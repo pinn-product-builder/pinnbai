@@ -2,11 +2,13 @@ import { useSearchParams } from 'react-router-dom';
 import { useCallback, useMemo } from 'react';
 import type { GlobalFilters, PeriodFilter } from '@/types/dashboard';
 
+const DEFAULT_ORG_ID = '073605bb-b60f-4928-b5b9-5fa149f35941';
+
 export function useGlobalFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const filters: GlobalFilters = useMemo(() => ({
-    orgId: searchParams.get('org') || '',
+    orgId: searchParams.get('org') || DEFAULT_ORG_ID,
     period: (searchParams.get('period') as PeriodFilter) || '30d',
     startDate: searchParams.get('start') || undefined,
     endDate: searchParams.get('end') || undefined,

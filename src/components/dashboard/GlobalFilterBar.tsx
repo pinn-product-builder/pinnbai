@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, Calendar, GitCompare, Filter } from 'lucide-react';
+import { Calendar, GitCompare, Filter } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,14 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
-import { useOrgOptions } from '@/hooks/useDashboardData';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function GlobalFilterBar() {
-  const { filters, setOrgId, setPeriod, setComparePrevious, setDateRange } = useGlobalFilters();
-  const { data: orgOptions = [], isLoading: orgsLoading } = useOrgOptions();
+  const { filters, setPeriod, setComparePrevious, setDateRange } = useGlobalFilters();
 
   const [dateRange, setDateRangeLocal] = React.useState<{ from?: Date; to?: Date }>({});
 
@@ -36,23 +33,6 @@ export function GlobalFilterBar() {
   return (
     <div className="h-full flex items-center justify-between px-6">
       <div className="flex items-center gap-4">
-        {/* Org Select */}
-        <div className="flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-muted-foreground" />
-          <Select value={filters.orgId} onValueChange={setOrgId}>
-            <SelectTrigger className="w-48 bg-secondary border-border">
-              <SelectValue placeholder={orgsLoading ? "Carregando..." : "Selecione a org"} />
-            </SelectTrigger>
-            <SelectContent>
-              {orgOptions.map((org) => (
-                <SelectItem key={org} value={org}>
-                  {org}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Period Select */}
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-muted-foreground" />
