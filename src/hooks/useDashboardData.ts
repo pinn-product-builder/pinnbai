@@ -1,0 +1,385 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabaseClient';
+import type {
+  ExecutiveKpis,
+  ExecutiveDaily,
+  FunnelStage,
+  Meeting,
+  ConversationKpis7d,
+  ConversationKpis30d,
+  ConversationDaily,
+  ConversationByHour,
+  ConversationHeatmap,
+  TrafficKpis7d,
+  TrafficKpis30d,
+  TrafficDaily,
+  TopAd,
+  CallsKpis7d,
+  CallsKpis30d,
+  CallsDaily,
+  CallEvent,
+  MappingCoverage,
+  UnmappedCandidate,
+  IngestionRun,
+  AIInsight,
+  KpiDefinition,
+} from '@/types/dashboard';
+
+// Org options
+export function useOrgOptions() {
+  return useQuery({
+    queryKey: ['org-options'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_dashboard_kpis_30d_v3')
+        .select('org_id');
+      
+      if (error) throw error;
+      
+      const uniqueOrgs = [...new Set(data?.map(d => d.org_id) || [])];
+      return uniqueOrgs.filter(Boolean);
+    },
+  });
+}
+
+// Executive hooks
+export function useExecutiveKpis(orgId: string) {
+  return useQuery({
+    queryKey: ['executive-kpis', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_dashboard_kpis_30d_v3')
+        .select('*')
+        .eq('org_id', orgId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as ExecutiveKpis | null;
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useExecutiveDaily(orgId: string) {
+  return useQuery({
+    queryKey: ['executive-daily', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_dashboard_daily_60d_v3')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('day', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as ExecutiveDaily[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useFunnelCurrent(orgId: string) {
+  return useQuery({
+    queryKey: ['funnel-current', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_funnel_current_exec')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('stage_order', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as FunnelStage[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useMeetingsUpcoming(orgId: string) {
+  return useQuery({
+    queryKey: ['meetings-upcoming', orgId],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('vw_meetings_upcoming_v3')
+        .select('*')
+        .eq('org_id', orgId)
+        .gte('start_at', today)
+        .order('start_at', { ascending: true })
+        .limit(50);
+      
+      if (error) throw error;
+      return (data || []) as Meeting[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+// Conversations hooks
+export function useConversationsKpis(orgId: string, period: '7d' | '30d') {
+  return useQuery({
+    queryKey: ['conversations-kpis', orgId, period],
+    queryFn: async () => {
+      const view = period === '7d' ? 'vw_agente_kpis_7d' : 'vw_agente_kpis_30d';
+      const { data, error } = await supabase
+        .from(view)
+        .select('*')
+        .eq('org_id', orgId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as (ConversationKpis7d | ConversationKpis30d) | null;
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useConversationsDaily(orgId: string) {
+  return useQuery({
+    queryKey: ['conversations-daily', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_kommo_msg_in_daily_60d_v3')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('day', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as ConversationDaily[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useConversationsByHour(orgId: string) {
+  return useQuery({
+    queryKey: ['conversations-by-hour', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_kommo_msg_in_by_hour_7d_v3')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('hour', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as ConversationByHour[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useConversationsHeatmap(orgId: string) {
+  return useQuery({
+    queryKey: ['conversations-heatmap', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_kommo_msg_in_heatmap_30d_v3')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      if (error) throw error;
+      return (data || []) as ConversationHeatmap[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+// Traffic hooks
+export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
+  return useQuery({
+    queryKey: ['trafego-kpis', orgId, period],
+    queryFn: async () => {
+      const view = period === '7d' ? 'vw_trafego_kpis_7d' : 'vw_trafego_kpis_30d';
+      const { data, error } = await supabase
+        .from(view)
+        .select('*')
+        .eq('org_id', orgId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as (TrafficKpis7d | TrafficKpis30d) | null;
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useTrafegoDaily(orgId: string) {
+  return useQuery({
+    queryKey: ['trafego-daily', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_trafego_daily_30d')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('day', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as TrafficDaily[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useTopAds(orgId: string) {
+  return useQuery({
+    queryKey: ['top-ads', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_spend_top_ads_30d_v2')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('spend_total', { ascending: false })
+        .limit(10);
+      
+      if (error) throw error;
+      return (data || []) as TopAd[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+// VAPI hooks
+export function useCallsKpis(orgId: string, period: '7d' | '30d') {
+  return useQuery({
+    queryKey: ['calls-kpis', orgId, period],
+    queryFn: async () => {
+      const view = period === '7d' ? 'vw_calls_kpis_7d' : 'vw_calls_kpis_30d';
+      const { data, error } = await supabase
+        .from(view)
+        .select('*')
+        .eq('org_id', orgId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as (CallsKpis7d | CallsKpis30d) | null;
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useCallsDaily(orgId: string) {
+  return useQuery({
+    queryKey: ['calls-daily', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_calls_daily_30d')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('day', { ascending: true });
+      
+      if (error) throw error;
+      return (data || []) as CallsDaily[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useCallsLast50(orgId: string) {
+  return useQuery({
+    queryKey: ['calls-last-50', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_calls_last_50')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('event_ts', { ascending: false })
+        .limit(50);
+      
+      if (error) throw error;
+      return (data || []) as CallEvent[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+// Admin hooks
+export function useMappingCoverage(orgId: string) {
+  return useQuery({
+    queryKey: ['mapping-coverage', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_funnel_mapping_coverage')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      if (error) throw error;
+      return (data || []) as MappingCoverage[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useUnmappedCandidates(orgId: string) {
+  return useQuery({
+    queryKey: ['unmapped-candidates', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vw_funnel_unmapped_candidates')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('hits', { ascending: false });
+      
+      if (error) throw error;
+      return (data || []) as UnmappedCandidate[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+export function useIngestionRuns(orgId: string) {
+  return useQuery({
+    queryKey: ['ingestion-runs', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ingestion_runs')
+        .select('*')
+        .eq('org_id', orgId)
+        .order('started_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      return (data || []) as IngestionRun[];
+    },
+    enabled: !!orgId,
+  });
+}
+
+// Insights
+export function useInsights(orgId: string, scope: string) {
+  return useQuery({
+    queryKey: ['insights', orgId, scope],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_insights')
+        .select('*')
+        .eq('org_id', orgId)
+        .eq('scope', scope)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as AIInsight | null;
+    },
+    enabled: !!orgId,
+  });
+}
+
+// KPI Dictionary
+export function useKpiDictionary() {
+  return useQuery({
+    queryKey: ['kpi-dictionary'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('kpi_dictionary')
+        .select('*');
+      
+      if (error) throw error;
+      
+      const dictionary: Record<string, KpiDefinition> = {};
+      (data || []).forEach((item: KpiDefinition) => {
+        dictionary[item.kpi_key] = item;
+      });
+      return dictionary;
+    },
+  });
+}
