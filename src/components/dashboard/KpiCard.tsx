@@ -90,6 +90,21 @@ const LOCAL_KPI_DEFINITIONS: Record<string, { title: string; definition: string;
     title: 'Mensagens Recebidas (30d)',
     definition: 'Total de mensagens recebidas nos últimos 30 dias.',
   },
+  conv_lead_to_msg_30d: {
+    title: 'Mensagens por Lead (30d)',
+    definition: 'Média de mensagens recebidas por lead nos últimos 30 dias. Valores acima de 100% indicam que, em média, cada lead enviou mais de uma mensagem.',
+    formula: '(total_mensagens / total_leads) × 100'
+  },
+  conv_lead_to_meeting_30d: {
+    title: 'Conv. Lead → Reunião (30d)',
+    definition: 'Percentual de leads que agendaram pelo menos uma reunião nos últimos 30 dias.',
+    formula: '(leads_com_reunião / total_leads) × 100'
+  },
+  conv_msg_to_meeting_30d: {
+    title: 'Conv. Mensagem → Reunião (30d)',
+    definition: 'Percentual de leads que enviaram mensagem e posteriormente agendaram reunião.',
+    formula: '(reuniões_agendadas / leads_com_mensagem) × 100'
+  },
   // Executivo
   spend_30d: {
     title: 'Investimento Total',
@@ -161,9 +176,9 @@ export function KpiCard({
           minimumFractionDigits: 2,
         }).format(value);
       case 'percent':
-        // Se o valor for <= 1, assume que é proporção decimal (0.43 = 43%)
-        // Se for > 1, assume que já está em porcentagem
-        const percentValue = value <= 1 ? value * 100 : value;
+        // Multiplica por 100 para converter proporção decimal em porcentagem
+        // Suporta valores > 100% (ex: mensagens por lead)
+        const percentValue = value * 100;
         return `${percentValue.toFixed(1)}%`;
       default:
         return new Intl.NumberFormat('pt-BR').format(value);
