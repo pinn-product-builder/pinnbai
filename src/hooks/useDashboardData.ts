@@ -582,27 +582,49 @@ export function useIngestionRuns(orgId: string) {
   });
 }
 
-// Insights
+// Insights - busca por scope exato ou qualquer insight disponível
 export function useInsights(orgId: string, scope: string) {
   return useQuery({
     queryKey: ['insights', orgId, scope],
     queryFn: async () => {
-      // Buscar insight mais recente pelo scope específico
-      const { data, error } = await supabase
+      // Mapear scopes possíveis (inglês/português)
+      const scopeVariants = [scope];
+      if (scope === 'executive') scopeVariants.push('executivo');
+      if (scope === 'executivo') scopeVariants.push('executive');
+      if (scope === 'conversas') scopeVariants.push('conversations');
+      if (scope === 'trafego') scopeVariants.push('traffic');
+      if (scope === 'vapi') scopeVariants.push('calls');
+      
+      // Tentar buscar pelo scope específico primeiro
+      let { data, error } = await supabase
         .from('ai_insights')
-        .select('payload,created_at')
+        .select('payload,created_at,scope')
         .eq('org_id', orgId)
-        .eq('scope', scope)
+        .in('scope', scopeVariants)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
       if (error) throw error;
       
+      // Se não encontrar pelo scope específico, buscar qualquer insight da org
+      if (!data) {
+        const { data: anyData, error: anyError } = await supabase
+          .from('ai_insights')
+          .select('payload,created_at,scope')
+          .eq('org_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (anyError) throw anyError;
+        data = anyData;
+      }
+      
       if (data) {
         return {
           org_id: orgId,
-          scope,
+          scope: data.scope || scope,
           payload: data.payload,
           created_at: data.created_at,
         } as AIInsight;
