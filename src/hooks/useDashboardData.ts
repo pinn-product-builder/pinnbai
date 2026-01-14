@@ -204,57 +204,65 @@ export function useConversationsHeatmap(orgId: string) {
   });
 }
 
-// Traffic hooks - Calcula KPIs a partir da view diária
+// Traffic hooks - Calcula KPIs diretamente da tabela trafego e view
 export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
   return useQuery({
     queryKey: ['trafego-kpis', orgId, period],
     queryFn: async () => {
-      // Buscar dados diários da view
-      const { data, error } = await supabase
-        .from('vw_trafego_daily_30d')
-        .select('day,spend_total,leads,cpl,meetings_booked,cp_meeting_booked')
-        .eq('org_id', orgId)
-        .order('day', { ascending: false });
-      
-      if (error) throw error;
-      
       // Calcular a data de corte baseado no período
       const daysToInclude = period === '7d' ? 7 : 30;
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToInclude);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
       
-      // Filtrar e agregar os dados
-      const filteredData = (data || []).filter(row => {
-        const rowDate = new Date(row.day);
-        return rowDate >= cutoffDate;
-      });
+      // Buscar investimento diretamente da tabela trafego (fonte primária de gastos)
+      const { data: trafegoData, error: trafegoError } = await supabase
+        .from('trafego')
+        .select('data,custo')
+        .eq('org_id', orgId)
+        .gte('data', cutoffStr);
       
-      // Somar os valores
-      const totals = filteredData.reduce((acc, row) => {
-        acc.spend_total += Number(row.spend_total) || 0;
+      if (trafegoError) throw trafegoError;
+      
+      // Buscar leads e reuniões da view (que tem esses dados agregados)
+      const { data: viewData, error: viewError } = await supabase
+        .from('vw_trafego_daily_30d')
+        .select('day,leads,meetings_booked')
+        .eq('org_id', orgId)
+        .gte('day', cutoffStr);
+      
+      if (viewError) throw viewError;
+      
+      // Somar investimento da tabela trafego
+      const spend_total = (trafegoData || []).reduce((sum, row) => {
+        return sum + (Number(row.custo) || 0);
+      }, 0);
+      
+      // Somar leads e reuniões da view
+      const viewTotals = (viewData || []).reduce((acc, row) => {
         acc.leads += Number(row.leads) || 0;
         acc.meetings_booked += Number(row.meetings_booked) || 0;
         return acc;
-      }, { spend_total: 0, leads: 0, meetings_booked: 0 });
+      }, { leads: 0, meetings_booked: 0 });
       
       // Calcular CPL e Custo por Reunião
-      const cpl = totals.leads > 0 ? totals.spend_total / totals.leads : 0;
-      const cpMeeting = totals.meetings_booked > 0 ? totals.spend_total / totals.meetings_booked : 0;
+      const cpl = viewTotals.leads > 0 ? spend_total / viewTotals.leads : 0;
+      const cpMeeting = viewTotals.meetings_booked > 0 ? spend_total / viewTotals.meetings_booked : 0;
       
       if (period === '7d') {
         return {
-          spend_total_7d: totals.spend_total,
-          leads_7d: totals.leads,
+          spend_total_7d: spend_total,
+          leads_7d: viewTotals.leads,
           cpl_7d: cpl,
-          meetings_booked_7d: totals.meetings_booked,
+          meetings_booked_7d: viewTotals.meetings_booked,
           cp_meeting_booked_7d: cpMeeting,
         } as TrafficKpis7d;
       } else {
         return {
-          spend_total_30d: totals.spend_total,
-          leads_30d: totals.leads,
+          spend_total_30d: spend_total,
+          leads_30d: viewTotals.leads,
           cpl_30d: cpl,
-          meetings_booked_30d: totals.meetings_booked,
+          meetings_booked_30d: viewTotals.meetings_booked,
           cp_meeting_booked_30d: cpMeeting,
         } as TrafficKpis30d;
       }
@@ -267,24 +275,68 @@ export function useTrafegoDaily(orgId: string) {
   return useQuery({
     queryKey: ['trafego-daily', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar dados da tabela trafego (fonte primária de gastos) nos últimos 30 dias
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
+      const { data: trafegoData, error: trafegoError } = await supabase
+        .from('trafego')
+        .select('data,custo')
+        .eq('org_id', orgId)
+        .gte('data', cutoffStr)
+        .order('data', { ascending: true });
+      
+      if (trafegoError) throw trafegoError;
+      
+      // Buscar dados da view para leads e reuniões
+      const { data: viewData, error: viewError } = await supabase
         .from('vw_trafego_daily_30d')
-        .select('day,spend_total,leads,cpl,meetings_booked,cp_meeting_booked')
+        .select('day,leads,meetings_booked')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
       
-      if (error) throw error;
+      if (viewError) throw viewError;
+      
+      // Agregar gastos por dia da tabela trafego
+      const spendByDay: Record<string, number> = {};
+      (trafegoData || []).forEach(row => {
+        const day = row.data;
+        if (!spendByDay[day]) {
+          spendByDay[day] = 0;
+        }
+        spendByDay[day] += Number(row.custo) || 0;
+      });
+      
+      // Criar mapa de dados da view
+      const viewByDay: Record<string, { leads: number; meetings_booked: number }> = {};
+      (viewData || []).forEach(row => {
+        viewByDay[row.day] = {
+          leads: Number(row.leads) || 0,
+          meetings_booked: Number(row.meetings_booked) || 0,
+        };
+      });
+      
+      // Combinar todos os dias únicos
+      const allDays = [...new Set([...Object.keys(spendByDay), ...Object.keys(viewByDay)])].sort();
       
       // Mapear para o formato esperado
-      return (data || []).map(row => ({
-        org_id: orgId,
-        day: row.day,
-        spend_total: Number(row.spend_total) || 0,
-        leads: Number(row.leads) || 0,
-        cpl: Number(row.cpl) || 0,
-        meetings_booked: Number(row.meetings_booked) || 0,
-        cp_meeting_booked: Number(row.cp_meeting_booked) || 0,
-      })) as TrafficDaily[];
+      return allDays.map(day => {
+        const spend = spendByDay[day] || 0;
+        const view = viewByDay[day] || { leads: 0, meetings_booked: 0 };
+        const cpl = view.leads > 0 ? spend / view.leads : 0;
+        const cpMeeting = view.meetings_booked > 0 ? spend / view.meetings_booked : 0;
+        
+        return {
+          org_id: orgId,
+          day,
+          spend_total: spend,
+          leads: view.leads,
+          cpl,
+          meetings_booked: view.meetings_booked,
+          cp_meeting_booked: cpMeeting,
+        };
+      }) as TrafficDaily[];
     },
     enabled: !!orgId,
   });
