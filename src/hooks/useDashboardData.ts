@@ -100,7 +100,7 @@ export function useMeetingsUpcoming(orgId: string) {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
-        .from('vw_meetings_upcoming_v3')
+        .from('vw_calendar_events_current_v3')
         .select('*')
         .eq('org_id', orgId)
         .gte('start_at', today)
