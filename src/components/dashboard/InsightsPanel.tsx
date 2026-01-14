@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, AlertCircle, Info, Lightbulb, TrendingDown, FileText, RefreshCw, Clock } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, Lightbulb, TrendingDown, RefreshCw, Clock, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -35,27 +35,32 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
       const result = await generateInsights(orgId, scope, 30);
       
       if (result.success) {
+        // Aguardar um pouco para a edge function gravar os dados
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         toast({
-          title: 'Insights atualizados',
-          description: 'Os insights foram gerados com sucesso',
+          title: '✨ Insights Atualizados!',
+          description: 'Novos insights foram gerados com IA',
         });
       } else {
-        // Se a função não existir, apenas recarregar os dados existentes
         toast({
-          title: 'Dados recarregados',
-          description: 'Os insights existentes foram recarregados',
+          title: 'Dados Recarregados',
+          description: result.error || 'Os insights existentes foram recarregados',
         });
       }
       
-      // Invalidar cache para recarregar os dados em ambos os casos
-      queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
-      queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
-    } catch (err) {
+      // Invalidar cache para recarregar os dados
+      await queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
+      await queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
+      
+      // Forçar refetch
+      await queryClient.refetchQueries({ queryKey: ['insights', orgId, scope] });
+    } catch (err: any) {
       // Em caso de erro, ainda tentar recarregar os dados existentes
-      queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
-      queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
+      await queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
+      await queryClient.refetchQueries({ queryKey: ['insights', orgId, scope] });
       toast({
-        title: 'Dados recarregados',
+        title: 'Dados Recarregados',
         description: 'Os insights existentes foram recarregados',
       });
     } finally {
@@ -140,7 +145,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
   return (
     <div className="space-y-4">
       {/* Header com botão de atualizar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         {insight?.created_at && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
@@ -149,14 +154,26 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
         )}
         {orgId && scope && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="h-7 text-xs gap-1.5"
+            disabled={isRefreshing || isLoading}
+            className={cn(
+              "h-8 text-xs gap-1.5 transition-all duration-300",
+              isRefreshing && "bg-primary/10 border-primary/30"
+            )}
           >
-            <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin")} />
-            Atualizar
+            {isRefreshing ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Gerando...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Atualizar Insights</span>
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -165,7 +182,27 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
         <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
           <Lightbulb className="w-10 h-10 mb-3 opacity-50" />
           <p className="text-sm">Nenhum insight disponível</p>
-          <p className="text-xs mt-1">Clique em "Atualizar" para gerar novos insights</p>
+          {orgId && scope && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="mt-3 gap-1.5"
+            >
+              {isRefreshing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Gerando...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Gerar Insights com IA</span>
+                </>
+              )}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
