@@ -5,11 +5,14 @@ import {
   TrendingUp, 
   CalendarCheck,
   Target,
-  BarChart3
+  Table as TableIcon,
+  ScatterChart as ScatterIcon
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
 import { DailyChart, BarChartHorizontal } from '@/components/dashboard/Charts';
+import { CorrelationChart } from '@/components/dashboard/CorrelationChart';
+import { TrafficTable } from '@/components/dashboard/TrafficTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
@@ -38,6 +41,13 @@ export default function TrafegoPage() {
       </div>
     );
   }
+
+  // Preparar dados para o gráfico de correlação
+  const correlationData = (daily || []).map(d => ({
+    day: new Date(d.day + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+    spend: d.spend_total,
+    leads: d.leads,
+  }));
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -138,7 +148,7 @@ export default function TrafegoPage() {
         </KpiGrid>
       </Section>
 
-      {/* Charts Row */}
+      {/* Charts Row 1 - Performance diária e correlação */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Performance Diária (30d)"
@@ -162,6 +172,21 @@ export default function TrafegoPage() {
         </ChartCard>
 
         <ChartCard
+          title="Correlação Investimento × Leads"
+          subtitle="Análise de eficiência do investimento"
+          isLoading={dailyLoading}
+          isEmpty={!daily?.length}
+        >
+          <CorrelationChart
+            data={correlationData}
+            height={320}
+          />
+        </ChartCard>
+      </div>
+
+      {/* Charts Row 2 - Top ads e insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard
           title="Top 10 Anúncios (30d)"
           subtitle="Anúncios com maior investimento"
           isLoading={topAdsLoading}
@@ -177,16 +202,24 @@ export default function TrafegoPage() {
             formatValue={(v) => `R$ ${v.toLocaleString('pt-BR')}`}
           />
         </ChartCard>
+
+        <ChartCard
+          title="Insights IA"
+          subtitle="Análises automáticas de tráfego pago"
+          isLoading={insightsLoading}
+        >
+          <InsightsPanel insight={insights || null} />
+        </ChartCard>
       </div>
 
-      {/* Insights */}
+      {/* Tabela detalhada */}
       <ChartCard
-        title="Insights IA"
-        subtitle="Análises automáticas de tráfego pago"
-        isLoading={insightsLoading}
-        className="max-w-2xl"
+        title="Performance Diária Detalhada"
+        subtitle="Últimos 15 dias com indicadores de tendência"
+        isLoading={dailyLoading}
+        isEmpty={!daily?.length}
       >
-        <InsightsPanel insight={insights || null} />
+        <TrafficTable data={daily || []} />
       </ChartCard>
     </div>
   );
