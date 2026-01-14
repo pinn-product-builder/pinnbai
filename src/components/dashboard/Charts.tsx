@@ -201,3 +201,92 @@ export function HourlyChart({ data, color = 'primary', height = 200 }: HourlyCha
     </ResponsiveContainer>
   );
 }
+
+interface AccumulatedChartProps {
+  data: Array<{
+    day: string;
+    accumulated: number;
+    daily?: number;
+  }>;
+  height?: number;
+  valuePrefix?: string;
+  valueSuffix?: string;
+}
+
+export function AccumulatedChart({ 
+  data, 
+  height = 280, 
+  valuePrefix = '$',
+  valueSuffix = '',
+}: AccumulatedChartProps) {
+  const formattedData = data.map((d) => ({
+    ...d,
+    dayLabel: format(parseISO(d.day), 'dd/MM', { locale: ptBR }),
+  }));
+
+  const formatValue = (value: number) => {
+    return `${valuePrefix}${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${valueSuffix}`;
+  };
+
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="gradient-accumulated" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={chartColors.success} stopOpacity={0.4} />
+            <stop offset="100%" stopColor={chartColors.success} stopOpacity={0.05} />
+          </linearGradient>
+          <linearGradient id="gradient-daily" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={chartColors.warning} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={chartColors.warning} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <XAxis dataKey="dayLabel" {...commonAxisProps} />
+        <YAxis {...commonAxisProps} tickFormatter={(v) => `${valuePrefix}${v}`} />
+        <Tooltip 
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null;
+            return (
+              <div className="glass-card p-3 border border-border/50 shadow-xl">
+                <p className="text-xs text-muted-foreground mb-2">{label}</p>
+                {payload.map((entry: any, index: number) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <span 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: entry.color }} 
+                    />
+                    <span className="text-muted-foreground">{entry.name}:</span>
+                    <span className="font-medium">{formatValue(entry.value)}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          }}
+        />
+        <Legend 
+          wrapperStyle={{ paddingTop: 20 }}
+          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+        />
+        {formattedData[0]?.daily !== undefined && (
+          <Area
+            type="monotone"
+            dataKey="daily"
+            name="Custo Diário"
+            stroke={chartColors.warning}
+            strokeWidth={2}
+            fill="url(#gradient-daily)"
+          />
+        )}
+        <Area
+          type="monotone"
+          dataKey="accumulated"
+          name="Custo Acumulado"
+          stroke={chartColors.success}
+          strokeWidth={2}
+          fill="url(#gradient-accumulated)"
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}

@@ -1,10 +1,10 @@
-import React from 'react';
-import { Phone, Target, Clock, PhoneCall, Timer, DollarSign, Percent, TrendingUp } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Phone, Target, Clock, PhoneCall, Timer, DollarSign, Percent, TrendingUp, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
-import { DailyChart } from '@/components/dashboard/Charts';
+import { DailyChart, AccumulatedChart } from '@/components/dashboard/Charts';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,16 @@ import {
   useInsights,
 } from '@/hooks/useDashboardData';
 import type { CallEvent } from '@/types/dashboard';
+
+// Interface para dados diários de ligações
+interface DailyCallData {
+  day: string;
+  calls_done: number;
+  calls_answered: number;
+  total_minutes: number;
+  avg_minutes: number;
+  total_spent_usd: number;
+}
 
 function CallsTable({ calls, isLoading }: { calls: CallEvent[]; isLoading?: boolean }) {
   if (isLoading) {
@@ -93,6 +103,94 @@ function CallsTable({ calls, isLoading }: { calls: CallEvent[]; isLoading?: bool
   );
 }
 
+// Tabela de dados diários
+function DailyCallsTable({ data, isLoading }: { data: DailyCallData[]; isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[...Array(10)].map((_, i) => (
+          <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/10">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+        <Calendar className="w-12 h-12 mb-3 opacity-50" />
+        <p className="text-sm">Nenhum dado diário disponível</p>
+      </div>
+    );
+  }
+
+  // Ordenar por data decrescente (mais recente primeiro)
+  const sortedData = [...data].sort((a, b) => b.day.localeCompare(a.day));
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-border/30">
+            <th className="text-left text-xs font-medium text-muted-foreground py-3 px-2">Data</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Realizadas</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Atendidas</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Tempo (min)</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Média (min)</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Custo (USD)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedData.map((row, index) => {
+            const taxaAtend = row.calls_done > 0 ? ((row.calls_answered / row.calls_done) * 100).toFixed(1) : '0.0';
+            return (
+              <tr 
+                key={index} 
+                className="border-b border-border/10 hover:bg-muted/5 transition-colors"
+              >
+                <td className="py-3 px-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-3 h-3 text-muted-foreground" />
+                    {format(parseISO(row.day), "dd/MM/yyyy", { locale: ptBR })}
+                  </div>
+                </td>
+                <td className="py-3 px-2 text-right">
+                  <span className="text-sm font-medium">{row.calls_done.toLocaleString('pt-BR')}</span>
+                </td>
+                <td className="py-3 px-2 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-sm font-medium text-success">{row.calls_answered.toLocaleString('pt-BR')}</span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      {taxaAtend}%
+                    </Badge>
+                  </div>
+                </td>
+                <td className="py-3 px-2 text-right text-sm text-muted-foreground">
+                  {row.total_minutes.toFixed(1)}
+                </td>
+                <td className="py-3 px-2 text-right text-sm text-muted-foreground">
+                  {row.avg_minutes.toFixed(2)}
+                </td>
+                <td className="py-3 px-2 text-right">
+                  <span className="text-sm font-medium text-primary">
+                    ${row.total_spent_usd.toFixed(2)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // Helper para formatar trend
 function makeTrend(value: number | undefined, periodLabel: string) {
   if (value === undefined || isNaN(value)) return undefined;
@@ -112,6 +210,21 @@ export default function VapiPage() {
   const { data: daily, isLoading: dailyLoading } = useCallsDaily(orgId);
   const { data: calls, isLoading: callsLoading } = useCallsLast50(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'vapi');
+
+  // Calcular dados de custo acumulado
+  const accumulatedCostData = useMemo(() => {
+    if (!daily?.length) return [];
+    
+    let accumulated = 0;
+    return daily.map(d => {
+      accumulated += d.total_spent_usd;
+      return {
+        day: d.day,
+        daily: d.total_spent_usd,
+        accumulated,
+      };
+    });
+  }, [daily]);
 
   if (!orgId) {
     return (
@@ -178,6 +291,7 @@ export default function VapiPage() {
             description="Duração média das ligações atendidas em minutos"
           />
         </KpiGrid>
+        
         <div className="mt-4">
           <KpiGrid columns={3}>
             <KpiCard
@@ -238,6 +352,32 @@ export default function VapiPage() {
           ]}
           height={280}
         />
+      </ChartCard>
+
+      {/* Accumulated Cost Chart */}
+      <ChartCard
+        title="Custo Acumulado"
+        subtitle="Evolução do custo total ao longo do tempo"
+        isLoading={dailyLoading}
+        isEmpty={!accumulatedCostData?.length}
+      >
+        <AccumulatedChart
+          data={accumulatedCostData}
+          height={280}
+          valuePrefix="$"
+        />
+      </ChartCard>
+
+      {/* Daily Data Table */}
+      <ChartCard
+        title="Dados Diários de Ligações"
+        subtitle="Detalhamento por dia com quantidade, tempo e custo"
+        isLoading={dailyLoading}
+        isEmpty={!daily?.length}
+      >
+        <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          <DailyCallsTable data={daily || []} />
+        </div>
       </ChartCard>
 
       {/* Bottom Row */}
