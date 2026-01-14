@@ -10,7 +10,8 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import ExecutivePage from "@/pages/dash/ExecutivePage";
 import ConversasPage from "@/pages/dash/ConversasPage";
 import TrafegoPage from "@/pages/dash/TrafegoPage";
-import VapiPage from "@/pages/dash/VapiPage";
+import LigacoesPage from "@/pages/dash/LigacoesPage";
+import VendasPage from "@/pages/dash/VendasPage";
 import AdminPage from "@/pages/dash/AdminPage";
 import ConfigPage from "@/pages/dash/ConfigPage";
 import LoginPage from "@/pages/LoginPage";
@@ -20,7 +21,7 @@ import { ROUTES } from "@/lib/config";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
@@ -42,7 +43,8 @@ const App = () => (
                       <Route path="executivo" element={<ExecutivePage />} />
                       <Route path="conversas" element={<ConversasPage />} />
                       <Route path="trafego" element={<TrafegoPage />} />
-                      <Route path="vapi" element={<VapiPage />} />
+                      <Route path="ligacoes" element={<LigacoesPage />} />
+                      <Route path="vendas" element={<VendasPage />} />
                       
                       {/* Admin-only routes */}
                       <Route path="admin" element={

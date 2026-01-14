@@ -194,12 +194,14 @@ export interface AIInsight {
 
 // KPI Dictionary
 export interface KpiDefinition {
-  kpi_key: string;
+  kpi_key?: string;
   title: string;
   definition: string;
-  formula: string;
-  example: string;
-  notes: string;
+  formula?: string;
+  example?: string;
+  notes?: string;
+  period?: string;
+  source?: string;
 }
 
 // Filter types

@@ -107,7 +107,7 @@ export function DailyChart({ data, lines, height = 300 }: DailyChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
         <defs>
           {lines.map((line) => (
             <linearGradient key={line.key} id={`gradient-${line.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -117,8 +117,26 @@ export function DailyChart({ data, lines, height = 300 }: DailyChartProps) {
           ))}
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="dayLabel" {...axisProps} />
-        <YAxis {...axisProps} />
+        <XAxis 
+          dataKey="dayLabel" 
+          {...axisProps}
+          label={{ 
+            value: 'Data', 
+            position: 'bottom', 
+            offset: 0,
+            style: { fontSize: 10, fill: axisProps.tick.fill, opacity: 0.7 }
+          }}
+        />
+        <YAxis 
+          {...axisProps}
+          label={{ 
+            value: 'Quantidade', 
+            angle: -90, 
+            position: 'insideLeft',
+            offset: 10,
+            style: { fontSize: 10, fill: axisProps.tick.fill, opacity: 0.7 }
+          }}
+        />
         <Tooltip content={<CustomTooltip />} />
         <Legend 
           wrapperStyle={{ paddingTop: 20 }}
@@ -223,7 +241,7 @@ export function HourlyChart({ data, color = 'primary', height = 200 }: HourlyCha
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <BarChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
         <defs>
           <linearGradient id="hourBarGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={chartColors[color]} stopOpacity={dark ? 0.8 : 0.9} />
@@ -231,8 +249,27 @@ export function HourlyChart({ data, color = 'primary', height = 200 }: HourlyCha
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="hourLabel" {...axisProps} interval={2} />
-        <YAxis {...axisProps} />
+        <XAxis 
+          dataKey="hourLabel" 
+          {...axisProps} 
+          interval={2}
+          label={{ 
+            value: 'Hora do dia', 
+            position: 'bottom', 
+            offset: 0,
+            style: { fontSize: 10, fill: axisProps.tick.fill, opacity: 0.7 }
+          }}
+        />
+        <YAxis 
+          {...axisProps}
+          label={{ 
+            value: 'Mensagens', 
+            angle: -90, 
+            position: 'insideLeft',
+            offset: 10,
+            style: { fontSize: 10, fill: axisProps.tick.fill, opacity: 0.7 }
+          }}
+        />
         <Tooltip content={<CustomTooltip />} />
         <Bar 
           dataKey="value" 

@@ -387,8 +387,8 @@ export default function VapiPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
-        title="VAPI - Ligações"
-        description="Monitoramento de chamadas e eventos de voz"
+        title="Ligações"
+        description="Monitoramento de chamadas telefônicas e eventos de voz"
       />
 
       {/* KPIs */}

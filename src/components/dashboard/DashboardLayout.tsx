@@ -101,7 +101,8 @@ const navItems = [
   { path: ROUTES.DASHBOARD.EXECUTIVO, label: 'Executivo', icon: LayoutDashboard, adminOnly: false },
   { path: ROUTES.DASHBOARD.CONVERSAS, label: 'Conversas', icon: MessageSquare, adminOnly: false },
   { path: ROUTES.DASHBOARD.TRAFEGO, label: 'Tráfego', icon: TrendingUp, adminOnly: false },
-  { path: ROUTES.DASHBOARD.VAPI, label: 'VAPI', icon: Phone, adminOnly: false },
+  { path: ROUTES.DASHBOARD.VAPI, label: 'Ligações', icon: Phone, adminOnly: false },
+  { path: ROUTES.DASHBOARD.VENDAS, label: 'Vendas', icon: TrendingUp, adminOnly: false },
   { path: ROUTES.DASHBOARD.ADMIN, label: 'Admin', icon: Settings, adminOnly: true },
   { path: ROUTES.DASHBOARD.CONFIG, label: 'Config', icon: Wrench, adminOnly: true },
 ];
