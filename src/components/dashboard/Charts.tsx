@@ -31,31 +31,53 @@ export const chartColors = {
   rose: 'hsl(350, 85%, 55%)',
 };
 
-// Grid and axis styling (Pinn Orange Theme)
-const commonAxisProps = {
-  stroke: 'hsl(27, 100%, 50% / 0.22)',  // --border-strong
-  fontSize: 11,
-  tickLine: false,
-  axisLine: false,
-  tick: { fill: 'hsl(35, 30%, 95% / 0.55)' } // --text-3
+// Detect if we're in light mode
+const isDarkMode = () => {
+  if (typeof window !== 'undefined') {
+    return document.documentElement.classList.contains('dark');
+  }
+  return true;
 };
 
-const gridColor = 'rgba(246, 241, 234, 0.06)'; // --gridline
+// Grid and axis styling - theme aware
+const getAxisProps = () => {
+  const dark = isDarkMode();
+  return {
+    stroke: dark ? 'hsl(27, 100%, 50% / 0.22)' : 'hsl(30, 20%, 80%)',
+    fontSize: 11,
+    tickLine: false,
+    axisLine: false,
+    tick: { fill: dark ? 'hsl(35, 30%, 95% / 0.55)' : 'hsl(20, 20%, 40%)' }
+  };
+};
+
+const getGridColor = () => {
+  const dark = isDarkMode();
+  return dark ? 'rgba(246, 241, 234, 0.06)' : 'rgba(0, 0, 0, 0.08)';
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
+  const dark = isDarkMode();
 
   return (
-    <div className="pinn-tooltip">
-      <p className="text-xs text-text-3 mb-2">{label}</p>
+    <div 
+      className="px-3 py-2 rounded-lg text-sm shadow-lg border"
+      style={{
+        background: dark ? 'hsl(20, 60%, 8%)' : 'hsl(0, 0%, 100%)',
+        borderColor: dark ? 'hsl(27, 100%, 50% / 0.3)' : 'hsl(30, 20%, 85%)',
+        color: dark ? 'hsl(35, 30%, 95%)' : 'hsl(20, 25%, 15%)',
+      }}
+    >
+      <p className="text-xs opacity-60 mb-2">{label}</p>
       {payload.map((entry: any, index: number) => (
         <div key={index} className="flex items-center gap-2 text-sm">
           <span 
             className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: entry.color }} 
           />
-          <span className="text-text-2">{entry.name}:</span>
-          <span className="font-medium text-text-1">{entry.value?.toLocaleString('pt-BR')}</span>
+          <span className="opacity-70">{entry.name}:</span>
+          <span className="font-medium">{entry.value?.toLocaleString('pt-BR')}</span>
         </div>
       ))}
     </div>
@@ -79,24 +101,28 @@ export function DailyChart({ data, lines, height = 300 }: DailyChartProps) {
     dayLabel: format(parseISO(d.day), 'dd/MM', { locale: ptBR }),
   }));
 
+  const axisProps = getAxisProps();
+  const gridColor = getGridColor();
+  const dark = isDarkMode();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           {lines.map((line) => (
             <linearGradient key={line.key} id={`gradient-${line.key}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={chartColors[line.color]} stopOpacity={0.3} />
+              <stop offset="0%" stopColor={chartColors[line.color]} stopOpacity={dark ? 0.3 : 0.4} />
               <stop offset="100%" stopColor={chartColors[line.color]} stopOpacity={0} />
             </linearGradient>
           ))}
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="dayLabel" {...commonAxisProps} />
-        <YAxis {...commonAxisProps} />
+        <XAxis dataKey="dayLabel" {...axisProps} />
+        <YAxis {...axisProps} />
         <Tooltip content={<CustomTooltip />} />
         <Legend 
           wrapperStyle={{ paddingTop: 20 }}
-          formatter={(value) => <span className="text-xs text-text-3">{value}</span>}
+          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
         />
         {lines.map((line) => 
           line.type === 'line' ? (
@@ -143,23 +169,26 @@ export function BarChartHorizontal({
   height = 300,
   formatValue = (v) => v.toLocaleString('pt-BR'),
 }: BarChartHorizontalProps) {
+  const axisProps = getAxisProps();
+  const gridColor = getGridColor();
+  const dark = isDarkMode();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="barGradient" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={chartColors[color]} stopOpacity={0.8} />
-            <stop offset="100%" stopColor={chartColors[color]} stopOpacity={0.4} />
+            <stop offset="0%" stopColor={chartColors[color]} stopOpacity={dark ? 0.8 : 0.9} />
+            <stop offset="100%" stopColor={chartColors[color]} stopOpacity={dark ? 0.4 : 0.5} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-        <XAxis type="number" {...commonAxisProps} tickFormatter={formatValue} />
+        <XAxis type="number" {...axisProps} tickFormatter={formatValue} />
         <YAxis 
           type="category" 
           dataKey="name" 
-          {...commonAxisProps} 
+          {...axisProps} 
           width={150}
-          tick={{ fill: 'hsl(35, 30%, 95% / 0.55)', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
         <Bar 
@@ -188,18 +217,22 @@ export function HourlyChart({ data, color = 'primary', height = 200 }: HourlyCha
     hourLabel: `${String(d.hour).padStart(2, '0')}h`,
   }));
 
+  const axisProps = getAxisProps();
+  const gridColor = getGridColor();
+  const dark = isDarkMode();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="hourBarGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={chartColors[color]} stopOpacity={0.8} />
-            <stop offset="100%" stopColor={chartColors[color]} stopOpacity={0.3} />
+            <stop offset="0%" stopColor={chartColors[color]} stopOpacity={dark ? 0.8 : 0.9} />
+            <stop offset="100%" stopColor={chartColors[color]} stopOpacity={dark ? 0.3 : 0.4} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="hourLabel" {...commonAxisProps} interval={2} />
-        <YAxis {...commonAxisProps} />
+        <XAxis dataKey="hourLabel" {...axisProps} interval={2} />
+        <YAxis {...axisProps} />
         <Tooltip content={<CustomTooltip />} />
         <Bar 
           dataKey="value" 
@@ -238,6 +271,9 @@ export function AccumulatedChart({
     return `${valuePrefix}${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${valueSuffix}`;
   };
 
+  const axisProps = getAxisProps();
+  const gridColor = getGridColor();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -252,8 +288,8 @@ export function AccumulatedChart({
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="dayLabel" {...commonAxisProps} />
-        <YAxis {...commonAxisProps} tickFormatter={(v) => `${valuePrefix}${v}`} />
+        <XAxis dataKey="dayLabel" {...axisProps} />
+        <YAxis {...axisProps} tickFormatter={(v) => `${valuePrefix}${v}`} />
         <Tooltip 
           content={({ active, payload, label }) => {
             if (!active || !payload?.length) return null;
@@ -330,6 +366,9 @@ export function StackedTrendChart({
     dayLabel: format(parseISO(d.day), 'dd/MM', { locale: ptBR }),
   }));
 
+  const axisProps = getAxisProps();
+  const gridColor = getGridColor();
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -342,25 +381,13 @@ export function StackedTrendChart({
           ))}
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-        <XAxis dataKey="dayLabel" {...commonAxisProps} />
-        <YAxis {...commonAxisProps} />
+        <XAxis dataKey="dayLabel" {...axisProps} />
+        <YAxis {...axisProps} />
         <Tooltip 
           content={({ active, payload, label }) => {
             if (!active || !payload?.length) return null;
             return (
-              <div className="pinn-tooltip max-w-xs">
-                <p className="text-xs text-text-3 mb-2">{label}</p>
-                {payload.map((entry: any, index: number) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <span 
-                      className="w-2 h-2 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: entry.color }} 
-                    />
-                    <span className="text-text-2 truncate">{labels[entry.dataKey] || entry.dataKey}:</span>
-                    <span className="font-medium text-text-1">{entry.value?.toLocaleString('pt-BR')}</span>
-                  </div>
-                ))}
-              </div>
+              <CustomTooltip active={active} payload={payload} label={label} />
             );
           }}
         />
