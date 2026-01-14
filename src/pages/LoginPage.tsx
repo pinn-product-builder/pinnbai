@@ -81,13 +81,12 @@ export default function LoginPage() {
           <div className="flex flex-col items-center mb-8">
             {/* Pinn Logo */}
             <PinnLogo className="mb-4 drop-shadow-[0_0_20px_hsl(var(--pinn-orange-500)/0.6)] animate-fade-in [animation-delay:100ms]" />
-            <p className="text-xs text-text-3 tracking-widest uppercase mb-4 animate-fade-in [animation-delay:200ms]">Business Analytics Intelligence</p>
             
             <h1 className="text-3xl font-bold text-gradient-primary drop-shadow-[0_0_25px_hsl(var(--pinn-orange-500)/0.6)] animate-fade-in [animation-delay:300ms]">
               Pinn Growth
             </h1>
             <p className="text-lg font-semibold text-pinn-gold-400 mt-2 drop-shadow-[0_0_20px_hsl(var(--pinn-gold-500)/0.5)] animate-fade-in [animation-delay:400ms]">
-              BAI Analytics Dashboard
+              Business Analytics Intelligence
             </p>
             <p className="text-text-3 text-sm mt-3 animate-fade-in [animation-delay:500ms]">Entre com suas credenciais</p>
           </div>
