@@ -119,15 +119,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <aside 
           className={cn(
             "fixed left-0 top-0 h-full z-40 transition-all duration-300 ease-in-out",
-            "bg-sidebar border-r border-sidebar-border",
+            "bg-bg-0 border-r border-border",
             collapsed ? "w-16" : "w-60"
           )}
         >
           {/* Logo */}
-          <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
+          <div className="h-16 flex items-center px-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center glow-primary">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 rounded-xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow">
+                <Sparkles className="w-4 h-4 text-white" />
               </div>
               {!collapsed && (
                 <span className="font-semibold text-lg text-gradient-primary">Pinn</span>
@@ -144,12 +144,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                    isActive && "bg-sidebar-accent text-primary glow-primary"
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
+                    isActive 
+                      ? "bg-pinn-cyan-500/12 border border-pinn-cyan-500/25 text-text-1" 
+                      : "text-text-2 hover:text-text-1 hover:bg-bg-2 border border-transparent"
                   )}
                 >
-                  <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-primary")} />
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-pinn-gradient" />
+                  )}
+                  <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-pinn-cyan-500")} />
                   {!collapsed && <span>{item.label}</span>}
                 </NavLink>
               );
@@ -163,16 +167,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   onClick={() => setViewMode(true)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                    "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                    "border border-dashed border-sidebar-border/50 hover:border-primary/50"
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    "text-text-2 hover:text-text-1 hover:bg-bg-2",
+                    "border border-dashed border-border hover:border-pinn-cyan-500/50"
                   )}
                 >
                   <Monitor className="w-5 h-5 flex-shrink-0" />
                   {!collapsed && <span>Modo View</span>}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">
+              <TooltipContent side="right" className="pinn-tooltip">
                 <p>Apresentação em tela cheia (Ctrl+Shift+V)</p>
               </TooltipContent>
             </Tooltip>
@@ -183,9 +187,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
               "absolute bottom-4 right-0 translate-x-1/2 w-6 h-6 rounded-full",
-              "bg-sidebar-accent border border-sidebar-border",
-              "flex items-center justify-center",
-              "hover:bg-primary hover:border-primary hover:text-primary-foreground",
+              "bg-bg-2 border border-border",
+              "flex items-center justify-center text-text-3",
+              "hover:bg-pinn-cyan-500 hover:border-pinn-cyan-500 hover:text-white",
               "transition-all duration-200"
             )}
           >
@@ -205,7 +209,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
         >
           {/* Header */}
-          <header className="sticky top-0 z-30 h-16 border-b border-border bg-background/80 backdrop-blur-xl">
+          <header className="sticky top-0 z-30 h-16 border-b border-border bg-bg-0/80 backdrop-blur-xl">
             <GlobalFilterBar />
           </header>
 

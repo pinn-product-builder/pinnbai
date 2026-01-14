@@ -7,74 +7,106 @@
 @import '@fontsource/dm-sans/600.css';
 @import '@fontsource/dm-sans/700.css';
 
-/* Pinn Design System - Dark Premium + Glassmorphism */
+/* ============================================
+   PINN DESIGN SYSTEM — Dark Premium + Cyan/Blue
+   ============================================ */
 
 @layer base {
   :root {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* === PINN Brand Colors === */
+    --pinn-cyan-500: 187 87% 40%;
+    --pinn-cyan-600: 187 87% 33%;
+    --pinn-blue-500: 220 87% 57%;
+    --pinn-blue-600: 220 78% 46%;
+    
+    /* === Backgrounds (Dark) === */
+    --bg-0: 220 50% 4%;
+    --bg-1: 220 45% 6%;
+    --bg-2: 220 42% 8%;
+    --bg-3: 220 40% 11%;
+    
+    /* === Text === */
+    --text-1: 200 25% 92%;
+    --text-2: 210 18% 70%;
+    --text-3: 215 15% 50%;
+    
+    /* === Borders === */
+    --border-default: 215 35% 14%;
+    --border-strong: 215 35% 20%;
+    --gridline: 0 0% 100% / 0.06;
+    
+    /* === Semantic Tokens (mapped) === */
+    --background: var(--bg-0);
+    --foreground: var(--text-1);
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: var(--bg-1);
+    --card-foreground: var(--text-1);
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: var(--bg-3);
+    --popover-foreground: var(--text-1);
 
-    --primary: 187 85% 53%;
-    --primary-foreground: 222 47% 6%;
+    --primary: var(--pinn-cyan-500);
+    --primary-foreground: 220 50% 4%;
 
-    --secondary: 222 30% 14%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: var(--bg-2);
+    --secondary-foreground: var(--text-1);
 
-    --muted: 222 30% 18%;
-    --muted-foreground: 215 20% 55%;
+    --muted: var(--bg-2);
+    --muted-foreground: var(--text-3);
 
-    --accent: 222 30% 16%;
-    --accent-foreground: 210 40% 98%;
+    --accent: var(--bg-2);
+    --accent-foreground: var(--text-1);
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    /* States */
+    --success: 160 65% 36%;
+    --success-foreground: 220 50% 4%;
 
-    --success: 152 69% 45%;
-    --success-foreground: 222 47% 6%;
+    --warning: 38 75% 44%;
+    --warning-foreground: 220 50% 4%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --destructive: 4 72% 50%;
+    --destructive-foreground: var(--text-1);
 
-    --border: 222 30% 16%;
-    --input: 222 30% 14%;
-    --ring: 187 85% 53%;
+    --info: var(--pinn-blue-500);
 
-    --radius: 0.75rem;
+    --border: var(--border-default);
+    --input: var(--bg-1);
+    --ring: var(--pinn-cyan-500);
 
-    --sidebar-background: 222 47% 7%;
-    --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 187 85% 53%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 30% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 14%;
-    --sidebar-ring: 187 85% 53%;
+    --radius: 1rem;
 
-    /* Custom glass effects */
-    --glass-bg: 222 47% 8% / 0.6;
-    --glass-border: 222 30% 20% / 0.5;
-    --glow-primary: 187 85% 53% / 0.15;
-    --glow-success: 152 69% 45% / 0.15;
-    --glow-warning: 38 92% 50% / 0.15;
-    --glow-destructive: 0 72% 51% / 0.15;
+    /* === Sidebar === */
+    --sidebar-background: var(--bg-0);
+    --sidebar-foreground: var(--text-2);
+    --sidebar-primary: var(--pinn-cyan-500);
+    --sidebar-primary-foreground: 220 50% 4%;
+    --sidebar-accent: var(--bg-2);
+    --sidebar-accent-foreground: var(--text-1);
+    --sidebar-border: var(--border-default);
+    --sidebar-ring: var(--pinn-cyan-500);
 
-    /* Chart colors */
-    --chart-1: 187 85% 53%;
-    --chart-2: 152 69% 45%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* === Focus === */
+    --focus: 187 87% 40% / 0.35;
+
+    /* === Glass effects === */
+    --glass-bg: 220 45% 6% / 0.7;
+    --glass-border: 215 35% 20% / 0.5;
+    --glow-primary: 187 87% 40% / 0.12;
+    --glow-success: 160 65% 36% / 0.12;
+    --glow-warning: 38 75% 44% / 0.12;
+    --glow-destructive: 4 72% 50% / 0.12;
+
+    /* === Chart colors === */
+    --chart-1: var(--pinn-cyan-500);
+    --chart-2: var(--pinn-blue-500);
+    --chart-3: var(--success);
+    --chart-4: var(--warning);
+    --chart-5: var(--destructive);
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: var(--bg-0);
+    --foreground: var(--text-1);
   }
 }
 
@@ -89,82 +121,270 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    /* Radial overlay for depth */
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--pinn-cyan-500) / 0.06), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--pinn-blue-500) / 0.04), transparent),
+      hsl(var(--bg-0));
+    background-attachment: fixed;
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar - Pinn style */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(222 47% 8%);
+    background: hsl(var(--bg-0));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(222 30% 20%);
-    border-radius: 4px;
+    background: hsl(var(--border-strong));
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(222 30% 25%);
+    background: hsl(var(--pinn-cyan-500) / 0.5);
   }
 }
 
 @layer components {
+  /* === Glass Card Base === */
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50 rounded-xl;
+    @apply relative rounded-2xl transition-all duration-200;
+    background: hsl(var(--bg-1));
+    border: 1px solid hsl(var(--border-default));
     box-shadow: 
-      0 0 0 1px hsl(var(--border) / 0.3),
-      0 4px 24px -4px hsl(222 47% 4% / 0.5),
-      inset 0 1px 0 0 hsl(210 40% 98% / 0.03);
+      0 0 0 1px hsl(var(--border-default) / 0.3),
+      0 8px 32px -8px hsl(220 50% 2% / 0.6),
+      inset 0 1px 0 0 hsl(var(--text-1) / 0.02);
   }
 
+  .glass-card:hover {
+    background: hsl(var(--bg-2));
+    border-color: hsl(var(--border-strong));
+  }
+
+  /* === Glass Card with Glow === */
   .glass-card-glow {
     @apply glass-card relative overflow-hidden;
   }
 
   .glass-card-glow::before {
     content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    @apply absolute -top-px left-0 right-0 h-[2px] opacity-50;
+    background: linear-gradient(90deg, 
+      transparent, 
+      hsl(var(--pinn-cyan-500) / 0.5) 20%,
+      hsl(var(--pinn-blue-500) / 0.5) 80%,
+      transparent
+    );
+  }
+
+  .glass-card-glow::after {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
     background: radial-gradient(
       600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      hsl(var(--glow-primary)),
+      hsl(var(--pinn-cyan-500) / 0.08),
       transparent 40%
     );
   }
 
-  .glass-card-glow:hover::before {
+  .glass-card-glow:hover::after {
     @apply opacity-100;
   }
 
+  /* === Glow Effects === */
   .glow-primary {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+    box-shadow: 
+      0 0 20px -5px hsl(var(--pinn-cyan-500) / 0.25),
+      0 0 40px -10px hsl(var(--pinn-cyan-500) / 0.15);
   }
 
   .glow-success {
-    box-shadow: 0 0 20px -5px hsl(var(--success) / 0.3);
+    box-shadow: 0 0 20px -5px hsl(var(--success) / 0.25);
   }
 
   .glow-warning {
-    box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.3);
+    box-shadow: 0 0 20px -5px hsl(var(--warning) / 0.25);
   }
 
   .glow-destructive {
-    box-shadow: 0 0 20px -5px hsl(var(--destructive) / 0.3);
+    box-shadow: 0 0 20px -5px hsl(var(--destructive) / 0.25);
   }
 
+  /* === Text Gradient === */
   .text-gradient-primary {
-    @apply bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
   }
 
+  /* === Sidebar Items === */
   .sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
-    @apply text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200;
+    color: hsl(var(--text-2));
+  }
+
+  .sidebar-item:hover {
+    background: hsl(var(--bg-2));
+    color: hsl(var(--text-1));
   }
 
   .sidebar-item-active {
-    @apply sidebar-item bg-sidebar-accent text-primary;
+    @apply sidebar-item relative;
+    background: hsl(var(--pinn-cyan-500) / 0.12);
+    border: 1px solid hsl(var(--pinn-cyan-500) / 0.25);
+    color: hsl(var(--text-1));
+  }
+
+  .sidebar-item-active::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full;
+    background: linear-gradient(180deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+  }
+
+  /* === Button Primary (Gradient CTA) === */
+  .btn-primary {
+    @apply relative px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200;
+    background: linear-gradient(135deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+    color: hsl(var(--text-1));
+    box-shadow: 0 4px 14px -4px hsl(var(--pinn-cyan-500) / 0.4);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 6px 20px -4px hsl(var(--pinn-cyan-500) / 0.5);
+  }
+
+  .btn-primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--focus));
+  }
+
+  /* === Button Secondary (Outline) === */
+  .btn-secondary {
+    @apply px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200;
+    background: transparent;
+    border: 1px solid hsl(var(--border-strong));
+    color: hsl(var(--text-2));
+  }
+
+  .btn-secondary:hover {
+    background: hsl(var(--bg-2));
+    color: hsl(var(--text-1));
+  }
+
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--focus));
+  }
+
+  /* === KPI Card Accent === */
+  .kpi-accent {
+    @apply relative;
+  }
+
+  .kpi-accent::before {
+    content: '';
+    @apply absolute -left-px top-3 bottom-3 w-[3px] rounded-r-full;
+    background: linear-gradient(180deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+  }
+
+  /* === Delta Badges === */
+  .delta-positive {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    background: hsl(var(--success) / 0.12);
+    color: hsl(var(--success));
+    border: 1px solid hsl(var(--success) / 0.2);
+  }
+
+  .delta-negative {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+    background: hsl(var(--destructive) / 0.12);
+    color: hsl(var(--destructive));
+    border: 1px solid hsl(var(--destructive) / 0.2);
+  }
+
+  /* === Table Styles === */
+  .pinn-table {
+    @apply w-full;
+  }
+
+  .pinn-table thead {
+    background: hsl(var(--bg-2));
+  }
+
+  .pinn-table thead th {
+    @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider;
+    color: hsl(var(--text-3));
+    border-bottom: 1px solid hsl(var(--border-default));
+  }
+
+  .pinn-table tbody tr {
+    background: hsl(var(--bg-1));
+    border-bottom: 1px solid hsl(var(--border-default));
+    transition: background 0.15s ease;
+  }
+
+  .pinn-table tbody tr:hover {
+    background: hsl(var(--bg-2));
+  }
+
+  .pinn-table tbody td {
+    @apply px-4 py-3 text-sm;
+    color: hsl(var(--text-2));
+  }
+
+  /* === Input/Select Styles === */
+  .pinn-input {
+    @apply w-full px-3 py-2 rounded-xl text-sm transition-all duration-200;
+    background: hsl(var(--bg-1));
+    border: 1px solid hsl(var(--border-default));
+    color: hsl(var(--text-1));
+  }
+
+  .pinn-input::placeholder {
+    color: hsl(var(--text-3));
+  }
+
+  .pinn-input:focus {
+    outline: none;
+    border-color: hsl(var(--pinn-cyan-500) / 0.45);
+    box-shadow: 0 0 0 3px hsl(var(--focus));
+  }
+
+  /* === Toggle/Switch === */
+  .pinn-toggle[data-state="unchecked"] {
+    background: hsl(var(--bg-2));
+  }
+
+  .pinn-toggle[data-state="checked"] {
+    background: hsl(var(--pinn-cyan-500) / 0.35);
+  }
+
+  .pinn-toggle[data-state="checked"] span {
+    background: hsl(var(--pinn-cyan-500));
+  }
+
+  /* === Tooltip === */
+  .pinn-tooltip {
+    @apply px-3 py-2 rounded-lg text-sm;
+    background: hsl(var(--bg-3));
+    border: 1px solid hsl(var(--border-strong));
+    color: hsl(var(--text-1));
+    box-shadow: 0 8px 24px -8px hsl(220 50% 2% / 0.6);
+  }
+
+  /* === Empty State === */
+  .pinn-empty {
+    @apply flex flex-col items-center justify-center py-12;
+    color: hsl(var(--text-3));
+  }
+
+  .pinn-empty svg {
+    @apply w-12 h-12 mb-4 opacity-40;
   }
 }
 
@@ -175,14 +395,23 @@
 
   @keyframes glow {
     from {
-      box-shadow: 0 0 10px -5px hsl(var(--primary) / 0.3);
+      box-shadow: 0 0 10px -5px hsl(var(--pinn-cyan-500) / 0.3);
     }
     to {
-      box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.5);
+      box-shadow: 0 0 24px -5px hsl(var(--pinn-cyan-500) / 0.5);
     }
   }
 
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Subtle hover glow for interactive elements */
+  .hover-glow {
+    @apply transition-all duration-200;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 16px -4px hsl(var(--pinn-cyan-500) / 0.3);
   }
 }
