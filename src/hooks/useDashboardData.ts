@@ -292,21 +292,36 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
     queryFn: async () => {
       // Calcular a data de corte baseado no período
       const daysToInclude = period === '7d' ? 7 : 30;
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - daysToInclude);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
       
-      // Buscar dados da view vw_afonsina_custos_funil_dia com todas as métricas
-      // Nota: coluna é entrada_total (singular), não entradas_total
+      // Período atual
+      const currentEnd = new Date();
+      const currentStart = new Date();
+      currentStart.setDate(currentStart.getDate() - daysToInclude);
+      
+      // Período anterior (para comparação)
+      const previousEnd = new Date(currentStart);
+      previousEnd.setDate(previousEnd.getDate() - 1);
+      const previousStart = new Date(previousEnd);
+      previousStart.setDate(previousStart.getDate() - daysToInclude + 1);
+      
+      const currentStartStr = currentStart.toISOString().split('T')[0];
+      const previousStartStr = previousStart.toISOString().split('T')[0];
+      const previousEndStr = previousEnd.toISOString().split('T')[0];
+      
+      // Buscar dados do período atual e anterior em uma única query
       const { data, error } = await supabase
         .from('vw_afonsina_custos_funil_dia')
         .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
-        .gte('dia', cutoffStr);
+        .gte('dia', previousStartStr);
       
       if (error) throw error;
       
-      // Somar os valores do período
-      const totals = (data || []).reduce((acc, row) => {
+      // Separar dados do período atual e anterior
+      const currentData = (data || []).filter(row => row.dia >= currentStartStr);
+      const previousData = (data || []).filter(row => row.dia >= previousStartStr && row.dia <= previousEndStr);
+      
+      // Função para agregar totais
+      const aggregate = (rows: typeof data) => rows!.reduce((acc, row) => {
         acc.spend += Number(row.custo_total) || 0;
         acc.leads += Number(row.leads_total) || 0;
         acc.entradas += Number(row.entrada_total) || 0;
@@ -315,33 +330,66 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
         return acc;
       }, { spend: 0, leads: 0, entradas: 0, meetings_booked: 0, meetings_done: 0 });
       
+      const current = aggregate(currentData);
+      const previous = aggregate(previousData);
+      
       // Calcular métricas derivadas
-      const cpl = totals.leads > 0 ? totals.spend / totals.leads : 0;
-      const cpMeeting = totals.meetings_booked > 0 ? totals.spend / totals.meetings_booked : 0;
-      const taxaEntrada = totals.leads > 0 ? (totals.entradas / totals.leads) * 100 : 0;
+      const cpl = current.leads > 0 ? current.spend / current.leads : 0;
+      const cpMeeting = current.meetings_booked > 0 ? current.spend / current.meetings_booked : 0;
+      const taxaEntrada = current.leads > 0 ? (current.entradas / current.leads) * 100 : 0;
+      
+      const prevCpl = previous.leads > 0 ? previous.spend / previous.leads : 0;
+      const prevCpMeeting = previous.meetings_booked > 0 ? previous.spend / previous.meetings_booked : 0;
+      const prevTaxaEntrada = previous.leads > 0 ? (previous.entradas / previous.leads) * 100 : 0;
+      
+      // Função para calcular variação percentual
+      const calcChange = (curr: number, prev: number) => {
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return ((curr - prev) / prev) * 100;
+      };
+      
+      // Calcular variações
+      const changes = {
+        spend: calcChange(current.spend, previous.spend),
+        leads: calcChange(current.leads, previous.leads),
+        entradas: calcChange(current.entradas, previous.entradas),
+        cpl: calcChange(cpl, prevCpl),
+        meetings_booked: calcChange(current.meetings_booked, previous.meetings_booked),
+        meetings_done: calcChange(current.meetings_done, previous.meetings_done),
+        cp_meeting: calcChange(cpMeeting, prevCpMeeting),
+        taxa_entrada: calcChange(taxaEntrada, prevTaxaEntrada),
+      };
+      
+      const periodLabel = period === '7d' ? 'vs 7d anteriores' : 'vs 30d anteriores';
       
       if (period === '7d') {
         return {
-          spend_total_7d: totals.spend,
-          leads_7d: totals.leads,
-          entradas_7d: totals.entradas,
+          spend_total_7d: current.spend,
+          leads_7d: current.leads,
+          entradas_7d: current.entradas,
           cpl_7d: cpl,
-          meetings_booked_7d: totals.meetings_booked,
-          meetings_done_7d: totals.meetings_done,
+          meetings_booked_7d: current.meetings_booked,
+          meetings_done_7d: current.meetings_done,
           cp_meeting_booked_7d: cpMeeting,
           taxa_entrada_7d: taxaEntrada,
-        } as TrafficKpis7d;
+          // Variações para comparação
+          changes,
+          periodLabel,
+        } as TrafficKpis7d & { changes: typeof changes; periodLabel: string };
       } else {
         return {
-          spend_total_30d: totals.spend,
-          leads_30d: totals.leads,
-          entradas_30d: totals.entradas,
+          spend_total_30d: current.spend,
+          leads_30d: current.leads,
+          entradas_30d: current.entradas,
           cpl_30d: cpl,
-          meetings_booked_30d: totals.meetings_booked,
-          meetings_done_30d: totals.meetings_done,
+          meetings_booked_30d: current.meetings_booked,
+          meetings_done_30d: current.meetings_done,
           cp_meeting_booked_30d: cpMeeting,
           taxa_entrada_30d: taxaEntrada,
-        } as TrafficKpis30d;
+          // Variações para comparação
+          changes,
+          periodLabel,
+        } as TrafficKpis30d & { changes: typeof changes; periodLabel: string };
       }
     },
     enabled: !!orgId,
