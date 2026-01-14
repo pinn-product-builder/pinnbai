@@ -12,17 +12,17 @@ interface FunnelChartProps {
 
 // Mapeamento de nomes bonitos para cada estágio
 const stageNameMap: Record<string, string> = {
-  'novo': '🆕 Novo Lead',
-  'entrada': '📥 Entrada',
-  'reuniao_agendada': '📅 Reunião Agendada',
-  'desmarque': '❌ Desmarque',
-  'qualificado': '✅ Qualificado',
-  'proposta': '📋 Proposta Enviada',
-  'negociacao': '🤝 Em Negociação',
-  'fechado': '🎉 Fechado/Ganho',
-  'perdido': '💔 Perdido',
-  'follow_up': '🔄 Follow-up',
-  'remarketing': '📢 Remarketing',
+  'novo': 'Novo Lead',
+  'entrada': 'Entrada',
+  'reuniao_agendada': 'Reunião Agendada',
+  'desmarque': 'Desmarque',
+  'qualificado': 'Qualificado',
+  'proposta': 'Proposta Enviada',
+  'negociacao': 'Em Negociação',
+  'fechado': 'Fechado/Ganho',
+  'perdido': 'Perdido',
+  'follow_up': 'Follow-up',
+  'remarketing': 'Remarketing',
 };
 
 // Cores únicas para cada estágio
