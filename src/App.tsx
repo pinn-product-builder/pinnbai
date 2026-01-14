@@ -14,6 +14,7 @@ import AdminPage from "@/pages/dash/AdminPage";
 import ConfigPage from "@/pages/dash/ConfigPage";
 import LoginPage from "@/pages/LoginPage";
 import NotFound from "./pages/NotFound";
+import { ROUTES } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
@@ -26,10 +27,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
-            <Route path="/login" element={<LoginPage />} />
+            <Route path={ROUTES.LOGIN} element={<LoginPage />} />
             
             {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dash/executivo" replace />} />
+            <Route path="/" element={<Navigate to={ROUTES.DASHBOARD.EXECUTIVO} replace />} />
             
             {/* Protected dashboard routes */}
             <Route path="/dash/*" element={

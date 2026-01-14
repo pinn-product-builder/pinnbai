@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { SUPABASE_RPC } from '@/lib/config';
 
 export type AppRole = 'admin' | 'user';
 
@@ -25,7 +26,7 @@ export function useAuth() {
   const fetchUserRole = useCallback(async (userId: string): Promise<AppRole | null> => {
     try {
       const { data, error } = await supabase
-        .rpc('get_user_role', { _user_id: userId });
+        .rpc(SUPABASE_RPC.GET_USER_ROLE, { _user_id: userId });
       
       if (error) {
         console.error('Error fetching role:', error);

@@ -1,73 +1,173 @@
-# Welcome to your Lovable project
+# Pinn Growth Dashboard (Afonsina)
 
-## Project info
+Dashboard web de **Business Intelligence** para acompanhar performance de aquisição, conversas, tráfego pago e ligações (VAPI), com autenticação e dados via **Supabase**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Visão geral
 
-## How can I edit this code?
+O projeto entrega um painel com múltiplas visões:
 
-There are several ways of editing your application.
+- **Executivo**: KPIs principais, evolução diária, funil atual, próximas reuniões, insights.
+- **Conversas**: indicadores e distribuição de mensagens (diário / por hora / heatmap), tabelas e insights.
+- **Tráfego**: investimento, CPL, entradas no funil, top anúncios, séries diárias e insights.
+- **VAPI**: KPIs de ligações, séries diárias, motivos de finalização, últimas chamadas e insights.
+- **Admin/Config**: telas restritas para administradores (mapeamentos, ingestões, etc.).
 
-**Use Lovable**
+## Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **React 18 + TypeScript**
+- **Vite** (dev server e build)
+- **React Router** (rotas)
+- **TanStack React Query** (cache/queries)
+- **Supabase** (Auth + Postgres + Views + Edge Functions)
+- **Tailwind CSS + shadcn/ui (Radix UI)** (UI)
+- **Recharts** (gráficos)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Como rodar localmente
 
-**Use your preferred IDE**
+Pré-requisitos:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Node.js 18+**
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Comandos:
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Outros scripts:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+npm run preview
+npm run lint
+```
 
-**Use GitHub Codespaces**
+## Rotas da aplicação
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Público**
+  - `/login`
+- **Protegido (requer login)**
+  - `/dash/executivo`
+  - `/dash/conversas`
+  - `/dash/trafego`
+  - `/dash/vapi`
+- **Admin (requer role admin)**
+  - `/dash/admin`
+  - `/dash/config`
 
-## What technologies are used for this project?
+As rotas e paths ficam centralizados em `src/lib/config.ts` (`ROUTES`).
 
-This project is built with:
+## Autenticação e autorização (RBAC)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+O fluxo é:
 
-## How can I deploy this project?
+1. Login com email/senha via Supabase Auth.
+2. O hook `useAuth` (em `src/hooks/useAuth.ts`) mantém `user`, `session`, `loading` e busca a **role** do usuário.
+3. A role é obtida via RPC (Postgres function): `get_user_role` (constante em `src/lib/supabaseViews.ts` → `SUPABASE_RPC.GET_USER_ROLE`).
+4. Rotas protegidas usam `src/components/ProtectedRoute.tsx`:
+   - se **não autenticado**, redireciona para `/login`;
+   - se `requireAdmin` e usuário não é admin, redireciona para o dashboard.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Dados e queries (React Query)
 
-## Can I connect a custom domain to my Lovable project?
+Toda leitura de dados é feita via hooks no arquivo:
 
-Yes, you can!
+- `src/hooks/useDashboardData.ts`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Esse arquivo concentra os hooks por domínio:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- **Executivo**: `useExecutiveKpis`, `useExecutiveDaily`, `useFunnelCurrent`, `useMeetingsUpcoming`
+- **Conversas**: `useConversationsKpis`, `useConversationsDaily`, `useConversationsByHour`, `useConversationsHeatmap`
+- **Tráfego**: `useTrafegoKpis`, `useTrafegoDaily`, `useTopAds`, `useInvestimento`
+- **VAPI**: `useCallsKpis`, `useCallsDaily`, `useCallsEndedReasons`, `useCallsEndedReasonsTrend`, `useCallsLast50`
+- **Admin**: `useMappingCoverage`, `useUnmappedCandidates`, `useIngestionRuns`
+- **Insights**: `useInsights`, `useInsightsHistory`, `generateInsights`, `testIngestion`
+- **Apoio**: `useOrgOptions`, `useLeadsCount`, `useKpiDictionary`
+
+### Fonte da verdade para tabelas/views do Supabase
+
+Para facilitar manutenção e evitar strings repetidas, nomes de views/tabelas ficam em:
+
+- `src/lib/supabaseViews.ts`
+  - `SUPABASE_VIEWS`: views (ex.: `vw_dashboard_kpis_30d_v3`)
+  - `SUPABASE_TABLES`: tabelas (ex.: `leads_v2`, `ai_insights`)
+  - `SUPABASE_RPC`: RPCs (ex.: `get_user_role`)
+  - `SUPABASE_EDGE_FUNCTIONS`: edge functions (ex.: `generate-insights`)
+
+## Filtros globais (URL-driven)
+
+O dashboard possui filtros globais persistidos na URL:
+
+- `org` (orgId)
+- `period` (`7d | 14d | 30d | 60d | 90d | custom`)
+- `start` / `end` (quando `custom`)
+- `compare` (comparar com período anterior)
+- `source` (opcional)
+
+Implementação:
+
+- `src/hooks/useGlobalFilters.ts` (lê/escreve `searchParams`)
+- `src/components/dashboard/GlobalFilterBar.tsx` (UI do filtro)
+
+Defaults e opções:
+
+- `src/lib/config.ts` (`DEFAULT_ORG_ID`, `DEFAULT_PERIOD`, `PERIOD_OPTIONS`, `PERIOD_DAYS`)
+
+## Estrutura do projeto
+
+```text
+src/
+  components/
+    dashboard/           # componentes do dashboard (cards, charts, tabelas, layout)
+    ui/                  # shadcn/ui
+    ProtectedRoute.tsx
+  contexts/
+    AuthContext.tsx
+  hooks/
+    useAuth.ts
+    useDashboardData.ts
+    useGlobalFilters.ts
+  lib/
+    config.ts            # constantes/config centralizadas
+    supabaseViews.ts     # nomes de views/tabelas/RPC/edge functions
+    supabaseClient.ts    # cliente Supabase
+    format.ts            # formatação (moeda, % etc.)
+    dateHelpers.ts       # helpers de datas/períodos
+    calculations.ts      # cálculos/reduções (CPL, conversões etc.)
+    kpiDefinitions.ts    # fallback de definições de KPI (tooltip)
+    utils.ts             # cn()
+  pages/
+    dash/                # páginas do dashboard
+    LoginPage.tsx
+```
+
+## Convenções de manutenção (importante)
+
+Para manter o projeto fácil de dar manutenção:
+
+- **Views/tabelas/RPC/edge functions**: sempre usar constantes de `src/lib/supabaseViews.ts`
+- **Rotas**: sempre usar `ROUTES` de `src/lib/config.ts`
+- **Períodos/limites/defaults**: usar constantes de `src/lib/config.ts`
+- **Datas**: usar helpers de `src/lib/dateHelpers.ts`
+- **Cálculos**: usar `src/lib/calculations.ts`
+- **Formatação**: usar `src/lib/format.ts`
+
+## Supabase (configuração)
+
+O cliente fica em `src/lib/supabaseClient.ts` e utiliza `SUPABASE_CONFIG` de `src/lib/config.ts`.
+
+> Nota: a chave **anon** do Supabase é pública (padrão do Supabase), mas **as permissões reais dependem do RLS** no banco.
+
+## Troubleshooting
+
+### Arquivos “vermelhos” no IDE / erros de “Cannot find module …”
+
+Normalmente é cache do TypeScript Language Server.
+
+- No Cursor/VS Code: `Ctrl+Shift+P` → **TypeScript: Restart TS Server**
+- Se persistir: `Developer: Reload Window`
+
+## Licença
+
+Defina aqui a licença do repositório (ex.: MIT / Proprietária).

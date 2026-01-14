@@ -62,14 +62,16 @@ const SidebarContext = createContext<SidebarContextType>({
 
 export const useSidebarContext = () => useContext(SidebarContext);
 
+import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
+
 // Itens de navegação com flag de admin
 const navItems = [
-  { path: '/dash/executivo', label: 'Executivo', icon: LayoutDashboard, adminOnly: false },
-  { path: '/dash/conversas', label: 'Conversas', icon: MessageSquare, adminOnly: false },
-  { path: '/dash/trafego', label: 'Tráfego', icon: TrendingUp, adminOnly: false },
-  { path: '/dash/vapi', label: 'VAPI', icon: Phone, adminOnly: false },
-  { path: '/dash/admin', label: 'Admin', icon: Settings, adminOnly: true },
-  { path: '/dash/config', label: 'Config', icon: Wrench, adminOnly: true },
+  { path: ROUTES.DASHBOARD.EXECUTIVO, label: 'Executivo', icon: LayoutDashboard, adminOnly: false },
+  { path: ROUTES.DASHBOARD.CONVERSAS, label: 'Conversas', icon: MessageSquare, adminOnly: false },
+  { path: ROUTES.DASHBOARD.TRAFEGO, label: 'Tráfego', icon: TrendingUp, adminOnly: false },
+  { path: ROUTES.DASHBOARD.VAPI, label: 'VAPI', icon: Phone, adminOnly: false },
+  { path: ROUTES.DASHBOARD.ADMIN, label: 'Admin', icon: Settings, adminOnly: true },
+  { path: ROUTES.DASHBOARD.CONFIG, label: 'Config', icon: Wrench, adminOnly: true },
 ];
 
 interface DashboardLayoutProps {
@@ -92,11 +94,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Atalho de teclado ESC para sair do modo view
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && viewMode) {
+      if (e.key === KEYBOARD_SHORTCUTS.EXIT_VIEW_MODE && viewMode) {
         setViewMode(false);
       }
       // Atalho F11 ou Ctrl+Shift+V para alternar modo view
-      if ((e.key === 'F11' || (e.ctrlKey && e.shiftKey && e.key === 'V')) && !e.repeat) {
+      const isViewModeShortcut = e.key === 'F11' || (e.ctrlKey && e.shiftKey && e.key === 'V');
+      if (isViewModeShortcut && !e.repeat) {
         e.preventDefault();
         setViewMode(!viewMode);
       }
@@ -141,7 +144,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Dashboard Consolidado com auto-refresh */}
           <main className="w-full min-h-screen p-6 overflow-auto">
-            <ViewModeDashboard refreshInterval={60} />
+            <ViewModeDashboard refreshInterval={REFRESH_INTERVALS.VIEW_MODE_DASHBOARD} />
           </main>
         </div>
       </SidebarContext.Provider>

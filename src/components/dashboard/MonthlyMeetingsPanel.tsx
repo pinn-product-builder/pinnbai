@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { EXCLUDED_MEETING_PATTERNS } from '@/lib/config';
 
 interface MonthlyMeeting {
   id: string;
@@ -35,23 +36,11 @@ interface MeetingAttendance {
   attended: boolean;
 }
 
-// Emails e nomes a filtrar
-const EXCLUDED_PATTERNS = [
-  'recesso',
-  'ph553479@gmail.com',
-  'passisventura@gmail.com',
-  '=passisventura@gmail.com',
-  'pht544939@gmail.com',
-  'pedro@outlook.com',
-  'pedro@ponto.com',
-  'roberto arruda'
-];
-
 function shouldExcludeMeeting(meeting: MonthlyMeeting): boolean {
   const summary = (meeting.summary || '').toLowerCase();
   const description = (meeting.description || '').toLowerCase();
   
-  return EXCLUDED_PATTERNS.some(pattern => 
+  return EXCLUDED_MEETING_PATTERNS.some(pattern => 
     summary.includes(pattern.toLowerCase()) || 
     description.includes(pattern.toLowerCase())
   );

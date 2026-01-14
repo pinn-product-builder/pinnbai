@@ -1,5 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
+import {
+  DEFAULT_DAILY_RANGE_DAYS,
+  QUERY_LIMITS,
+} from '@/lib/config';
+import {
+  SUPABASE_VIEWS,
+  SUPABASE_TABLES,
+  SUPABASE_RPC,
+  SUPABASE_EDGE_FUNCTIONS,
+} from '@/lib/supabaseViews';
+import {
+  getPeriodDays,
+  getDateRange,
+  getPreviousPeriodRange,
+  getCutoffDate,
+  getTodayString,
+  calculatePercentageChange,
+} from '@/lib/dateHelpers';
+import {
+  calculateCPL,
+  calculateCostPerMeeting,
+  calculateConversionRate,
+  calculateTaxaEntrada,
+  calculateTaxaAtendimento,
+  aggregateFunnelData,
+  aggregateCallsData,
+  aggregateByDay,
+} from '@/lib/calculations';
 import type {
   ExecutiveKpis,
   ExecutiveDaily,
@@ -31,32 +59,19 @@ export function useInvestimento(orgId: string, period: '7d' | '30d' | '60d' = '3
   return useQuery({
     queryKey: ['investimento', orgId, period],
     queryFn: async () => {
-      const daysMap = { '7d': 7, '30d': 30, '60d': 60 };
-      const days = daysMap[period];
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      const days = getPeriodDays(period);
+      const { dateStr } = getCutoffDate(days);
       
       const { data, error } = await supabase
-        .from('trafego')
+        .from(SUPABASE_TABLES.TRAFEGO)
         .select('data,custo')
         .eq('org_id', orgId)
-        .gte('data', cutoffStr);
+        .gte('data', dateStr);
       
       if (error) throw error;
       
-      // Agregar por dia
-      const byDay: Record<string, number> = {};
-      let total = 0;
-      
-      (data || []).forEach(row => {
-        const day = row.data;
-        const custo = Number(row.custo) || 0;
-        byDay[day] = (byDay[day] || 0) + custo;
-        total += custo;
-      });
-      
-      return { total, byDay };
+      const result = aggregateByDay(data || [], 'data', 'custo');
+      return { total: result.total, byDay: result.byDay };
     },
     enabled: !!orgId,
   });
@@ -68,7 +83,7 @@ export function useLeadsCount() {
     queryKey: ['leads-count'],
     queryFn: async () => {
       const { count, error } = await supabase
-        .from('leads_v2')
+        .from(SUPABASE_TABLES.LEADS_V2)
         .select('*', { count: 'exact', head: true });
       
       if (error) {
@@ -87,7 +102,7 @@ export function useOrgOptions() {
     queryKey: ['org-options'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_dashboard_kpis_30d_v3')
+        .from(SUPABASE_VIEWS.DASHBOARD_KPIS_30D)
         .select('org_id');
       
       if (error) throw error;
@@ -103,35 +118,19 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
   return useQuery({
     queryKey: ['executive-kpis', orgId, period],
     queryFn: async () => {
-      const periodDays: Record<string, number> = {
-        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
-      };
-      const days = periodDays[period] || 30;
+      const days = getPeriodDays(period);
+      const currentRange = getDateRange(period, days);
+      const previousRange = getPreviousPeriodRange(period, days);
       
-      // Período atual
-      const currentEnd = new Date();
-      const currentStart = new Date();
-      currentStart.setDate(currentStart.getDate() - days);
-      
-      // Período anterior
-      const previousEnd = new Date(currentStart);
-      previousEnd.setDate(previousEnd.getDate() - 1);
-      const previousStart = new Date(previousEnd);
-      previousStart.setDate(previousStart.getDate() - days + 1);
-      
-      const currentStartStr = currentStart.toISOString().split('T')[0];
-      const previousStartStr = previousStart.toISOString().split('T')[0];
-      const previousEndStr = previousEnd.toISOString().split('T')[0];
-      
-      // Buscar dados da view vw_afonsina_custos_funil_dia para ambos os períodos
+      // Buscar dados da view para ambos os períodos
       const [funnelResult, kpisResult] = await Promise.all([
         supabase
-          .from('vw_afonsina_custos_funil_dia')
+          .from(SUPABASE_VIEWS.AFONSINA_CUSTOS_FUNIL_DIA)
           .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
-          .gte('dia', previousStartStr),
+          .gte('dia', previousRange.startStr),
         // Buscar msg_in_30d da view de KPIs
         supabase
-          .from('vw_dashboard_kpis_30d_v3')
+          .from(SUPABASE_VIEWS.DASHBOARD_KPIS_30D)
           .select('msg_in_30d,meetings_cancelled_30d')
           .eq('org_id', orgId)
           .maybeSingle()
@@ -142,45 +141,33 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
       const kpisData = kpisResult.data;
       
       // Separar dados
-      const currentData = (data || []).filter(row => row.dia >= currentStartStr);
-      const previousData = (data || []).filter(row => row.dia >= previousStartStr && row.dia <= previousEndStr);
+      const currentData = (data || []).filter(row => row.dia >= currentRange.startStr);
+      const previousData = (data || []).filter(row => 
+        row.dia >= previousRange.startStr && row.dia <= previousRange.endStr
+      );
       
-      // Agregar
-      const aggregate = (rows: typeof data) => rows!.reduce((acc, row) => {
-        acc.spend += Number(row.custo_total) || 0;
-        acc.leads += Number(row.leads_total) || 0;
-        acc.entradas += Number(row.entrada_total) || 0;
-        acc.meetings_scheduled += Number(row.reuniao_agendada_total) || 0;
-        acc.meetings_done += Number(row.reuniao_realizada_total) || 0;
-        return acc;
-      }, { spend: 0, leads: 0, entradas: 0, meetings_scheduled: 0, meetings_done: 0 });
+      // Agregar usando função utilitária
+      const current = aggregateFunnelData(currentData);
+      const previous = aggregateFunnelData(previousData);
       
-      const current = aggregate(currentData);
-      const previous = aggregate(previousData);
+      // Calcular métricas derivadas usando funções utilitárias
+      const cpl = calculateCPL(current.spend, current.leads);
+      const cpm_meeting = calculateCostPerMeeting(current.spend, current.meetings_scheduled);
+      const conv_lead_to_meeting = calculateConversionRate(current.meetings_scheduled, current.leads);
       
-      // Calcular métricas derivadas
-      const cpl = current.leads > 0 ? current.spend / current.leads : 0;
-      const cpm_meeting = current.meetings_scheduled > 0 ? current.spend / current.meetings_scheduled : 0;
-      const conv_lead_to_meeting = current.leads > 0 ? (current.meetings_scheduled / current.leads) : 0;
+      const prevCpl = calculateCPL(previous.spend, previous.leads);
+      const prevCpmMeeting = calculateCostPerMeeting(previous.spend, previous.meetings_scheduled);
+      const prevConvLeadToMeeting = calculateConversionRate(previous.meetings_scheduled, previous.leads);
       
-      const prevCpl = previous.leads > 0 ? previous.spend / previous.leads : 0;
-      const prevCpmMeeting = previous.meetings_scheduled > 0 ? previous.spend / previous.meetings_scheduled : 0;
-      const prevConvLeadToMeeting = previous.leads > 0 ? (previous.meetings_scheduled / previous.leads) : 0;
-      
-      // Função para calcular variação percentual
-      const calcChange = (curr: number, prev: number) => {
-        if (prev === 0) return curr > 0 ? 100 : 0;
-        return ((curr - prev) / prev) * 100;
-      };
-      
+      // Calcular variações usando função utilitária
       const changes = {
-        leads: calcChange(current.leads, previous.leads),
-        spend: calcChange(current.spend, previous.spend),
-        meetings_scheduled: calcChange(current.meetings_scheduled, previous.meetings_scheduled),
-        meetings_done: calcChange(current.meetings_done, previous.meetings_done),
-        cpl: calcChange(cpl, prevCpl),
-        cpm_meeting: calcChange(cpm_meeting, prevCpmMeeting),
-        conv_lead_to_meeting: calcChange(conv_lead_to_meeting, prevConvLeadToMeeting),
+        leads: calculatePercentageChange(current.leads, previous.leads),
+        spend: calculatePercentageChange(current.spend, previous.spend),
+        meetings_scheduled: calculatePercentageChange(current.meetings_scheduled, previous.meetings_scheduled),
+        meetings_done: calculatePercentageChange(current.meetings_done, previous.meetings_done),
+        cpl: calculatePercentageChange(cpl, prevCpl),
+        cpm_meeting: calculatePercentageChange(cpm_meeting, prevCpmMeeting),
+        conv_lead_to_meeting: calculatePercentageChange(conv_lead_to_meeting, prevConvLeadToMeeting),
       };
       
       const periodLabel = `vs ${days}d anteriores`;
@@ -212,7 +199,7 @@ export function useExecutiveDaily(orgId: string) {
     queryKey: ['executive-daily', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_dashboard_daily_60d_v3')
+        .from(SUPABASE_VIEWS.DASHBOARD_DAILY_60D)
         .select('day,leads_new,msg_in,spend,meetings_scheduled')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
@@ -229,7 +216,7 @@ export function useFunnelCurrent(orgId: string) {
     queryKey: ['funnel-current', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_funnel_current_v3')
+        .from(SUPABASE_VIEWS.FUNNEL_CURRENT)
         .select('stage_rank,stage_name,leads_total')
         .order('stage_rank', { ascending: true });
       
@@ -253,16 +240,16 @@ export function useMeetingsUpcoming(orgId: string) {
   return useQuery({
     queryKey: ['meetings-upcoming', orgId],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayString();
       const { data, error } = await supabase
-        .from('vw_calendar_events_current_v3')
+        .from(SUPABASE_VIEWS.CALENDAR_EVENTS_CURRENT)
         .select('*')
         .eq('org_id', orgId)
         .neq('status', 'cancelled')
         .not('meeting_url', 'is', null)
         .gte('start_at', today)
         .order('start_at', { ascending: true })
-        .limit(50);
+        .limit(QUERY_LIMITS.MEETINGS_UPCOMING);
       
       if (error) throw error;
       return (data || []) as Meeting[];
@@ -278,7 +265,7 @@ export function useConversationsKpis(orgId: string) {
     queryFn: async () => {
       // Usar a mesma view da tela executiva que tem os dados corretos
       const { data, error } = await supabase
-        .from('vw_dashboard_kpis_30d_v3')
+        .from(SUPABASE_VIEWS.DASHBOARD_KPIS_30D)
         .select('*')
         .eq('org_id', orgId)
         .maybeSingle();
@@ -310,7 +297,7 @@ export function useConversationsDaily(orgId: string) {
     queryKey: ['conversations-daily', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_kommo_msg_in_daily_60d_v3')
+        .from(SUPABASE_VIEWS.KOMMO_MSG_IN_DAILY_60D)
         .select('*')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
@@ -327,7 +314,7 @@ export function useConversationsByHour(orgId: string) {
     queryKey: ['conversations-by-hour', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_kommo_msg_in_by_hour_7d_v3')
+        .from(SUPABASE_VIEWS.KOMMO_MSG_IN_BY_HOUR_7D)
         .select('hour,msg_in_total')
         .eq('org_id', orgId)
         .order('hour', { ascending: true });
@@ -349,7 +336,7 @@ export function useConversationsHeatmap(orgId: string) {
     queryKey: ['conversations-heatmap', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_kommo_msg_in_heatmap_30d_v3')
+        .from(SUPABASE_VIEWS.KOMMO_MSG_IN_HEATMAP_30D)
         .select('dow,hour,msg_in_total')
         .eq('org_id', orgId);
       
@@ -372,48 +359,31 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
   return useQuery({
     queryKey: ['trafego-kpis', orgId, period],
     queryFn: async () => {
-      // Calcular a data de corte baseado no período
-      const periodDays: Record<string, number> = {
-        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
-      };
-      const daysToInclude = periodDays[period] || 30;
-      
-      // Período atual
-      const currentEnd = new Date();
-      const currentStart = new Date();
-      currentStart.setDate(currentStart.getDate() - daysToInclude);
-      
-      // Período anterior (para comparação)
-      const previousEnd = new Date(currentStart);
-      previousEnd.setDate(previousEnd.getDate() - 1);
-      const previousStart = new Date(previousEnd);
-      previousStart.setDate(previousStart.getDate() - daysToInclude + 1);
-      
-      const currentStartStr = currentStart.toISOString().split('T')[0];
-      const previousStartStr = previousStart.toISOString().split('T')[0];
-      const previousEndStr = previousEnd.toISOString().split('T')[0];
+      const daysToInclude = getPeriodDays(period);
+      const currentRange = getDateRange(period, daysToInclude);
+      const previousRange = getPreviousPeriodRange(period, daysToInclude);
       
       // Buscar dados de custo, entradas e reuniões da view original
       const { data: funnelData, error: funnelError } = await supabase
-        .from('vw_afonsina_custos_funil_dia')
+        .from(SUPABASE_VIEWS.AFONSINA_CUSTOS_FUNIL_DIA)
         .select('dia,custo_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
-        .gte('dia', previousStartStr);
+          .gte('dia', previousRange.startStr);
       
       if (funnelError) throw funnelError;
       
       // Buscar leads da tabela leads_v2 normalizada (com kommo_lead_id para identificar entradas)
       const [leadsCurrentResult, leadsPreviousResult] = await Promise.all([
         supabase
-          .from('leads_v2')
+          .from(SUPABASE_TABLES.LEADS_V2)
           .select('id, created_at, kommo_lead_id')
           .eq('org_id', orgId)
-          .gte('created_at', currentStartStr),
+          .gte('created_at', currentRange.startStr),
         supabase
-          .from('leads_v2')
+          .from(SUPABASE_TABLES.LEADS_V2)
           .select('id, created_at, kommo_lead_id')
           .eq('org_id', orgId)
-          .gte('created_at', previousStartStr)
-          .lt('created_at', currentStartStr)
+          .gte('created_at', previousRange.startStr)
+          .lt('created_at', currentRange.startStr)
       ]);
       
       // Contar leads e entradas (entrada = tem kommo_lead_id, significa que entrou no chat)
@@ -423,45 +393,34 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
       const previousEntradas = leadsPreviousResult.data?.filter(l => l.kommo_lead_id !== null).length || 0;
       
       // Separar dados do período atual e anterior para custos e reuniões
-      const currentFunnel = (funnelData || []).filter(row => row.dia >= currentStartStr);
-      const previousFunnel = (funnelData || []).filter(row => row.dia >= previousStartStr && row.dia <= previousEndStr);
+      const currentFunnel = (funnelData || []).filter(row => row.dia >= currentRange.startStr);
+      const previousFunnel = (funnelData || []).filter(row => 
+        row.dia >= previousRange.startStr && row.dia <= previousRange.endStr
+      );
       
-      // Função para agregar custos e reuniões
-      const aggregateFunnel = (rows: typeof funnelData) => rows!.reduce((acc, row) => {
-        acc.spend += Number(row.custo_total) || 0;
-        acc.meetings_booked += Number(row.reuniao_agendada_total) || 0;
-        acc.meetings_done += Number(row.reuniao_realizada_total) || 0;
-        return acc;
-      }, { spend: 0, meetings_booked: 0, meetings_done: 0 });
+      // Agregar usando função utilitária
+      const currentAgg = aggregateFunnelData(currentFunnel);
+      const previousAgg = aggregateFunnelData(previousFunnel);
       
-      const currentAgg = aggregateFunnel(currentFunnel);
-      const previousAgg = aggregateFunnel(previousFunnel);
+      // Calcular métricas derivadas usando funções utilitárias
+      const cpl = calculateCPL(currentAgg.spend, currentLeads);
+      const cpMeeting = calculateCostPerMeeting(currentAgg.spend, currentAgg.meetings_scheduled);
+      const taxaEntrada = calculateTaxaEntrada(currentEntradas, currentLeads);
       
-      // Calcular métricas derivadas (usando leads e entradas da leads_v2)
-      const cpl = currentLeads > 0 ? currentAgg.spend / currentLeads : 0;
-      const cpMeeting = currentAgg.meetings_booked > 0 ? currentAgg.spend / currentAgg.meetings_booked : 0;
-      const taxaEntrada = currentLeads > 0 ? (currentEntradas / currentLeads) * 100 : 0;
+      const prevCpl = calculateCPL(previousAgg.spend, previousLeads);
+      const prevCpMeeting = calculateCostPerMeeting(previousAgg.spend, previousAgg.meetings_scheduled);
+      const prevTaxaEntrada = calculateTaxaEntrada(previousEntradas, previousLeads);
       
-      const prevCpl = previousLeads > 0 ? previousAgg.spend / previousLeads : 0;
-      const prevCpMeeting = previousAgg.meetings_booked > 0 ? previousAgg.spend / previousAgg.meetings_booked : 0;
-      const prevTaxaEntrada = previousLeads > 0 ? (previousEntradas / previousLeads) * 100 : 0;
-      
-      // Função para calcular variação percentual
-      const calcChange = (curr: number, prev: number) => {
-        if (prev === 0) return curr > 0 ? 100 : 0;
-        return ((curr - prev) / prev) * 100;
-      };
-      
-      // Calcular variações
+      // Calcular variações usando função utilitária
       const changes = {
-        spend: calcChange(currentAgg.spend, previousAgg.spend),
-        leads: calcChange(currentLeads, previousLeads),
-        entradas: calcChange(currentEntradas, previousEntradas),
-        cpl: calcChange(cpl, prevCpl),
-        meetings_booked: calcChange(currentAgg.meetings_booked, previousAgg.meetings_booked),
-        meetings_done: calcChange(currentAgg.meetings_done, previousAgg.meetings_done),
-        cp_meeting: calcChange(cpMeeting, prevCpMeeting),
-        taxa_entrada: calcChange(taxaEntrada, prevTaxaEntrada),
+        spend: calculatePercentageChange(currentAgg.spend, previousAgg.spend),
+        leads: calculatePercentageChange(currentLeads, previousLeads),
+        entradas: calculatePercentageChange(currentEntradas, previousEntradas),
+        cpl: calculatePercentageChange(cpl, prevCpl),
+        meetings_booked: calculatePercentageChange(currentAgg.meetings_scheduled, previousAgg.meetings_scheduled),
+        meetings_done: calculatePercentageChange(currentAgg.meetings_done, previousAgg.meetings_done),
+        cp_meeting: calculatePercentageChange(cpMeeting, prevCpMeeting),
+        taxa_entrada: calculatePercentageChange(taxaEntrada, prevTaxaEntrada),
       };
       
       const periodLabel = `vs ${daysToInclude}d anteriores`;
@@ -472,7 +431,7 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
         leads: currentLeads,
         entradas: currentEntradas,
         cpl: cpl,
-        meetings_booked: currentAgg.meetings_booked,
+        meetings_booked: currentAgg.meetings_scheduled,
         meetings_done: currentAgg.meetings_done,
         cp_meeting_booked: cpMeeting,
         taxa_entrada: taxaEntrada,
@@ -490,16 +449,13 @@ export function useTrafegoDaily(orgId: string) {
   return useQuery({
     queryKey: ['trafego-daily', orgId],
     queryFn: async () => {
-      // Período de 60 dias para ter dados suficientes
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 60);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      const { dateStr } = getCutoffDate(DEFAULT_DAILY_RANGE_DAYS);
       
       // Nota: coluna é entrada_total (singular), não entradas_total
       const { data, error } = await supabase
-        .from('vw_afonsina_custos_funil_dia')
+        .from(SUPABASE_VIEWS.AFONSINA_CUSTOS_FUNIL_DIA)
         .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
-        .gte('dia', cutoffStr)
+        .gte('dia', dateStr)
         .order('dia', { ascending: true });
       
       if (error) throw error;
@@ -527,7 +483,7 @@ export function useTopAds(orgId: string) {
     queryFn: async () => {
       // Buscar dados da tabela trafego e agregar por anúncio
       const { data, error } = await supabase
-        .from('trafego')
+        .from(SUPABASE_TABLES.TRAFEGO)
         .select('anuncio,custo')
         .eq('org_id', orgId);
       
@@ -548,10 +504,10 @@ export function useTopAds(orgId: string) {
         .map(([ad_name, spend_total]) => ({
           org_id: orgId,
           ad_name,
-          spend_total,
+          spend_total: Number(spend_total) || 0,
         }))
         .sort((a, b) => b.spend_total - a.spend_total)
-        .slice(0, 10);
+        .slice(0, QUERY_LIMITS.TOP_ADS);
       
       return topAds as TopAd[];
     },
@@ -565,75 +521,47 @@ export function useCallsKpis(orgId: string, period: '7d' | '14d' | '30d' | '60d'
   return useQuery({
     queryKey: ['calls-kpis', orgId, period],
     queryFn: async () => {
-      const periodDays: Record<string, number> = {
-        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
-      };
-      const days = periodDays[period] || 30;
-      
-      // Período atual
-      const currentEnd = new Date();
-      const currentStart = new Date();
-      currentStart.setDate(currentStart.getDate() - days);
-      
-      // Período anterior (para comparação)
-      const previousEnd = new Date(currentStart);
-      previousEnd.setDate(previousEnd.getDate() - 1);
-      const previousStart = new Date(previousEnd);
-      previousStart.setDate(previousStart.getDate() - days + 1);
-      
-      const currentStartStr = currentStart.toISOString().split('T')[0];
-      const previousStartStr = previousStart.toISOString().split('T')[0];
-      const previousEndStr = previousEnd.toISOString().split('T')[0];
+      const days = getPeriodDays(period);
+      const currentRange = getDateRange(period, days);
+      const previousRange = getPreviousPeriodRange(period, days);
       
       // Buscar dados da tabela v3_calls_daily_v3
       const { data, error } = await supabase
-        .from('v3_calls_daily_v3')
+        .from(SUPABASE_VIEWS.CALLS_DAILY_V3)
         .select('day,calls_done,calls_answered,total_minutes,avg_minutes,total_spent_usd')
-        .gte('day', previousStartStr)
+        .gte('day', previousRange.startStr)
         .order('day', { ascending: true });
       
       if (error) throw error;
       
       // Separar dados do período atual e anterior
-      const currentData = (data || []).filter(row => row.day >= currentStartStr);
-      const previousData = (data || []).filter(row => row.day >= previousStartStr && row.day <= previousEndStr);
+      const currentData = (data || []).filter(row => row.day >= currentRange.startStr);
+      const previousData = (data || []).filter(row => 
+        row.day >= previousRange.startStr && row.day <= previousRange.endStr
+      );
       
-      // Função para agregar totais
-      const aggregate = (rows: typeof data) => rows!.reduce((acc, row) => {
-        acc.calls_done += Number(row.calls_done) || 0;
-        acc.calls_answered += Number(row.calls_answered) || 0;
-        acc.total_minutes += Number(row.total_minutes) || 0;
-        acc.total_spent += Number(row.total_spent_usd) || 0;
-        return acc;
-      }, { calls_done: 0, calls_answered: 0, total_minutes: 0, total_spent: 0 });
+      // Agregar usando função utilitária
+      const current = aggregateCallsData(currentData);
+      const previous = aggregateCallsData(previousData);
       
-      const current = aggregate(currentData);
-      const previous = aggregate(previousData);
-      
-      // Calcular métricas derivadas
-      const taxaAtendimento = current.calls_done > 0 ? (current.calls_answered / current.calls_done) * 100 : 0;
+      // Calcular métricas derivadas usando funções utilitárias
+      const taxaAtendimento = calculateTaxaAtendimento(current.calls_answered, current.calls_done);
       const avgMinutes = current.calls_answered > 0 ? current.total_minutes / current.calls_answered : 0;
-      const costPerCall = current.calls_done > 0 ? current.total_spent / current.calls_done : 0;
+      const costPerCall = calculateCostPerMeeting(current.total_spent, current.calls_done);
       
-      const prevTaxaAtendimento = previous.calls_done > 0 ? (previous.calls_answered / previous.calls_done) * 100 : 0;
+      const prevTaxaAtendimento = calculateTaxaAtendimento(previous.calls_answered, previous.calls_done);
       const prevAvgMinutes = previous.calls_answered > 0 ? previous.total_minutes / previous.calls_answered : 0;
-      const prevCostPerCall = previous.calls_done > 0 ? previous.total_spent / previous.calls_done : 0;
+      const prevCostPerCall = calculateCostPerMeeting(previous.total_spent, previous.calls_done);
       
-      // Função para calcular variação percentual
-      const calcChange = (curr: number, prev: number) => {
-        if (prev === 0) return curr > 0 ? 100 : 0;
-        return ((curr - prev) / prev) * 100;
-      };
-      
-      // Calcular variações
+      // Calcular variações usando função utilitária
       const changes = {
-        calls_done: calcChange(current.calls_done, previous.calls_done),
-        calls_answered: calcChange(current.calls_answered, previous.calls_answered),
-        total_minutes: calcChange(current.total_minutes, previous.total_minutes),
-        total_spent: calcChange(current.total_spent, previous.total_spent),
-        taxa_atendimento: calcChange(taxaAtendimento, prevTaxaAtendimento),
-        avg_minutes: calcChange(avgMinutes, prevAvgMinutes),
-        cost_per_call: calcChange(costPerCall, prevCostPerCall),
+        calls_done: calculatePercentageChange(current.calls_done, previous.calls_done),
+        calls_answered: calculatePercentageChange(current.calls_answered, previous.calls_answered),
+        total_minutes: calculatePercentageChange(current.total_minutes, previous.total_minutes),
+        total_spent: calculatePercentageChange(current.total_spent, previous.total_spent),
+        taxa_atendimento: calculatePercentageChange(taxaAtendimento, prevTaxaAtendimento),
+        avg_minutes: calculatePercentageChange(avgMinutes, prevAvgMinutes),
+        cost_per_call: calculatePercentageChange(costPerCall, prevCostPerCall),
       };
       
       const periodLabel = `vs ${days}d anteriores`;
@@ -659,15 +587,12 @@ export function useCallsDaily(orgId: string) {
   return useQuery({
     queryKey: ['calls-daily', orgId],
     queryFn: async () => {
-      // Período de 60 dias para ter dados suficientes
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 60);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      const { dateStr } = getCutoffDate(DEFAULT_DAILY_RANGE_DAYS);
       
       const { data, error } = await supabase
-        .from('v3_calls_daily_v3')
+        .from(SUPABASE_VIEWS.CALLS_DAILY_V3)
         .select('day,calls_done,calls_answered,total_minutes,avg_minutes,total_spent_usd')
-        .gte('day', cutoffStr)
+        .gte('day', dateStr)
         .order('day', { ascending: true });
       
       if (error) throw error;
@@ -690,19 +615,13 @@ export function useCallsEndedReasons(orgId: string, period: '7d' | '14d' | '30d'
   return useQuery({
     queryKey: ['calls-ended-reasons', orgId, period],
     queryFn: async () => {
-      const periodDays: Record<string, number> = {
-        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
-      };
-      const days = periodDays[period] || 30;
-      
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      const days = getPeriodDays(period);
+      const { dateStr } = getCutoffDate(days);
       
       const { data, error } = await supabase
-        .from('v3_calls_ended_reason_daily')
+        .from(SUPABASE_VIEWS.CALLS_ENDED_REASON_DAILY)
         .select('ended_reason,calls_done')
-        .gte('day_brt', cutoffStr);
+        .gte('day_brt', dateStr);
       
       if (error) throw error;
       
@@ -732,19 +651,13 @@ export function useCallsEndedReasonsTrend(orgId: string, period: '7d' | '14d' | 
   return useQuery({
     queryKey: ['calls-ended-reasons-trend', orgId, period],
     queryFn: async () => {
-      const periodDays: Record<string, number> = {
-        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
-      };
-      const days = periodDays[period] || 30;
-      
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      const days = getPeriodDays(period);
+      const { dateStr } = getCutoffDate(days);
       
       const { data, error } = await supabase
-        .from('v3_calls_ended_reason_daily')
+        .from(SUPABASE_VIEWS.CALLS_ENDED_REASON_DAILY)
         .select('day_brt,ended_reason,calls_done')
-        .gte('day_brt', cutoffStr)
+        .gte('day_brt', dateStr)
         .order('day_brt', { ascending: true });
       
       if (error) throw error;
@@ -804,9 +717,9 @@ export function useCallsLast50(orgId: string) {
     queryKey: ['calls-last-50', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vapi_calls')
+        .from(SUPABASE_TABLES.VAPI_CALLS)
         .select('*')
-        .limit(50);
+        .limit(QUERY_LIMITS.CALLS_LAST);
       
       if (error) throw error;
       
@@ -834,7 +747,7 @@ export function useMappingCoverage(orgId: string) {
     queryKey: ['mapping-coverage', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_funnel_mapping_coverage')
+        .from(SUPABASE_VIEWS.FUNNEL_MAPPING_COVERAGE)
         .select('*')
         .eq('org_id', orgId);
       
@@ -850,7 +763,7 @@ export function useUnmappedCandidates(orgId: string) {
     queryKey: ['unmapped-candidates', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_funnel_unmapped_candidates')
+        .from(SUPABASE_VIEWS.FUNNEL_UNMAPPED_CANDIDATES)
         .select('*')
         .eq('org_id', orgId)
         .order('hits', { ascending: false });
@@ -867,11 +780,11 @@ export function useIngestionRuns(orgId: string) {
     queryKey: ['ingestion-runs', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('ingestion_runs')
+        .from(SUPABASE_TABLES.INGESTION_RUNS)
         .select('*')
         .eq('org_id', orgId)
         .order('started_at', { ascending: false })
-        .limit(20);
+        .limit(QUERY_LIMITS.INGESTION_RUNS);
       
       if (error) throw error;
       return (data || []) as IngestionRun[];
@@ -895,7 +808,7 @@ export function useInsights(orgId: string, scope: string) {
       
       // Tentar buscar pelo scope específico primeiro
       let { data, error } = await supabase
-        .from('ai_insights')
+        .from(SUPABASE_TABLES.AI_INSIGHTS)
         .select('payload,created_at,scope')
         .eq('org_id', orgId)
         .in('scope', scopeVariants)
@@ -908,7 +821,7 @@ export function useInsights(orgId: string, scope: string) {
       // Se não encontrar pelo scope específico, buscar qualquer insight da org
       if (!data) {
         const { data: anyData, error: anyError } = await supabase
-          .from('ai_insights')
+          .from(SUPABASE_TABLES.AI_INSIGHTS)
           .select('payload,created_at,scope')
           .eq('org_id', orgId)
           .order('created_at', { ascending: false })
@@ -940,7 +853,7 @@ export function useInsightsHistory(orgId: string, scope?: string, limit: number 
     queryKey: ['insights-history', orgId, scope, limit],
     queryFn: async () => {
       let query = supabase
-        .from('ai_insights')
+        .from(SUPABASE_TABLES.AI_INSIGHTS)
         .select('payload,created_at,scope')
         .eq('org_id', orgId)
         .order('created_at', { ascending: false })
@@ -975,7 +888,7 @@ export function useInsightsHistory(orgId: string, scope?: string, limit: number 
 // Função para gerar insights via edge function
 export async function generateInsights(orgId: string, scope: string, windowDays: number = 30) {
   try {
-    const { data, error } = await supabase.functions.invoke('generate-insights', {
+    const { data, error } = await supabase.functions.invoke(SUPABASE_EDGE_FUNCTIONS.GENERATE_INSIGHTS, {
       body: { org_id: orgId, scope, window_days: windowDays },
     });
     
@@ -993,7 +906,7 @@ export async function generateInsights(orgId: string, scope: string, windowDays:
 // Função para testar ingestão via smart-processor
 export async function testIngestion(ingestKey: string) {
   try {
-    const { data, error } = await supabase.functions.invoke('smart-processor', {
+    const { data, error } = await supabase.functions.invoke(SUPABASE_EDGE_FUNCTIONS.SMART_PROCESSOR, {
       body: { ping: true },
       headers: {
         'x-ingest-key': ingestKey,
@@ -1016,7 +929,7 @@ export function useKpiDictionary() {
     queryKey: ['kpi-dictionary'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('kpi_dictionary')
+        .from(SUPABASE_TABLES.KPI_DICTIONARY)
         .select('*');
       
       if (error) throw error;

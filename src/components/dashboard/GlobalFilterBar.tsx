@@ -14,6 +14,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { PERIOD_OPTIONS } from '@/lib/config';
 
 export function GlobalFilterBar() {
   const { filters, setPeriod, setComparePrevious, setDateRange } = useGlobalFilters();
@@ -41,12 +42,11 @@ export function GlobalFilterBar() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">7 dias</SelectItem>
-              <SelectItem value="14d">14 dias</SelectItem>
-              <SelectItem value="30d">30 dias</SelectItem>
-              <SelectItem value="60d">60 dias</SelectItem>
-              <SelectItem value="90d">90 dias</SelectItem>
-              <SelectItem value="custom">Personalizado</SelectItem>
+              {PERIOD_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

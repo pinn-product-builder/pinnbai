@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# nested copy of repo (avoid accidentally committing embedded git repo)
+pinnbai/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
