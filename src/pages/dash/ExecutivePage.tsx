@@ -8,7 +8,7 @@ import {
   TrendingUp,
   Target,
   Percent,
-  Calendar
+  CheckCircle
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
@@ -88,7 +88,7 @@ export default function ExecutivePage() {
 
       {/* KPIs */}
       <Section title="Indicadores Principais">
-        <KpiGrid columns={4}>
+        <KpiGrid columns={5}>
           <KpiCard
             title="Total de Leads"
             value={leadsCount || 0}
@@ -112,6 +112,15 @@ export default function ExecutivePage() {
             variant="success"
             isLoading={kpisLoading}
             trend={makeTrend(changes?.meetings_scheduled, periodLabel)}
+          />
+          <KpiCard
+            title={`Reuniões Realizadas (${period})`}
+            value={kpis?.meetings_done || 0}
+            kpiKey="meetings_done"
+            icon={<CheckCircle className="w-5 h-5" />}
+            variant="success"
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.meetings_done, periodLabel)}
           />
           <KpiCard
             title={`Reuniões Canceladas (${period})`}
@@ -225,6 +234,7 @@ export default function ExecutivePage() {
           title="Reuniões do Mês"
           subtitle="Controle de comparecimento"
           isLoading={false}
+          className="h-[420px]"
         >
           <MonthlyMeetingsPanel orgId={orgId} compact />
         </ChartCard>
@@ -233,6 +243,7 @@ export default function ExecutivePage() {
           title="Lista de Leads"
           subtitle="Leads recentes"
           isLoading={false}
+          className="h-[420px]"
         >
           <LeadsTable orgId={orgId} compact />
         </ChartCard>
