@@ -7,7 +7,8 @@ import {
   DollarSign, 
   TrendingUp,
   Target,
-  Percent
+  Percent,
+  History
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
@@ -15,6 +16,7 @@ import { DailyChart } from '@/components/dashboard/Charts';
 import { FunnelChart } from '@/components/dashboard/FunnelChart';
 import { MeetingsTable } from '@/components/dashboard/MeetingsTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
+import { InsightsHistory } from '@/components/dashboard/InsightsHistory';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
   useExecutiveKpis,
@@ -22,6 +24,7 @@ import {
   useFunnelCurrent,
   useMeetingsUpcoming,
   useInsights,
+  useInsightsHistory,
 } from '@/hooks/useDashboardData';
 
 export default function ExecutivePage() {
@@ -33,6 +36,7 @@ export default function ExecutivePage() {
   const { data: funnel, isLoading: funnelLoading } = useFunnelCurrent(orgId);
   const { data: meetings, isLoading: meetingsLoading } = useMeetingsUpcoming(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'executive');
+  const { data: insightsHistory, isLoading: historyLoading } = useInsightsHistory(orgId);
 
   const handleStageClick = (stage: any) => {
     console.log('Stage clicked:', stage);
@@ -181,6 +185,18 @@ export default function ExecutivePage() {
           <InsightsPanel insight={insights || null} orgId={orgId} scope="executive" />
         </ChartCard>
       </div>
+
+      {/* Histórico de Insights */}
+      <Section title="Histórico de Insights" icon={<History className="w-5 h-5" />}>
+        <ChartCard
+          title="Todos os Insights"
+          subtitle="Histórico completo de análises geradas pela IA"
+          isLoading={historyLoading}
+          isEmpty={!insightsHistory?.length}
+        >
+          <InsightsHistory insights={insightsHistory || []} />
+        </ChartCard>
+      </Section>
     </div>
   );
 }

@@ -78,15 +78,19 @@ function EmptyState() {
 interface SectionProps {
   title: string;
   description?: string;
+  icon?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
-export function Section({ title, description, children, className }: SectionProps) {
+export function Section({ title, description, icon, children, className }: SectionProps) {
   return (
     <section className={cn("space-y-4", className)}>
       <div>
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          {icon}
+          {title}
+        </h2>
         {description && (
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         )}
