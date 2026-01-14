@@ -51,7 +51,7 @@ export default function LoginPage() {
             <img 
               src={pinnLogo} 
               alt="Pinn" 
-              className="h-10 mb-4 drop-shadow-[0_0_20px_hsl(var(--pinn-orange-500)/0.6)]" 
+              className="h-10 mb-4 drop-shadow-[0_0_20px_hsl(var(--pinn-orange-500)/0.6)] mix-blend-lighten" 
             />
             <p className="text-xs text-text-3 tracking-widest uppercase mb-4">Business Analytics Intelligence</p>
             
