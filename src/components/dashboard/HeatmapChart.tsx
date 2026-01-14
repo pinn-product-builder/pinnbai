@@ -15,13 +15,13 @@ interface HeatmapChartProps {
 
 const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-// Cores quentes usando o tema Pinn (laranja)
+// Cores quentes usando o tema Pinn (laranja) - melhor contraste em dark mode
 const heatColors = [
-  { bg: 'bg-bg-2', border: 'border-border', label: '0' },
-  { bg: 'bg-pinn-orange-500/20', border: 'border-pinn-orange-500/30', label: 'Baixo' },
-  { bg: 'bg-pinn-orange-500/40', border: 'border-pinn-orange-500/50', label: 'Médio' },
-  { bg: 'bg-pinn-orange-500/60', border: 'border-pinn-orange-500/60', label: 'Alto' },
-  { bg: 'bg-pinn-orange-500/80', border: 'border-pinn-orange-500/70', label: 'Máximo' },
+  { bg: 'bg-muted/30 dark:bg-muted/40', border: 'border-border/50 dark:border-border/60', label: '0' },
+  { bg: 'bg-orange-400/30 dark:bg-orange-400/35', border: 'border-orange-400/40 dark:border-orange-400/50', label: 'Baixo' },
+  { bg: 'bg-orange-500/50 dark:bg-orange-500/55', border: 'border-orange-500/60 dark:border-orange-500/70', label: 'Médio' },
+  { bg: 'bg-orange-500/70 dark:bg-orange-500/75', border: 'border-orange-500/75 dark:border-orange-500/85', label: 'Alto' },
+  { bg: 'bg-orange-500/90 dark:bg-orange-500', border: 'border-orange-600 dark:border-orange-500', label: 'Máximo' },
 ];
 
 export function HeatmapChart({ data, className }: HeatmapChartProps) {

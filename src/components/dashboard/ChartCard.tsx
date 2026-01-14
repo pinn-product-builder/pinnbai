@@ -1,11 +1,15 @@
 import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { InboxIcon } from 'lucide-react';
+import { InboxIcon, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { getChartDefinition, ChartDefinition } from '@/lib/chartDefinitions';
 
 interface ChartCardProps {
   title: string;
   subtitle?: string;
+  /** Key do gráfico para buscar definição automática */
+  chartKey?: string;
   /** Explicação dos eixos do gráfico: ex: "Eixo X = tempo (dias), Eixo Y = quantidade" */
   axisHint?: string;
   children: ReactNode;
@@ -18,6 +22,7 @@ interface ChartCardProps {
 export function ChartCard({
   title,
   subtitle,
+  chartKey,
   axisHint,
   children,
   action,
@@ -25,15 +30,59 @@ export function ChartCard({
   isEmpty,
   className,
 }: ChartCardProps) {
+  const definition = chartKey ? getChartDefinition(chartKey) : undefined;
+  
   return (
     <div className={cn("glass-card p-6 relative overflow-hidden", className)}>
       <div className="flex items-start justify-between mb-4 relative z-10">
-        <div>
-          <h3 className="text-lg font-semibold text-text-1">{title}</h3>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-text-1">{title}</h3>
+            {definition && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button className="text-muted-foreground hover:text-primary transition-colors">
+                    <Info className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side="right" 
+                  className="max-w-xs p-4 space-y-2"
+                  sideOffset={8}
+                >
+                  <p className="font-semibold text-sm text-foreground">{definition.title}</p>
+                  <p className="text-xs text-muted-foreground">{definition.description}</p>
+                  <div className="pt-2 border-t border-border/50 space-y-1.5 text-xs">
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium">Eixo X:</span>
+                      <span className="text-foreground">{definition.axisX}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium">Eixo Y:</span>
+                      <span className="text-foreground">{definition.axisY}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium">Período:</span>
+                      <span className="text-foreground">{definition.period}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium">Fonte:</span>
+                      <span className="text-foreground font-mono text-[10px]">{definition.source}</span>
+                    </div>
+                  </div>
+                  {definition.interpretation && (
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs text-primary/90 italic">💡 {definition.interpretation}</p>
+                    </div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
           {subtitle && (
             <p className="text-sm text-text-3 mt-1">{subtitle}</p>
           )}
-          {axisHint && (
+          {axisHint && !definition && (
             <p className="text-xs text-text-3/70 mt-1 italic">{axisHint}</p>
           )}
         </div>
