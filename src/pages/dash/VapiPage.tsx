@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
-import { DailyChart, AccumulatedChart } from '@/components/dashboard/Charts';
+import { DailyChart, AccumulatedChart, StackedTrendChart } from '@/components/dashboard/Charts';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,7 @@ import {
   useCallsDaily,
   useCallsLast50,
   useCallsEndedReasons,
+  useCallsEndedReasonsTrend,
   useInsights,
 } from '@/hooks/useDashboardData';
 import type { CallEvent } from '@/types/dashboard';
@@ -350,6 +351,7 @@ export default function VapiPage() {
   const { data: daily, isLoading: dailyLoading } = useCallsDaily(orgId);
   const { data: calls, isLoading: callsLoading } = useCallsLast50(orgId);
   const { data: endedReasons, isLoading: endedReasonsLoading } = useCallsEndedReasons(orgId, period);
+  const { data: endedReasonsTrend, isLoading: endedReasonsTrendLoading } = useCallsEndedReasonsTrend(orgId, period);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'vapi');
 
   // Calcular dados de custo acumulado
@@ -506,6 +508,21 @@ export default function VapiPage() {
           data={accumulatedCostData}
           height={280}
           valuePrefix="$"
+        />
+      </ChartCard>
+
+      {/* Tendência de Motivos de Finalização */}
+      <ChartCard
+        title="Tendência de Motivos de Finalização"
+        subtitle="Evolução dos motivos de encerramento ao longo do tempo"
+        isLoading={endedReasonsTrendLoading}
+        isEmpty={!endedReasonsTrend?.data?.length}
+      >
+        <StackedTrendChart
+          data={endedReasonsTrend?.data || []}
+          keys={endedReasonsTrend?.topReasons || []}
+          labels={endedReasonLabels}
+          height={300}
         />
       </ChartCard>
 
