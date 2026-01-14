@@ -165,7 +165,7 @@
 
   /* === Glass Card with Glow === */
   .glass-card-glow {
-    @apply glass-card relative overflow-hidden;
+    @apply glass-card relative;
   }
 
   .glass-card-glow::before {
