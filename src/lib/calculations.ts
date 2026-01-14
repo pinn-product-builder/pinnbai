@@ -125,21 +125,20 @@ export function aggregateCallsData(data: Array<{
   total_minutes?: number | string;
   total_spent_usd?: number | string;
 }>): CallsAggregate {
-  return data.reduce(
-    (acc, row) => {
-      acc.calls_done += Number(row.calls_done) || 0;
-      acc.calls_answered += Number(row.calls_answered) || 0;
-      acc.total_minutes += Number(row.total_minutes) || 0;
-      acc.total_spent += Number(row.total_spent_usd) || 0;
-      return acc;
-    },
-    {
-      calls_done: 0,
-      calls_answered: 0,
-      total_minutes: 0,
-      total_spent: 0,
-    }
-  );
+  const initial: CallsAggregate = {
+    calls_done: 0,
+    calls_answered: 0,
+    total_minutes: 0,
+    total_spent: 0,
+  };
+  
+  return data.reduce((acc, row) => {
+    acc.calls_done += Number(row.calls_done) || 0;
+    acc.calls_answered += Number(row.calls_answered) || 0;
+    acc.total_minutes += Number(row.total_minutes) || 0;
+    acc.total_spent += Number(row.total_spent_usd) || 0;
+    return acc;
+  }, initial);
 }
 
 // ===== CALCULATE METRICS FROM AGGREGATE =====

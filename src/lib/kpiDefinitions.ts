@@ -128,11 +128,11 @@ export const LOCAL_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     title: 'Reuniões Canceladas',
     definition: 'Total de reuniões canceladas no período.',
   },
-  meetings_done: {
+  exec_meetings_done: {
     title: 'Reuniões Realizadas',
     definition: 'Total de reuniões que foram efetivamente realizadas.',
   },
-  cpl_30d: {
+  exec_cpl_30d: {
     title: 'CPL (30d)',
     definition: 'Custo por Lead médio nos últimos 30 dias.',
     formula: 'investimento / leads',
@@ -142,7 +142,7 @@ export const LOCAL_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     definition: 'Custo médio para agendar uma reunião nos últimos 30 dias.',
     formula: 'investimento / reuniões_agendadas',
   },
-  conv_lead_to_meeting_30d: {
+  exec_conv_lead_to_meeting_30d: {
     title: 'Conversão Lead → Reunião (30d)',
     definition: 'Percentual de leads que agendaram reunião nos últimos 30 dias.',
     formula: '(reuniões_agendadas / leads) × 100',
