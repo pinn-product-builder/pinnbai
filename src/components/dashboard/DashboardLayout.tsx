@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -9,17 +9,28 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Wrench
+  Wrench,
+  Monitor,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarContextType {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  viewMode: boolean;
+  setViewMode: (viewMode: boolean) => void;
 }
 
-const SidebarContext = createContext<SidebarContextType>({ collapsed: false, setCollapsed: () => {} });
+const SidebarContext = createContext<SidebarContextType>({ 
+  collapsed: false, 
+  setCollapsed: () => {},
+  viewMode: false,
+  setViewMode: () => {}
+});
 
 export const useSidebarContext = () => useContext(SidebarContext);
 
@@ -38,10 +49,70 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState(false);
   const location = useLocation();
 
+  // Atalho de teclado ESC para sair do modo view
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && viewMode) {
+        setViewMode(false);
+      }
+      // Atalho F11 ou Ctrl+Shift+V para alternar modo view
+      if ((e.key === 'F11' || (e.ctrlKey && e.shiftKey && e.key === 'V')) && !e.repeat) {
+        e.preventDefault();
+        setViewMode(!viewMode);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewMode]);
+
+  // Modo View - tela cheia sem sidebar
+  if (viewMode) {
+    return (
+      <SidebarContext.Provider value={{ collapsed, setCollapsed, viewMode, setViewMode }}>
+        <div className="min-h-screen w-full bg-background relative">
+          {/* Botão para sair do modo view - aparece no hover */}
+          <div className="fixed top-4 right-4 z-50 opacity-0 hover:opacity-100 transition-opacity duration-300 group">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setViewMode(false)}
+                  className="bg-background/80 backdrop-blur-sm border-border/50 hover:bg-background hover:border-primary"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Sair do modo apresentação (ESC)</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* Indicador sutil no canto */}
+          <div className="fixed bottom-4 right-4 z-50 opacity-30 hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/60 backdrop-blur-sm border border-border/30 text-xs text-muted-foreground">
+              <Monitor className="w-3 h-3" />
+              <span>Modo Apresentação</span>
+              <span className="text-[10px] opacity-60">(ESC para sair)</span>
+            </div>
+          </div>
+
+          {/* Page Content - tela cheia */}
+          <main className="w-full min-h-screen p-6 overflow-auto">
+            {children}
+          </main>
+        </div>
+      </SidebarContext.Provider>
+    );
+  }
+
   return (
-    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+    <SidebarContext.Provider value={{ collapsed, setCollapsed, viewMode, setViewMode }}>
       <div className="min-h-screen flex w-full bg-background">
         {/* Sidebar */}
         <aside 
@@ -83,6 +154,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               );
             })}
           </nav>
+
+          {/* View Mode Button */}
+          <div className="absolute bottom-16 left-0 right-0 px-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setViewMode(true)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                    "border border-dashed border-sidebar-border/50 hover:border-primary/50"
+                  )}
+                >
+                  <Monitor className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && <span>Modo View</span>}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Apresentação em tela cheia (Ctrl+Shift+V)</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
 
           {/* Collapse Button */}
           <button
