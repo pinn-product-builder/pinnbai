@@ -26,6 +26,7 @@ import {
   useMeetingsUpcoming,
   useInsights,
   useInsightsHistory,
+  useLeadsCount,
 } from '@/hooks/useDashboardData';
 
 export default function ExecutivePage() {
@@ -49,6 +50,7 @@ export default function ExecutivePage() {
   const { data: meetings, isLoading: meetingsLoading } = useMeetingsUpcoming(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'executive');
   const { data: insightsHistory, isLoading: historyLoading } = useInsightsHistory(orgId);
+  const { data: leadsCount, isLoading: leadsCountLoading } = useLeadsCount();
 
   const handleStageClick = (stage: any) => {
     console.log('Stage clicked:', stage);
@@ -90,13 +92,12 @@ export default function ExecutivePage() {
       <Section title="Indicadores Principais">
         <KpiGrid columns={4}>
           <KpiCard
-            title={`Leads (${period})`}
-            value={kpis?.leads_total_30d || 0}
-            kpiKey="leads_total_30d"
+            title="Total de Leads"
+            value={leadsCount || 0}
+            kpiKey="leads_total"
             icon={<Users className="w-5 h-5" />}
             variant="primary"
-            isLoading={kpisLoading}
-            trend={makeTrend(changes?.leads, periodLabel)}
+            isLoading={leadsCountLoading}
           />
           <KpiCard
             title={`Mensagens (${period})`}

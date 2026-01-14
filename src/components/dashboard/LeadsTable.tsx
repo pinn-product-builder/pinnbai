@@ -24,46 +24,25 @@ interface LeadsTableProps {
   orgId: string;
 }
 
-// Hook para buscar leads individuais
+// Hook para buscar leads individuais da tabela leads_v2
 export function useLeadsList(orgId: string) {
   return useQuery({
     queryKey: ['leads-list', orgId],
     queryFn: async () => {
-      // Tenta buscar da view de leads com detalhes do funil
-      // Se não existir, tenta tabelas alternativas
-      const tables = [
-        'leads_v2', // Tabela principal de leads
-      ];
+      // Buscar diretamente da tabela leads_v2
+      const { data, error } = await supabase
+        .from('leads_v2')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
       
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .eq('org_id', orgId)
-          .order('created_at', { ascending: false })
-          .limit(500);
-        
-        if (!error && data && data.length > 0) {
-          console.log(`Leads carregados da tabela: ${table}`);
-          return { data, source: table };
-        }
+      if (error) {
+        console.error('Erro ao buscar leads_v2:', error);
+        throw error;
       }
       
-      // Fallback: tentar sem filtro de org_id
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(500);
-        
-        if (!error && data && data.length > 0) {
-          console.log(`Leads carregados da tabela (sem org_id): ${table}`);
-          return { data, source: table };
-        }
-      }
-      
-      return { data: [], source: null };
+      console.log(`Leads carregados: ${data?.length || 0}`);
+      return { data: data || [], source: 'leads_v2' };
     },
     enabled: !!orgId,
   });
@@ -169,9 +148,7 @@ export function LeadsTable({ orgId }: LeadsTableProps) {
           <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">Nenhum lead encontrado</p>
           <p className="text-sm mt-2">
-            Não foi possível encontrar uma tabela de leads no banco de dados.
-            <br />
-            Tabelas tentadas: vw_leads_current, leads, kommo_leads, vw_funnel_leads_detail
+            A tabela leads_v2 está vazia ou não possui registros.
           </p>
         </div>
       ) : (
