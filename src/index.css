@@ -108,16 +108,16 @@
      DARK MODE
      ============================================ */
   .dark {
-    /* === Backgrounds (Dark Warm) === */
-    --bg-0: 20 100% 3%;
-    --bg-1: 20 100% 4%;
-    --bg-2: 20 80% 6%;
-    --bg-3: 20 60% 8%;
+    /* === Backgrounds (Dark Warm - suavizado) === */
+    --bg-0: 20 30% 10%;
+    --bg-1: 20 25% 12%;
+    --bg-2: 20 20% 15%;
+    --bg-3: 20 18% 18%;
     
-    /* === Text (Warm White) === */
-    --text-1: 35 30% 95%;
-    --text-2: 35 30% 95% / 0.78;
-    --text-3: 35 30% 95% / 0.55;
+    /* === Text (Warm White - mais claro) === */
+    --text-1: 35 30% 98%;
+    --text-2: 35 25% 88%;
+    --text-3: 35 20% 72%;
     
     /* === Borders (Warm Orange Tint) === */
     --border-default: 27 100% 50% / 0.10;
