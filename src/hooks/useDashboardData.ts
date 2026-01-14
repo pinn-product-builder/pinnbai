@@ -62,6 +62,25 @@ export function useInvestimento(orgId: string, period: '7d' | '30d' | '60d' = '3
   });
 }
 
+// Hook para contar total de leads da tabela leads_v2
+export function useLeadsCount() {
+  return useQuery({
+    queryKey: ['leads-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('leads_v2')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.error('Erro ao contar leads_v2:', error);
+        return 0;
+      }
+      
+      return count || 0;
+    },
+  });
+}
+
 // Org options
 export function useOrgOptions() {
   return useQuery({
