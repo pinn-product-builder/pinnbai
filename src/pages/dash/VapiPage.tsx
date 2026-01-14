@@ -144,18 +144,20 @@ export default function VapiPage() {
 
       {/* Chart */}
       <ChartCard
-        title="Ligações Diárias (30d)"
-        subtitle="Volume de ligações por dia"
+        title="Ligações Diárias"
+        subtitle="Volume de ligações por dia (realizadas vs atendidas)"
         isLoading={dailyLoading}
         isEmpty={!daily?.length}
       >
         <DailyChart
           data={(daily || []).map(d => ({
             day: d.day,
-            calls_total: d.calls_total,
+            calls_done: d.calls_done,
+            calls_answered: d.calls_answered,
           }))}
           lines={[
-            { key: 'calls_total', name: 'Ligações', color: 'primary' },
+            { key: 'calls_done', name: 'Realizadas', color: 'primary' },
+            { key: 'calls_answered', name: 'Atendidas', color: 'success' },
           ]}
           height={280}
         />
