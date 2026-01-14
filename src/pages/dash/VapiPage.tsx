@@ -181,7 +181,7 @@ export default function VapiPage() {
           subtitle="Análises automáticas de VAPI"
           isLoading={insightsLoading}
         >
-          <InsightsPanel insight={insights || null} />
+          <InsightsPanel insight={insights || null} orgId={orgId} scope="vapi" />
         </ChartCard>
       </div>
     </div>

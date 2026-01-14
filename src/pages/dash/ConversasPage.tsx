@@ -139,7 +139,7 @@ export default function ConversasPage() {
           subtitle="Análises automáticas de conversas"
           isLoading={insightsLoading}
         >
-          <InsightsPanel insight={insights || null} />
+          <InsightsPanel insight={insights || null} orgId={orgId} scope="conversas" />
         </ChartCard>
       </div>
     </div>

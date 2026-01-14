@@ -587,35 +587,69 @@ export function useInsights(orgId: string, scope: string) {
   return useQuery({
     queryKey: ['insights', orgId, scope],
     queryFn: async () => {
-      // Primeiro tenta buscar pelo scope específico
-      let { data, error } = await supabase
+      // Buscar insight mais recente pelo scope específico
+      const { data, error } = await supabase
         .from('ai_insights')
-        .select('*')
+        .select('payload,created_at')
         .eq('org_id', orgId)
         .eq('scope', scope)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       
-      // Fallback: busca qualquer insight da org se não encontrar pelo scope
-      if (!data && !error) {
-        const fallback = await supabase
-          .from('ai_insights')
-          .select('*')
-          .eq('org_id', orgId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        data = fallback.data;
-        error = fallback.error;
+      if (error) throw error;
+      
+      if (data) {
+        return {
+          org_id: orgId,
+          scope,
+          payload: data.payload,
+          created_at: data.created_at,
+        } as AIInsight;
       }
       
-      if (error) throw error;
-      return data as AIInsight | null;
+      return null;
     },
     enabled: !!orgId,
   });
+}
+
+// Função para gerar insights via edge function
+export async function generateInsights(orgId: string, scope: string, windowDays: number = 30) {
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-insights', {
+      body: { org_id: orgId, scope, window_days: windowDays },
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    // Se a função não existir, retorna erro específico
+    if (err?.message?.includes('not found') || err?.status === 404) {
+      return { success: false, error: 'Função não disponível' };
+    }
+    return { success: false, error: err?.message || 'Erro ao gerar insights' };
+  }
+}
+
+// Função para testar ingestão via smart-processor
+export async function testIngestion(ingestKey: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke('smart-processor', {
+      body: { ping: true },
+      headers: {
+        'x-ingest-key': ingestKey,
+      },
+    });
+    
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err: any) {
+    if (err?.message?.includes('not found') || err?.status === 404) {
+      return { success: false, error: 'Função não disponível' };
+    }
+    return { success: false, error: err?.message || 'Erro ao testar ingestão' };
+  }
 }
 
 // KPI Dictionary

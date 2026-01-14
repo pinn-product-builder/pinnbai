@@ -9,6 +9,7 @@ import ConversasPage from "@/pages/dash/ConversasPage";
 import TrafegoPage from "@/pages/dash/TrafegoPage";
 import VapiPage from "@/pages/dash/VapiPage";
 import AdminPage from "@/pages/dash/AdminPage";
+import ConfigPage from "@/pages/dash/ConfigPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
                 <Route path="trafego" element={<TrafegoPage />} />
                 <Route path="vapi" element={<VapiPage />} />
                 <Route path="admin" element={<AdminPage />} />
+                <Route path="config" element={<ConfigPage />} />
               </Routes>
             </DashboardLayout>
           } />
