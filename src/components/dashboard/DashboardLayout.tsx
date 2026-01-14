@@ -19,6 +19,7 @@ import { ViewModeDashboard } from './ViewModeDashboard';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
 
 // Pinn Logo SVG Component
 const PinnLogoIcon = ({ className }: { className?: string }) => (
@@ -61,8 +62,6 @@ const SidebarContext = createContext<SidebarContextType>({
 });
 
 export const useSidebarContext = () => useContext(SidebarContext);
-
-import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
 
 // Itens de navegação com flag de admin
 const navItems = [

@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Loader2, Sparkles } from 'lucide-react';
+import { ROUTES } from '@/lib/config';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -31,12 +32,12 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
 
   // Not authenticated - redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
   // Requires admin but user is not admin - redirect to dashboard
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/dash/executivo" replace />;
+    return <Navigate to={ROUTES.DASHBOARD.EXECUTIVO} replace />;
   }
 
   return <>{children}</>;

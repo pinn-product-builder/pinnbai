@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-import { SUPABASE_RPC } from '@/lib/config';
+import { SUPABASE_RPC } from '@/lib/supabaseViews';
 
 export type AppRole = 'admin' | 'user';
 

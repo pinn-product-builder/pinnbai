@@ -2,6 +2,24 @@
 
 Dashboard web de **Business Intelligence** para acompanhar performance de aquisição, conversas, tráfego pago e ligações (VAPI), com autenticação e dados via **Supabase**.
 
+## Índice
+
+- [Visão geral](#visão-geral)
+- [Stack](#stack)
+- [Funcionalidades](#funcionalidades)
+- [Como rodar localmente](#como-rodar-localmente)
+- [Arquitetura (visão técnica)](#arquitetura-visão-técnica)
+- [Rotas da aplicação](#rotas-da-aplicação)
+- [Autenticação e autorização (RBAC)](#autenticação-e-autorização-rbac)
+- [Filtros globais (URL-driven)](#filtros-globais-url-driven)
+- [Dados e queries (React Query)](#dados-e-queries-react-query)
+- [Supabase (tabelas/views/RPC/Edge Functions)](#supabase-tabelasviewsrpcedge-functions)
+- [Estrutura do projeto](#estrutura-do-projeto)
+- [Biblioteca de manutenção (src/lib)](#biblioteca-de-manutenção-srclib)
+- [Convenções de manutenção (importante)](#convenções-de-manutenção-importante)
+- [Troubleshooting](#troubleshooting)
+- [Licença](#licença)
+
 ## Visão geral
 
 O projeto entrega um painel com múltiplas visões:
@@ -21,6 +39,16 @@ O projeto entrega um painel com múltiplas visões:
 - **Supabase** (Auth + Postgres + Views + Edge Functions)
 - **Tailwind CSS + shadcn/ui (Radix UI)** (UI)
 - **Recharts** (gráficos)
+
+## Funcionalidades
+
+- **Autenticação** via Supabase (sessão persistente + refresh automático).
+- **Controle de acesso** por role (`admin`/`user`) com rotas protegidas.
+- **Dashboards** por domínio (executivo, conversas, tráfego, VAPI).
+- **Filtros globais** persistidos na URL (compartilháveis).
+- **Cache e sincronização de dados** com React Query.
+- **Modo apresentação (View Mode)** com atalho de teclado.
+- **UI moderna** com Tailwind + shadcn/ui + Radix UI.
 
 ## Como rodar localmente
 
@@ -42,6 +70,28 @@ npm run build
 npm run preview
 npm run lint
 ```
+
+## Arquitetura (visão técnica)
+
+O app é um SPA React com camadas claras:
+
+```text
+UI (pages/components)
+  ↓ usa
+Hooks (src/hooks) + Contextos (src/contexts)
+  ↓ acessa
+Supabase Client (src/lib/supabaseClient.ts)
+  ↓ consulta
+Views/Tabelas (Postgres via Supabase) + Edge Functions
+```
+
+- **UI**: páginas em `src/pages` e componentes em `src/components`.
+- **Estado**:
+  - estado “server” via **React Query** (cache/requests)
+  - auth via **AuthContext**
+  - filtros globais via **URL search params**
+- **Dados**: consultas padronizadas em `src/hooks/useDashboardData.ts`.
+- **Manutenção**: constantes/utilitários centralizados em `src/lib/`.
 
 ## Rotas da aplicação
 
@@ -68,6 +118,12 @@ O fluxo é:
 4. Rotas protegidas usam `src/components/ProtectedRoute.tsx`:
    - se **não autenticado**, redireciona para `/login`;
    - se `requireAdmin` e usuário não é admin, redireciona para o dashboard.
+
+Componentes/arquivos chave:
+
+- `src/contexts/AuthContext.tsx`: Provider e hook `useAuthContext()`.
+- `src/hooks/useAuth.ts`: integração Supabase Auth + role.
+- `src/components/ProtectedRoute.tsx`: gate de rota (auth/admin).
 
 ## Dados e queries (React Query)
 
@@ -114,6 +170,56 @@ Defaults e opções:
 
 - `src/lib/config.ts` (`DEFAULT_ORG_ID`, `DEFAULT_PERIOD`, `PERIOD_OPTIONS`, `PERIOD_DAYS`)
 
+## Supabase (tabelas/views/RPC/Edge Functions)
+
+### Cliente
+
+- `src/lib/supabaseClient.ts` usa `SUPABASE_CONFIG` (em `src/lib/config.ts`)
+
+### Views (Postgres)
+
+Centralizadas em `src/lib/supabaseViews.ts` (`SUPABASE_VIEWS`):
+
+- **Executivo**
+  - `vw_dashboard_kpis_30d_v3`
+  - `vw_dashboard_daily_60d_v3`
+  - `vw_funnel_current_v3`
+  - `vw_calendar_events_current_v3`
+- **Conversas**
+  - `vw_kommo_msg_in_daily_60d_v3`
+  - `vw_kommo_msg_in_by_hour_7d_v3`
+  - `vw_kommo_msg_in_heatmap_30d_v3`
+- **Tráfego**
+  - `vw_afonsina_custos_funil_dia`
+- **VAPI**
+  - `v3_calls_daily_v3`
+  - `v3_calls_ended_reason_daily`
+- **Admin**
+  - `vw_funnel_mapping_coverage`
+  - `vw_funnel_unmapped_candidates`
+
+### Tabelas
+
+Centralizadas em `src/lib/supabaseViews.ts` (`SUPABASE_TABLES`):
+
+- `leads_v2`
+- `trafego`
+- `vapi_calls`
+- `ai_insights`
+- `kpi_dictionary`
+- `ingestion_runs`
+
+### RPC
+
+- `get_user_role` (centralizado em `SUPABASE_RPC`)
+
+### Edge Functions
+
+- `generate-insights` (centralizado em `SUPABASE_EDGE_FUNCTIONS`)
+- `smart-processor` (centralizado em `SUPABASE_EDGE_FUNCTIONS`)
+
+> Nota de segurança: a chave **anon** é pública por design (client-side), mas o acesso real aos dados depende de **RLS (Row Level Security)** e policies no Supabase.
+
 ## Estrutura do projeto
 
 ```text
@@ -142,6 +248,18 @@ src/
     LoginPage.tsx
 ```
 
+## Biblioteca de manutenção (`src/lib`)
+
+Os arquivos abaixo foram criados/refatorados para reduzir duplicação e facilitar manutenção:
+
+- `src/lib/config.ts`: constantes globais (rotas, períodos, limites, atalhos, defaults, config do Supabase)
+- `src/lib/supabaseViews.ts`: “fonte da verdade” de views/tabelas/RPC/edge functions
+- `src/lib/dateHelpers.ts`: helpers de datas/períodos e variação percentual
+- `src/lib/calculations.ts`: agregações e cálculos (CPL, conversão, taxas etc.)
+- `src/lib/format.ts`: formatação (moeda, número, percentuais, datas)
+- `src/lib/kpiDefinitions.ts`: fallback local para tooltips/descrições de KPI
+- `src/lib/utils.ts`: `cn()` (clsx + tailwind-merge)
+
 ## Convenções de manutenção (importante)
 
 Para manter o projeto fácil de dar manutenção:
@@ -167,6 +285,14 @@ Normalmente é cache do TypeScript Language Server.
 
 - No Cursor/VS Code: `Ctrl+Shift+P` → **TypeScript: Restart TS Server**
 - Se persistir: `Developer: Reload Window`
+
+### node_modules ausente / dependências não instaladas
+
+Se os imports não forem resolvidos ou o app não rodar:
+
+```bash
+npm install
+```
 
 ## Licença
 
