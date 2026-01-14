@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import pinnLogo from '@/assets/pinn-logo.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -46,9 +47,14 @@ export default function LoginPage() {
         <div className="glass-card-glow p-8 rounded-2xl border border-border">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow mb-4">
-              <Sparkles className="w-7 h-7 text-bg-0" />
-            </div>
+            {/* Pinn Logo */}
+            <img 
+              src={pinnLogo} 
+              alt="Pinn" 
+              className="h-10 mb-4 drop-shadow-[0_0_20px_hsl(var(--pinn-orange-500)/0.6)]" 
+            />
+            <p className="text-xs text-text-3 tracking-widest uppercase mb-4">Business Analytics Intelligence</p>
+            
             <h1 className="text-3xl font-bold text-gradient-primary drop-shadow-[0_0_25px_hsl(var(--pinn-orange-500)/0.6)]">
               Pinn Growth
             </h1>
