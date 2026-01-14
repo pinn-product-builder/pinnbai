@@ -208,7 +208,7 @@ export default function TrafegoPage() {
           subtitle="Análises automáticas de tráfego pago"
           isLoading={insightsLoading}
         >
-          <InsightsPanel insight={insights || null} />
+          <InsightsPanel insight={insights || null} orgId={orgId} scope="trafego" />
         </ChartCard>
       </div>
 

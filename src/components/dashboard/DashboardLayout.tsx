@@ -8,7 +8,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Wrench
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
@@ -28,6 +29,7 @@ const navItems = [
   { path: '/dash/trafego', label: 'Tráfego', icon: TrendingUp },
   { path: '/dash/vapi', label: 'VAPI', icon: Phone },
   { path: '/dash/admin', label: 'Admin', icon: Settings },
+  { path: '/dash/config', label: 'Config', icon: Wrench },
 ];
 
 interface DashboardLayoutProps {

@@ -178,7 +178,7 @@ export default function ExecutivePage() {
           subtitle="Análises e recomendações automáticas"
           isLoading={insightsLoading}
         >
-          <InsightsPanel insight={insights || null} />
+          <InsightsPanel insight={insights || null} orgId={orgId} scope="executive" />
         </ChartCard>
       </div>
     </div>
