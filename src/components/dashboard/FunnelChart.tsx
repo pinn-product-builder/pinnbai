@@ -25,10 +25,10 @@ const stageNameMap: Record<string, string> = {
   'remarketing': 'Remarketing',
 };
 
-// Cores únicas para cada estágio
+// Cores usando o tema laranja Pinn
 const stageColors: Record<string, string> = {
-  'novo': 'from-blue-500 to-blue-600',
-  'entrada': 'from-cyan-500 to-cyan-600',
+  'novo': 'from-pinn-orange-500 to-pinn-orange-600',
+  'entrada': 'from-pinn-gold-500 to-amber-500',
   'reuniao_agendada': 'from-emerald-500 to-emerald-600',
   'desmarque': 'from-red-400 to-red-500',
   'qualificado': 'from-green-500 to-green-600',
@@ -40,16 +40,16 @@ const stageColors: Record<string, string> = {
   'remarketing': 'from-pink-500 to-pink-600',
 };
 
-// Cores de fallback por índice
+// Cores de fallback por índice (usando tons quentes)
 const indexColors = [
-  'from-blue-500 to-blue-600',
-  'from-emerald-500 to-emerald-600',
-  'from-violet-500 to-violet-600',
+  'from-pinn-orange-500 to-pinn-orange-600',
+  'from-pinn-gold-500 to-amber-500',
   'from-amber-500 to-amber-600',
-  'from-cyan-500 to-cyan-600',
-  'from-pink-500 to-pink-600',
-  'from-orange-500 to-orange-600',
+  'from-orange-400 to-orange-500',
+  'from-yellow-500 to-yellow-600',
+  'from-emerald-500 to-emerald-600',
   'from-lime-500 to-lime-600',
+  'from-teal-500 to-teal-600',
 ];
 
 export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps) {
@@ -143,7 +143,7 @@ export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps)
                 </div>
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="max-w-xs">
+            <TooltipContent side="right" className="pinn-tooltip max-w-xs">
               <div className="space-y-1">
                 <p className="font-semibold">{displayName}</p>
                 <p className="text-xs text-muted-foreground">

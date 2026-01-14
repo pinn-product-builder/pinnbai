@@ -15,13 +15,13 @@ interface HeatmapChartProps {
 
 const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-// Cores quentes: do frio (azul) ao quente (vermelho/laranja)
+// Cores quentes usando o tema Pinn (laranja)
 const heatColors = [
-  { bg: 'bg-slate-800/30', border: 'border-slate-700/20', label: '0' },
-  { bg: 'bg-emerald-500/30', border: 'border-emerald-500/40', label: 'Baixo' },
-  { bg: 'bg-yellow-500/50', border: 'border-yellow-500/50', label: 'Médio' },
-  { bg: 'bg-orange-500/70', border: 'border-orange-500/60', label: 'Alto' },
-  { bg: 'bg-red-500/90', border: 'border-red-500/70', label: 'Máximo' },
+  { bg: 'bg-bg-2', border: 'border-border', label: '0' },
+  { bg: 'bg-pinn-orange-500/20', border: 'border-pinn-orange-500/30', label: 'Baixo' },
+  { bg: 'bg-pinn-orange-500/40', border: 'border-pinn-orange-500/50', label: 'Médio' },
+  { bg: 'bg-pinn-orange-500/60', border: 'border-pinn-orange-500/60', label: 'Alto' },
+  { bg: 'bg-pinn-orange-500/80', border: 'border-pinn-orange-500/70', label: 'Máximo' },
 ];
 
 export function HeatmapChart({ data, className }: HeatmapChartProps) {
@@ -95,7 +95,7 @@ export function HeatmapChart({ data, className }: HeatmapChartProps) {
                       </TooltipTrigger>
                       <TooltipContent 
                         side="top" 
-                        className="bg-popover border border-border shadow-xl p-3 min-w-[140px]"
+                        className="pinn-tooltip min-w-[140px]"
                       >
                         <div className="space-y-1.5">
                           <p className="font-semibold text-foreground text-sm">
@@ -139,7 +139,7 @@ export function HeatmapChart({ data, className }: HeatmapChartProps) {
                       )} 
                     />
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
+                  <TooltipContent side="top" className="pinn-tooltip text-xs">
                     <p className="font-medium">{color.label}</p>
                     <p className="text-muted-foreground">
                       {i === 0 ? 'Sem atividade' : 

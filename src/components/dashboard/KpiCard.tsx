@@ -176,8 +176,8 @@ export function KpiCard({
     },
     primary: {
       glow: 'glow-primary',
-      icon: 'text-pinn-cyan-500',
-      value: 'text-pinn-cyan-500',
+      icon: 'text-pinn-orange-500',
+      value: 'text-pinn-orange-500',
       accent: 'kpi-accent',
     },
     success: {
@@ -257,7 +257,7 @@ export function KpiCard({
                   <p className="font-medium text-text-1">{definition.title}</p>
                   <p className="text-xs text-text-2">{definition.definition}</p>
                   {definition.formula && (
-                    <p className="text-xs font-mono text-pinn-cyan-500 bg-pinn-cyan-500/10 px-2 py-1 rounded mt-1">
+                    <p className="text-xs font-mono text-pinn-orange-500 bg-pinn-orange-500/10 px-2 py-1 rounded mt-1">
                       {definition.formula}
                     </p>
                   )}
