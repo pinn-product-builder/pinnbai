@@ -8,7 +8,8 @@ import {
   TrendingUp,
   Target,
   Percent,
-  History
+  History,
+  ClipboardCheck
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
@@ -18,6 +19,7 @@ import { MeetingsTable } from '@/components/dashboard/MeetingsTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { InsightsHistory } from '@/components/dashboard/InsightsHistory';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
+import { DataValidationPanel } from '@/components/dashboard/DataValidationPanel';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
   useExecutiveKpis,
@@ -230,6 +232,11 @@ export default function ExecutivePage() {
         >
           <LeadsTable orgId={orgId} />
         </ChartCard>
+      </Section>
+
+      {/* Validação de Dados */}
+      <Section title="Validação de Dados" icon={<ClipboardCheck className="w-5 h-5" />}>
+        <DataValidationPanel orgId={orgId} />
       </Section>
 
       {/* Histórico de Insights */}
