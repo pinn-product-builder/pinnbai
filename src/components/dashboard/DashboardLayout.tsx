@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -11,7 +12,9 @@ import {
   Wrench,
   Monitor,
   X,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
@@ -46,6 +49,36 @@ const PinnLogoIcon = ({ className }: { className?: string }) => (
     />
   </svg>
 );
+
+// Theme Toggle Component
+function ThemeToggle({ collapsed }: { collapsed: boolean }) {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+            "text-text-2 hover:text-text-1 hover:bg-bg-2"
+          )}
+        >
+          {isDark ? (
+            <Sun className="w-5 h-5 flex-shrink-0 text-pinn-gold-500" />
+          ) : (
+            <Moon className="w-5 h-5 flex-shrink-0 text-pinn-orange-500" />
+          )}
+          {!collapsed && <span>{isDark ? 'Modo Claro' : 'Modo Escuro'}</span>}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="pinn-tooltip">
+        <p>Alternar tema</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -198,8 +231,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          {/* Bottom Actions: View Mode + Logout */}
+          {/* Bottom Actions: Theme Toggle + View Mode + Logout */}
           <div className="absolute bottom-16 left-0 right-0 px-3 space-y-2">
+            {/* Theme Toggle Button */}
+            <ThemeToggle collapsed={collapsed} />
+
             {/* View Mode Button */}
             <Tooltip>
               <TooltipTrigger asChild>
