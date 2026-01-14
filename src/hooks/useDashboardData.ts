@@ -84,7 +84,6 @@ export function useFunnelCurrent(orgId: string) {
       const { data, error } = await supabase
         .from('vw_funnel_current_v3')
         .select('stage_group,stage_name,stage_order,leads')
-        .eq('org_id', orgId)
         .order('stage_order', { ascending: true });
       
       if (error) throw error;
