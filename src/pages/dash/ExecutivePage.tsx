@@ -32,7 +32,7 @@ export default function ExecutivePage() {
   const { data: daily, isLoading: dailyLoading } = useExecutiveDaily(orgId);
   const { data: funnel, isLoading: funnelLoading } = useFunnelCurrent(orgId);
   const { data: meetings, isLoading: meetingsLoading } = useMeetingsUpcoming(orgId);
-  const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'executivo');
+  const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'executive');
 
   const handleStageClick = (stage: any) => {
     console.log('Stage clicked:', stage);

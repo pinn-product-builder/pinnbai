@@ -49,12 +49,17 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
     parsedPayload = insight.payload as Record<string, unknown>;
   }
 
-  const alerts = parsedPayload.alerts as Array<{ type: string; message: string }> | undefined;
-  const recommendations = parsedPayload.recommendations as string[] | undefined;
-  const anomalies = parsedPayload.anomalies as string[] | undefined;
+  const alerts = parsedPayload.alerts as Array<{ type?: string; text?: string; message?: string }> | undefined;
+  const recommendations = parsedPayload.recommendations as Array<{ text: string } | string> | undefined;
+  const anomalies = parsedPayload.anomalies as Array<{ text: string } | string> | undefined;
   const summary = parsedPayload.summary as string | undefined;
   const text = parsedPayload.text as string | undefined;
-  const insights = parsedPayload.insights as string[] | undefined;
+  const insightsData = parsedPayload.insights as Array<{ text: string } | string> | undefined;
+
+  // Helper para extrair texto de item (pode ser string ou { text: string })
+  const getItemText = (item: { text: string } | string): string => {
+    return typeof item === 'string' ? item : item.text;
+  };
 
   const getAlertIcon = (type: string) => {
     switch (type) {
@@ -91,16 +96,27 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
   }
 
   // Se tiver array de insights genéricos
-  if (insights && insights.length > 0) {
+  if (insightsData && insightsData.length > 0) {
     return (
       <div className="space-y-2">
-        {insights.map((item, i) => (
+        {insightsData.map((item, i) => (
           <div
             key={i}
             className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5"
           >
             <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-            <p className="text-sm">{item}</p>
+            <p className="text-sm">{getItemText(item)}</p>
+          </div>
+        ))}
+        
+        {/* Recommendations inline */}
+        {recommendations && recommendations.length > 0 && recommendations.map((rec, i) => (
+          <div
+            key={`rec-${i}`}
+            className="flex items-start gap-3 p-3 rounded-lg border border-success/30 bg-success/5"
+          >
+            <Lightbulb className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{getItemText(rec)}</p>
           </div>
         ))}
       </div>
@@ -122,11 +138,11 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
                 key={i}
                 className={cn(
                   "flex items-start gap-3 p-3 rounded-lg border",
-                  getAlertStyle(alert.type)
+                  getAlertStyle(alert.type || 'info')
                 )}
               >
-                {getAlertIcon(alert.type)}
-                <p className="text-sm">{alert.message}</p>
+                {getAlertIcon(alert.type || 'info')}
+                <p className="text-sm">{alert.text || alert.message}</p>
               </div>
             ))}
           </div>
@@ -147,7 +163,7 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
                 className="flex items-start gap-3 p-3 rounded-lg border border-success/30 bg-success/5"
               >
                 <Lightbulb className="w-4 h-4 text-success flex-shrink-0 mt-0.5" />
-                <p className="text-sm">{rec}</p>
+                <p className="text-sm">{getItemText(rec)}</p>
               </div>
             ))}
           </div>
@@ -168,7 +184,7 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
                 className="flex items-start gap-3 p-3 rounded-lg border border-warning/30 bg-warning/5"
               >
                 <TrendingDown className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-                <p className="text-sm">{anomaly}</p>
+                <p className="text-sm">{getItemText(anomaly)}</p>
               </div>
             ))}
           </div>
@@ -176,7 +192,7 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
       )}
 
       {/* Fallback: se não tiver nenhum campo conhecido, mostra o JSON */}
-      {!alerts?.length && !recommendations?.length && !anomalies?.length && (
+      {!alerts?.length && !recommendations?.length && !anomalies?.length && !insightsData?.length && (
         <div className="flex items-start gap-3 p-4 rounded-lg border border-muted/30 bg-muted/5">
           <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <pre className="text-sm whitespace-pre-wrap overflow-auto">
