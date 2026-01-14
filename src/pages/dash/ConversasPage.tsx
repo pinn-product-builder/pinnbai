@@ -80,7 +80,7 @@ export default function ConversasPage() {
 
         <KpiGrid columns={4}>
           <KpiCard
-            title="Conv. Lead → Mensagem"
+            title="Mensagens por Lead"
             value={kpis?.conv_lead_to_msg_30d || 0}
             kpiKey="conv_lead_to_msg_30d"
             icon={<Percent className="w-5 h-5" />}
