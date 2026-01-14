@@ -8,8 +8,7 @@ import {
   TrendingUp,
   Target,
   Percent,
-  History,
-  ClipboardCheck
+  Calendar
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
@@ -17,9 +16,8 @@ import { DailyChart } from '@/components/dashboard/Charts';
 import { FunnelChart } from '@/components/dashboard/FunnelChart';
 import { MeetingsTable } from '@/components/dashboard/MeetingsTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
-import { InsightsHistory } from '@/components/dashboard/InsightsHistory';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
-import { DataValidationPanel } from '@/components/dashboard/DataValidationPanel';
+import { MonthlyMeetingsPanel } from '@/components/dashboard/MonthlyMeetingsPanel';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
   useExecutiveKpis,
@@ -27,7 +25,6 @@ import {
   useFunnelCurrent,
   useMeetingsUpcoming,
   useInsights,
-  useInsightsHistory,
   useLeadsCount,
 } from '@/hooks/useDashboardData';
 
@@ -51,7 +48,6 @@ export default function ExecutivePage() {
   const { data: funnel, isLoading: funnelLoading } = useFunnelCurrent(orgId);
   const { data: meetings, isLoading: meetingsLoading } = useMeetingsUpcoming(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'executive');
-  const { data: insightsHistory, isLoading: historyLoading } = useInsightsHistory(orgId);
   const { data: leadsCount, isLoading: leadsCountLoading } = useLeadsCount();
 
   const handleStageClick = (stage: any) => {
@@ -234,20 +230,14 @@ export default function ExecutivePage() {
         </ChartCard>
       </Section>
 
-      {/* Validação de Dados */}
-      <Section title="Validação de Dados" icon={<ClipboardCheck className="w-5 h-5" />}>
-        <DataValidationPanel orgId={orgId} />
-      </Section>
-
-      {/* Histórico de Insights */}
-      <Section title="Histórico de Insights" icon={<History className="w-5 h-5" />}>
+      {/* Reuniões do Mês */}
+      <Section title="Reuniões do Mês" icon={<Calendar className="w-5 h-5" />}>
         <ChartCard
-          title="Todos os Insights"
-          subtitle="Histórico completo de análises geradas pela IA"
-          isLoading={historyLoading}
-          isEmpty={!insightsHistory?.length}
+          title="Controle de Reuniões"
+          subtitle="Marque as reuniões realizadas para acompanhar a taxa de comparecimento"
+          isLoading={false}
         >
-          <InsightsHistory insights={insightsHistory || []} />
+          <MonthlyMeetingsPanel orgId={orgId} />
         </ChartCard>
       </Section>
     </div>
