@@ -1,18 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   Calendar, 
-  ExternalLink, 
   Video, 
-  CheckCircle2, 
-  Clock, 
-  User,
-  Phone
+  CheckCircle2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,7 +25,11 @@ interface MonthlyMeeting {
   lead_name: string;
   lead_email: string;
   lead_phone: string;
-  is_done?: boolean;
+}
+
+interface MeetingAttendance {
+  meeting_id: string;
+  attended: boolean;
 }
 
 // Hook para buscar reuniões do mês
@@ -58,35 +57,101 @@ export function useMonthlyMeetings(orgId: string) {
   });
 }
 
+// Hook para buscar status de comparecimento
+function useMeetingAttendance(orgId: string) {
+  return useQuery({
+    queryKey: ['meeting-attendance', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('meeting_attendance')
+        .select('meeting_id, attended')
+        .eq('org_id', orgId)
+        .eq('attended', true);
+      
+      if (error) throw error;
+      
+      // Retorna um Set dos IDs das reuniões realizadas
+      const attendedIds = new Set<string>();
+      data?.forEach((item: MeetingAttendance) => {
+        if (item.attended) attendedIds.add(item.meeting_id);
+      });
+      return attendedIds;
+    },
+    enabled: !!orgId,
+  });
+}
+
+// Hook para alternar status de comparecimento
+function useToggleAttendance(orgId: string) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ meetingId, attended }: { meetingId: string; attended: boolean }) => {
+      if (attended) {
+        // Marcar como realizada (upsert)
+        const { error } = await supabase
+          .from('meeting_attendance')
+          .upsert({
+            meeting_id: meetingId,
+            org_id: orgId,
+            attended: true,
+            marked_at: new Date().toISOString()
+          }, {
+            onConflict: 'meeting_id,org_id'
+          });
+        
+        if (error) throw error;
+      } else {
+        // Desmarcar (atualizar para false)
+        const { error } = await supabase
+          .from('meeting_attendance')
+          .update({ attended: false, marked_at: new Date().toISOString() })
+          .eq('meeting_id', meetingId)
+          .eq('org_id', orgId);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, { attended }) => {
+      // Invalidar queries para atualizar KPIs e contagens
+      queryClient.invalidateQueries({ queryKey: ['meeting-attendance', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['executive-kpis'] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-meetings'] });
+      
+      if (attended) {
+        toast.success('Reunião marcada como realizada!');
+      } else {
+        toast.info('Reunião desmarcada');
+      }
+    },
+    onError: (error) => {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Erro ao atualizar status da reunião');
+    }
+  });
+}
+
 interface MonthlyMeetingsPanelProps {
   orgId: string;
   compact?: boolean;
 }
 
 export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetingsPanelProps) {
-  const { data: meetings, isLoading } = useMonthlyMeetings(orgId);
-  const [markedDone, setMarkedDone] = useState<Set<string>>(new Set());
+  const { data: meetings, isLoading: meetingsLoading } = useMonthlyMeetings(orgId);
+  const { data: attendedIds, isLoading: attendanceLoading } = useMeetingAttendance(orgId);
+  const toggleMutation = useToggleAttendance(orgId);
   
-  // Por enquanto, armazenamos localmente. Para persistir, precisaria de uma coluna na tabela
-  const toggleDone = (meetingId: string) => {
-    setMarkedDone(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(meetingId)) {
-        newSet.delete(meetingId);
-        toast.info('Reunião marcada como pendente');
-      } else {
-        newSet.add(meetingId);
-        toast.success('Reunião marcada como realizada!');
-      }
-      return newSet;
-    });
+  const isLoading = meetingsLoading || attendanceLoading;
+  
+  const handleToggle = (meetingId: string, currentlyDone: boolean) => {
+    toggleMutation.mutate({ meetingId, attended: !currentlyDone });
   };
   
   if (isLoading) {
     return (
       <div className="space-y-2">
         {[1, 2, 3].map(i => (
-          <Skeleton key={i} className="h-16 w-full rounded-lg" />
+          <Skeleton key={i} className="h-14 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -102,9 +167,8 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
   }
   
   const now = new Date();
-  const doneCount = markedDone.size;
+  const doneCount = attendedIds?.size || 0;
   const totalCount = meetings.length;
-  const displayMeetings = compact ? meetings.slice(0, 5) : meetings;
   
   return (
     <div className="space-y-3">
@@ -125,12 +189,16 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
         </div>
       </div>
       
-      {/* Meetings List - Compact */}
+      {/* Meetings List - All meetings, scrollable */}
       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-        {displayMeetings.map((meeting) => {
+        {meetings.map((meeting) => {
           const startDate = parseISO(meeting.start_at);
           const isPast = startDate < now;
-          const isDone = markedDone.has(meeting.id);
+          const isDone = attendedIds?.has(meeting.id) || false;
+          const isToggling = toggleMutation.isPending;
+          
+          // Determinar nome a exibir
+          const displayName = meeting.lead_name?.trim() || 'Sem nome';
           
           return (
             <div 
@@ -150,7 +218,7 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">
-                  {meeting.lead_name || 'Lead sem nome'}
+                  {displayName}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {format(startDate, 'HH:mm')} • {meeting.lead_phone || 'Sem telefone'}
@@ -167,13 +235,14 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
                   </Button>
                 )}
                 <Button
-                  variant={isDone ? "ghost" : "ghost"}
+                  variant="ghost"
                   size="icon"
                   className={cn(
                     "h-7 w-7",
                     isDone && "text-green-600"
                   )}
-                  onClick={() => toggleDone(meeting.id)}
+                  onClick={() => handleToggle(meeting.id, isDone)}
+                  disabled={isToggling}
                 >
                   <CheckCircle2 className={cn("w-4 h-4", isDone && "fill-current")} />
                 </Button>
@@ -182,12 +251,6 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
           );
         })}
       </div>
-      
-      {compact && meetings.length > 5 && (
-        <p className="text-xs text-center text-muted-foreground">
-          +{meetings.length - 5} reuniões
-        </p>
-      )}
     </div>
   );
 }
