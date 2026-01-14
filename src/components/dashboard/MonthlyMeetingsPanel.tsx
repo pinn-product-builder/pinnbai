@@ -5,7 +5,8 @@ import { ptBR } from 'date-fns/locale';
 import { 
   Calendar, 
   Video, 
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
@@ -20,16 +21,40 @@ interface MonthlyMeeting {
   end_at: string;
   status: string;
   summary: string;
+  description: string;
   meeting_url: string;
   html_link: string;
   lead_name: string;
   lead_email: string;
   lead_phone: string;
+  provider_event_id: string;
 }
 
 interface MeetingAttendance {
   meeting_id: string;
   attended: boolean;
+}
+
+// Emails e nomes a filtrar
+const EXCLUDED_PATTERNS = [
+  'recesso',
+  'ph553479@gmail.com',
+  'passisventura@gmail.com',
+  '=passisventura@gmail.com',
+  'pht544939@gmail.com',
+  'pedro@outlook.com',
+  'pedro@ponto.com',
+  'roberto arruda'
+];
+
+function shouldExcludeMeeting(meeting: MonthlyMeeting): boolean {
+  const summary = (meeting.summary || '').toLowerCase();
+  const description = (meeting.description || '').toLowerCase();
+  
+  return EXCLUDED_PATTERNS.some(pattern => 
+    summary.includes(pattern.toLowerCase()) || 
+    description.includes(pattern.toLowerCase())
+  );
 }
 
 // Hook para buscar reuniões do mês
@@ -45,13 +70,16 @@ export function useMonthlyMeetings(orgId: string) {
         .from('vw_calendar_events_current_v3')
         .select('*')
         .eq('org_id', orgId)
-        .neq('status', 'cancelled')
+        .eq('status', 'confirmed')
         .gte('start_at', monthStart)
         .lte('start_at', monthEnd)
         .order('start_at', { ascending: true });
       
       if (error) throw error;
-      return data as MonthlyMeeting[];
+      
+      // Filtrar reuniões excluídas
+      const filtered = (data as MonthlyMeeting[]).filter(m => !shouldExcludeMeeting(m));
+      return filtered;
     },
     enabled: !!orgId,
   });
@@ -70,7 +98,6 @@ function useMeetingAttendance(orgId: string) {
       
       if (error) throw error;
       
-      // Retorna um Set dos IDs das reuniões realizadas
       const attendedIds = new Set<string>();
       data?.forEach((item: MeetingAttendance) => {
         if (item.attended) attendedIds.add(item.meeting_id);
@@ -88,7 +115,6 @@ function useToggleAttendance(orgId: string) {
   return useMutation({
     mutationFn: async ({ meetingId, attended }: { meetingId: string; attended: boolean }) => {
       if (attended) {
-        // Marcar como realizada (upsert)
         const { error } = await supabase
           .from('meeting_attendance')
           .upsert({
@@ -102,7 +128,6 @@ function useToggleAttendance(orgId: string) {
         
         if (error) throw error;
       } else {
-        // Desmarcar (atualizar para false)
         const { error } = await supabase
           .from('meeting_attendance')
           .update({ attended: false, marked_at: new Date().toISOString() })
@@ -113,7 +138,6 @@ function useToggleAttendance(orgId: string) {
       }
     },
     onSuccess: (_, { attended }) => {
-      // Invalidar queries para atualizar KPIs e contagens
       queryClient.invalidateQueries({ queryKey: ['meeting-attendance', orgId] });
       queryClient.invalidateQueries({ queryKey: ['executive-kpis'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-meetings'] });
@@ -129,6 +153,26 @@ function useToggleAttendance(orgId: string) {
       toast.error('Erro ao atualizar status da reunião');
     }
   });
+}
+
+// Extrair link da reunião do description ou html_link
+function extractMeetingLink(meeting: MonthlyMeeting): string | null {
+  // Primeiro tenta html_link
+  if (meeting.html_link) return meeting.html_link;
+  
+  // Depois meeting_url
+  if (meeting.meeting_url) return meeting.meeting_url;
+  
+  // Tenta extrair do description (Google Meet links)
+  if (meeting.description) {
+    const meetMatch = meeting.description.match(/https:\/\/meet\.google\.com\/[a-z-]+/i);
+    if (meetMatch) return meetMatch[0];
+    
+    const zoomMatch = meeting.description.match(/https:\/\/[a-z]*\.?zoom\.us\/[^\s<"]+/i);
+    if (zoomMatch) return zoomMatch[0];
+  }
+  
+  return null;
 }
 
 interface MonthlyMeetingsPanelProps {
@@ -167,25 +211,32 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
   }
   
   const now = new Date();
-  const doneCount = attendedIds?.size || 0;
+  const doneCount = meetings.filter(m => attendedIds?.has(m.id)).length;
   const totalCount = meetings.length;
+  const attendanceRate = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
   
   return (
     <div className="space-y-3">
-      {/* Summary */}
+      {/* Summary with attendance rate */}
       <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-sm">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="font-medium">
-            {format(now, "MMM/yy", { locale: ptBR })}
+            {format(now, "MMMM/yy", { locale: ptBR })}
           </span>
           <Badge variant="secondary" className="text-xs">
             {totalCount} reuniões
           </Badge>
         </div>
-        <div className="flex items-center gap-1 text-xs">
-          <CheckCircle2 className="w-3 h-3 text-green-500" />
-          <span>{doneCount}/{totalCount}</span>
+        <div className="flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3 text-green-500" />
+            <span>{doneCount}/{totalCount}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-blue-500" />
+            <span className="font-semibold text-blue-600">{attendanceRate}%</span>
+          </div>
         </div>
       </div>
       
@@ -197,8 +248,9 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
           const isDone = attendedIds?.has(meeting.id) || false;
           const isToggling = toggleMutation.isPending;
           
-          // Determinar nome a exibir
-          const displayName = meeting.lead_name?.trim() || 'Sem nome';
+          // Usar summary como nome do lead
+          const displayName = meeting.summary?.trim() || 'Sem nome';
+          const meetingLink = extractMeetingLink(meeting);
           
           return (
             <div 
@@ -221,15 +273,15 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
                   {displayName}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {format(startDate, 'HH:mm')} • {meeting.lead_phone || 'Sem telefone'}
+                  {format(startDate, 'HH:mm')}
                 </p>
               </div>
               
               {/* Actions */}
               <div className="flex items-center gap-1 flex-shrink-0">
-                {(meeting.meeting_url || meeting.html_link) && (
+                {meetingLink && (
                   <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                    <a href={meeting.meeting_url || meeting.html_link} target="_blank" rel="noopener noreferrer">
+                    <a href={meetingLink} target="_blank" rel="noopener noreferrer" title="Abrir reunião">
                       <Video className="w-3.5 h-3.5" />
                     </a>
                   </Button>
@@ -243,6 +295,7 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
                   )}
                   onClick={() => handleToggle(meeting.id, isDone)}
                   disabled={isToggling}
+                  title={isDone ? "Desmarcar como realizada" : "Marcar como realizada"}
                 >
                   <CheckCircle2 className={cn("w-4 h-4", isDone && "fill-current")} />
                 </Button>
