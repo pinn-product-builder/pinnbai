@@ -66,7 +66,7 @@ export function useExecutiveDaily(orgId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_dashboard_daily_60d_v3')
-        .select('*')
+        .select('day,leads_new,msg_in,spend,meetings_scheduled')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
       
