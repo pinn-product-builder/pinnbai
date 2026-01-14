@@ -190,20 +190,35 @@ export function useMeetingsUpcoming(orgId: string) {
   });
 }
 
-// Conversations hooks
-export function useConversationsKpis(orgId: string, period: '7d' | '30d') {
+// Conversations hooks - Usando vw_dashboard_kpis_30d_v3 como fonte principal
+export function useConversationsKpis(orgId: string) {
   return useQuery({
-    queryKey: ['conversations-kpis', orgId, period],
+    queryKey: ['conversations-kpis', orgId],
     queryFn: async () => {
-      const view = period === '7d' ? 'vw_agente_kpis_7d' : 'vw_agente_kpis_30d';
+      // Usar a mesma view da tela executiva que tem os dados corretos
       const { data, error } = await supabase
-        .from(view)
+        .from('vw_dashboard_kpis_30d_v3')
         .select('*')
         .eq('org_id', orgId)
         .maybeSingle();
       
       if (error) throw error;
-      return data as (ConversationKpis7d | ConversationKpis30d) | null;
+      
+      // Retornar todos os dados disponíveis
+      return data as {
+        org_id: string;
+        leads_total_30d: number;
+        msg_in_30d: number;
+        meetings_scheduled_30d: number;
+        meetings_cancelled_30d: number;
+        meetings_total_30d: number;
+        spend_30d: number;
+        cpl_30d: number;
+        cpm_meeting_30d: number;
+        conv_lead_to_msg_30d: number;
+        conv_lead_to_meeting_30d: number;
+        conv_msg_to_meeting_30d: number;
+      } | null;
     },
     enabled: !!orgId,
   });

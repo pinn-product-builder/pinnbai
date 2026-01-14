@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Users, Target } from 'lucide-react';
+import { MessageSquare, Users, Target, Percent, CalendarCheck, TrendingUp } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
 import { DailyChart, HourlyChart } from '@/components/dashboard/Charts';
@@ -18,8 +18,7 @@ export default function ConversasPage() {
   const { filters } = useGlobalFilters();
   const orgId = filters.orgId;
 
-  const { data: kpis7d, isLoading: kpis7dLoading } = useConversationsKpis(orgId, '7d');
-  const { data: kpis30d, isLoading: kpis30dLoading } = useConversationsKpis(orgId, '30d');
+  const { data: kpis, isLoading: kpisLoading } = useConversationsKpis(orgId);
   const { data: daily, isLoading: dailyLoading } = useConversationsDaily(orgId);
   const { data: byHour, isLoading: byHourLoading } = useConversationsByHour(orgId);
   const { data: heatmap, isLoading: heatmapLoading } = useConversationsHeatmap(orgId);
@@ -42,38 +41,74 @@ export default function ConversasPage() {
         description="Análise de mensagens e engajamento"
       />
 
-      {/* KPIs */}
-      <Section title="Indicadores de Mensagens">
+      {/* KPIs de Mensagens */}
+      <Section title="Indicadores de Mensagens (30d)">
         <KpiGrid columns={4}>
           <KpiCard
-            title="Mensagens Recebidas (7d)"
-            value={(kpis7d as any)?.msg_in_7d || 0}
-            kpiKey="msg_in_7d"
-            icon={<MessageSquare className="w-5 h-5" />}
-            variant="primary"
-            isLoading={kpis7dLoading}
-          />
-          <KpiCard
-            title="Leads com Mensagem (7d)"
-            value={(kpis7d as any)?.leads_7d || 0}
-            kpiKey="leads_7d"
-            icon={<Users className="w-5 h-5" />}
-            isLoading={kpis7dLoading}
-          />
-          <KpiCard
-            title="Mensagens Recebidas (30d)"
-            value={(kpis30d as any)?.msg_in_30d || 0}
+            title="Mensagens Recebidas"
+            value={kpis?.msg_in_30d || 0}
             kpiKey="msg_in_30d"
             icon={<MessageSquare className="w-5 h-5" />}
-            variant="success"
-            isLoading={kpis30dLoading}
+            variant="primary"
+            isLoading={kpisLoading}
           />
           <KpiCard
-            title="Leads com Mensagem (30d)"
-            value={(kpis30d as any)?.leads_30d || 0}
-            kpiKey="leads_30d"
+            title="Leads Ativos"
+            value={kpis?.leads_total_30d || 0}
+            kpiKey="leads_total_30d"
             icon={<Users className="w-5 h-5" />}
-            isLoading={kpis30dLoading}
+            isLoading={kpisLoading}
+          />
+          <KpiCard
+            title="Reuniões Agendadas"
+            value={kpis?.meetings_scheduled_30d || 0}
+            kpiKey="meetings_scheduled_30d"
+            icon={<CalendarCheck className="w-5 h-5" />}
+            variant="success"
+            isLoading={kpisLoading}
+          />
+          <KpiCard
+            title="Total Reuniões"
+            value={kpis?.meetings_total_30d || 0}
+            kpiKey="meetings_total_30d"
+            icon={<CalendarCheck className="w-5 h-5" />}
+            isLoading={kpisLoading}
+          />
+        </KpiGrid>
+
+        <KpiGrid columns={4}>
+          <KpiCard
+            title="Conv. Lead → Mensagem"
+            value={kpis?.conv_lead_to_msg_30d || 0}
+            kpiKey="conv_lead_to_msg_30d"
+            icon={<Percent className="w-5 h-5" />}
+            format="percent"
+            variant="success"
+            isLoading={kpisLoading}
+          />
+          <KpiCard
+            title="Conv. Lead → Reunião"
+            value={kpis?.conv_lead_to_meeting_30d || 0}
+            kpiKey="conv_lead_to_meeting_30d"
+            icon={<Percent className="w-5 h-5" />}
+            format="percent"
+            variant="success"
+            isLoading={kpisLoading}
+          />
+          <KpiCard
+            title="Conv. Mensagem → Reunião"
+            value={kpis?.conv_msg_to_meeting_30d || 0}
+            kpiKey="conv_msg_to_meeting_30d"
+            icon={<TrendingUp className="w-5 h-5" />}
+            format="percent"
+            isLoading={kpisLoading}
+          />
+          <KpiCard
+            title="Custo por Reunião"
+            value={kpis?.cpm_meeting_30d || 0}
+            kpiKey="cpm_meeting_30d"
+            format="currency"
+            isLoading={kpisLoading}
           />
         </KpiGrid>
       </Section>
