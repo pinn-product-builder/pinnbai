@@ -43,17 +43,17 @@ const isDarkMode = () => {
 const getAxisProps = () => {
   const dark = isDarkMode();
   return {
-    stroke: dark ? 'hsl(27, 100%, 50% / 0.22)' : 'hsl(30, 20%, 80%)',
+    stroke: dark ? 'hsl(27, 100%, 50% / 0.25)' : 'hsl(30, 20%, 80%)',
     fontSize: 11,
     tickLine: false,
     axisLine: false,
-    tick: { fill: dark ? 'hsl(35, 30%, 95% / 0.55)' : 'hsl(20, 20%, 40%)' }
+    tick: { fill: dark ? 'hsl(35, 25%, 78%)' : 'hsl(20, 20%, 40%)' }
   };
 };
 
 const getGridColor = () => {
   const dark = isDarkMode();
-  return dark ? 'rgba(246, 241, 234, 0.06)' : 'rgba(0, 0, 0, 0.08)';
+  return dark ? 'rgba(246, 241, 234, 0.12)' : 'rgba(0, 0, 0, 0.08)';
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
