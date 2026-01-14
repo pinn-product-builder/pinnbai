@@ -10,40 +10,30 @@ import { cn } from '@/lib/utils';
 // Pinn Logo SVG Component - matching original design
 const PinnLogo = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center gap-2.5", className)}>
-    {/* Icon - S-shaped interlocking brackets */}
+    {/* Icon - Two interlocking angular brackets */}
     <svg 
-      viewBox="0 0 32 32" 
-      className="w-7 h-7"
+      viewBox="0 0 36 36" 
+      className="w-8 h-8"
       fill="none"
     >
-      {/* Top bracket - going down-right */}
+      {/* Top-right bracket (lighter orange) */}
       <path 
-        d="M6 6 L14 6 L14 10 L10 10 L10 16 L18 16" 
-        stroke="url(#pinnGradient)" 
-        strokeWidth="3.5" 
+        d="M8 4 L8 12 L16 20" 
+        stroke="#FF8A3D" 
+        strokeWidth="4" 
         strokeLinecap="round" 
         strokeLinejoin="round"
         fill="none"
       />
-      {/* Bottom bracket - going up-left */}
+      {/* Bottom-left bracket (darker orange) */}
       <path 
-        d="M26 26 L18 26 L18 22 L22 22 L22 16 L14 16" 
-        stroke="url(#pinnGradient2)" 
-        strokeWidth="3.5" 
+        d="M28 32 L28 24 L20 16" 
+        stroke="#D45A0A" 
+        strokeWidth="4" 
         strokeLinecap="round" 
         strokeLinejoin="round"
         fill="none"
       />
-      <defs>
-        <linearGradient id="pinnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF8A3D" />
-          <stop offset="100%" stopColor="#E85D04" />
-        </linearGradient>
-        <linearGradient id="pinnGradient2" x1="100%" y1="100%" x2="0%" y2="0%">
-          <stop offset="0%" stopColor="#C44D04" />
-          <stop offset="100%" stopColor="#E85D04" />
-        </linearGradient>
-      </defs>
     </svg>
     {/* Text */}
     <span className="text-xl font-bold text-white tracking-tight">Pinn</span>
