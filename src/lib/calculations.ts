@@ -31,8 +31,9 @@ export function calculateTaxaEntrada(entradas: number, leads: number): number {
 }
 
 // ===== CALCULATE TAXA ATENDIMENTO =====
+// Retorna como proporção (0-1) para compatibilidade com formatPercent
 export function calculateTaxaAtendimento(answered: number, total: number): number {
-  return calculateConversionRatePercent(answered, total);
+  return calculateConversionRate(answered, total);
 }
 
 // ===== CALCULATE AVERAGE =====
