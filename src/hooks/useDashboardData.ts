@@ -401,49 +401,50 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
       
       if (funnelError) throw funnelError;
       
-      // Buscar leads da tabela leads_v2 normalizada
+      // Buscar leads da tabela leads_v2 normalizada (com kommo_lead_id para identificar entradas)
       const [leadsCurrentResult, leadsPreviousResult] = await Promise.all([
         supabase
           .from('leads_v2')
-          .select('id, created_at')
+          .select('id, created_at, kommo_lead_id')
           .eq('org_id', orgId)
           .gte('created_at', currentStartStr),
         supabase
           .from('leads_v2')
-          .select('id, created_at')
+          .select('id, created_at, kommo_lead_id')
           .eq('org_id', orgId)
           .gte('created_at', previousStartStr)
           .lt('created_at', currentStartStr)
       ]);
       
-      // Contar leads da tabela normalizada
+      // Contar leads e entradas (entrada = tem kommo_lead_id, significa que entrou no chat)
       const currentLeads = leadsCurrentResult.data?.length || 0;
+      const currentEntradas = leadsCurrentResult.data?.filter(l => l.kommo_lead_id !== null).length || 0;
       const previousLeads = leadsPreviousResult.data?.length || 0;
+      const previousEntradas = leadsPreviousResult.data?.filter(l => l.kommo_lead_id !== null).length || 0;
       
-      // Separar dados do período atual e anterior para custos, entradas e reuniões
+      // Separar dados do período atual e anterior para custos e reuniões
       const currentFunnel = (funnelData || []).filter(row => row.dia >= currentStartStr);
       const previousFunnel = (funnelData || []).filter(row => row.dia >= previousStartStr && row.dia <= previousEndStr);
       
-      // Função para agregar custos, entradas e reuniões
+      // Função para agregar custos e reuniões
       const aggregateFunnel = (rows: typeof funnelData) => rows!.reduce((acc, row) => {
         acc.spend += Number(row.custo_total) || 0;
-        acc.entradas += Number(row.entrada_total) || 0;
         acc.meetings_booked += Number(row.reuniao_agendada_total) || 0;
         acc.meetings_done += Number(row.reuniao_realizada_total) || 0;
         return acc;
-      }, { spend: 0, entradas: 0, meetings_booked: 0, meetings_done: 0 });
+      }, { spend: 0, meetings_booked: 0, meetings_done: 0 });
       
       const currentAgg = aggregateFunnel(currentFunnel);
       const previousAgg = aggregateFunnel(previousFunnel);
       
-      // Calcular métricas derivadas (usando leads da leads_v2)
+      // Calcular métricas derivadas (usando leads e entradas da leads_v2)
       const cpl = currentLeads > 0 ? currentAgg.spend / currentLeads : 0;
       const cpMeeting = currentAgg.meetings_booked > 0 ? currentAgg.spend / currentAgg.meetings_booked : 0;
-      const taxaEntrada = currentLeads > 0 ? (currentAgg.entradas / currentLeads) * 100 : 0;
+      const taxaEntrada = currentLeads > 0 ? (currentEntradas / currentLeads) * 100 : 0;
       
       const prevCpl = previousLeads > 0 ? previousAgg.spend / previousLeads : 0;
       const prevCpMeeting = previousAgg.meetings_booked > 0 ? previousAgg.spend / previousAgg.meetings_booked : 0;
-      const prevTaxaEntrada = previousLeads > 0 ? (previousAgg.entradas / previousLeads) * 100 : 0;
+      const prevTaxaEntrada = previousLeads > 0 ? (previousEntradas / previousLeads) * 100 : 0;
       
       // Função para calcular variação percentual
       const calcChange = (curr: number, prev: number) => {
@@ -455,7 +456,7 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
       const changes = {
         spend: calcChange(currentAgg.spend, previousAgg.spend),
         leads: calcChange(currentLeads, previousLeads),
-        entradas: calcChange(currentAgg.entradas, previousAgg.entradas),
+        entradas: calcChange(currentEntradas, previousEntradas),
         cpl: calcChange(cpl, prevCpl),
         meetings_booked: calcChange(currentAgg.meetings_booked, previousAgg.meetings_booked),
         meetings_done: calcChange(currentAgg.meetings_done, previousAgg.meetings_done),
@@ -469,7 +470,7 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
       return {
         spend_total: currentAgg.spend,
         leads: currentLeads,
-        entradas: currentAgg.entradas,
+        entradas: currentEntradas,
         cpl: cpl,
         meetings_booked: currentAgg.meetings_booked,
         meetings_done: currentAgg.meetings_done,
