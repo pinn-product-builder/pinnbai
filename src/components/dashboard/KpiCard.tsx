@@ -161,7 +161,10 @@ export function KpiCard({
           minimumFractionDigits: 2,
         }).format(value);
       case 'percent':
-        return `${value.toFixed(1)}%`;
+        // Se o valor for <= 1, assume que é proporção decimal (0.43 = 43%)
+        // Se for > 1, assume que já está em porcentagem
+        const percentValue = value <= 1 ? value * 100 : value;
+        return `${percentValue.toFixed(1)}%`;
       default:
         return new Intl.NumberFormat('pt-BR').format(value);
     }
