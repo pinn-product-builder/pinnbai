@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Phone, Target, Clock, PhoneCall, Timer, DollarSign, Percent, TrendingUp, Calendar } from 'lucide-react';
+import { Phone, Target, Clock, PhoneCall, Timer, DollarSign, Percent, TrendingUp, Calendar, PhoneOff } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
@@ -8,11 +8,14 @@ import { DailyChart, AccumulatedChart } from '@/components/dashboard/Charts';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
   useCallsKpis,
   useCallsDaily,
   useCallsLast50,
+  useCallsEndedReasons,
   useInsights,
 } from '@/hooks/useDashboardData';
 import type { CallEvent } from '@/types/dashboard';
@@ -26,6 +29,45 @@ interface DailyCallData {
   avg_minutes: number;
   total_spent_usd: number;
 }
+
+// Mapeamento de motivos de finalização para português
+const endedReasonLabels: Record<string, string> = {
+  'customer-ended-call': 'Cliente encerrou',
+  'voicemail': 'Correio de voz',
+  'silence-timed-out': 'Timeout por silêncio',
+  'exceeded-max-duration': 'Excedeu duração máx.',
+  'assistant-ended-call': 'Assistente encerrou',
+  'call.in-progress.error.assistant-did-not-respond': 'Assistente não respondeu',
+  'pipeline-error-openai-llm-failed': 'Erro OpenAI',
+  'dial-no-answer': 'Não atendeu',
+  'dial-busy': 'Ocupado',
+  'unknown': 'Desconhecido',
+};
+
+// Cores para cada motivo
+const reasonColors: Record<string, string> = {
+  'customer-ended-call': 'from-emerald-500 to-emerald-600',
+  'voicemail': 'from-amber-500 to-amber-600',
+  'silence-timed-out': 'from-orange-500 to-orange-600',
+  'exceeded-max-duration': 'from-red-400 to-red-500',
+  'assistant-ended-call': 'from-blue-500 to-blue-600',
+  'call.in-progress.error.assistant-did-not-respond': 'from-rose-500 to-rose-600',
+  'pipeline-error-openai-llm-failed': 'from-red-600 to-red-700',
+  'dial-no-answer': 'from-gray-500 to-gray-600',
+  'dial-busy': 'from-yellow-500 to-yellow-600',
+  'unknown': 'from-slate-400 to-slate-500',
+};
+
+const indexColors = [
+  'from-emerald-500 to-emerald-600',
+  'from-amber-500 to-amber-600',
+  'from-orange-500 to-orange-600',
+  'from-blue-500 to-blue-600',
+  'from-violet-500 to-violet-600',
+  'from-pink-500 to-pink-600',
+  'from-cyan-500 to-cyan-600',
+  'from-lime-500 to-lime-600',
+];
 
 function CallsTable({ calls, isLoading }: { calls: CallEvent[]; isLoading?: boolean }) {
   if (isLoading) {
@@ -191,6 +233,104 @@ function DailyCallsTable({ data, isLoading }: { data: DailyCallData[]; isLoading
   );
 }
 
+// Componente de funil de motivos de finalização
+interface EndedReasonData {
+  reason: string;
+  count: number;
+}
+
+function EndedReasonsFunnel({ data, isLoading }: { data: EndedReasonData[]; isLoading?: boolean }) {
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <Skeleton className="h-10 flex-1" style={{ maxWidth: `${100 - i * 12}%` }} />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+        <PhoneOff className="w-12 h-12 mb-3 opacity-50" />
+        <p className="text-sm">Nenhum dado de motivos disponível</p>
+      </div>
+    );
+  }
+
+  const getReasonLabel = (reason: string): string => {
+    return endedReasonLabels[reason] || reason.replace(/-/g, ' ').replace(/\./g, ' ');
+  };
+
+  const getReasonColor = (reason: string, index: number): string => {
+    return reasonColors[reason] || indexColors[index % indexColors.length];
+  };
+
+  return (
+    <div className="space-y-2">
+      {data.map((item, index) => {
+        const percentage = (item.count / maxCount) * 100;
+        const percentOfTotal = ((item.count / total) * 100).toFixed(1);
+        const gradientClass = getReasonColor(item.reason, index);
+        const displayName = getReasonLabel(item.reason);
+
+        return (
+          <Tooltip key={item.reason}>
+            <TooltipTrigger asChild>
+              <div className="w-full group cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative">
+                    <div 
+                      className={cn(
+                        "h-9 rounded-lg bg-gradient-to-r transition-all duration-300",
+                        "group-hover:shadow-lg group-hover:scale-[1.01]",
+                        gradientClass
+                      )}
+                      style={{ width: `${Math.max(percentage, 10)}%` }}
+                    >
+                      <div className="absolute inset-0 flex items-center px-3">
+                        <span className="text-xs font-medium text-white truncate drop-shadow-sm">
+                          {displayName}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-24 text-right flex items-center justify-end gap-2">
+                    <span className="text-sm font-bold text-foreground">
+                      {item.count.toLocaleString('pt-BR')}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      {percentOfTotal}%
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xs">
+              <div className="space-y-1">
+                <p className="font-semibold">{displayName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {percentOfTotal}% do total de finalizações
+                </p>
+                <p className="text-sm font-bold text-primary">
+                  {item.count.toLocaleString('pt-BR')} ligações
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      })}
+    </div>
+  );
+}
+
 // Helper para formatar trend
 function makeTrend(value: number | undefined, periodLabel: string) {
   if (value === undefined || isNaN(value)) return undefined;
@@ -209,6 +349,7 @@ export default function VapiPage() {
   const { data: kpis, isLoading: kpisLoading } = useCallsKpis(orgId, period);
   const { data: daily, isLoading: dailyLoading } = useCallsDaily(orgId);
   const { data: calls, isLoading: callsLoading } = useCallsLast50(orgId);
+  const { data: endedReasons, isLoading: endedReasonsLoading } = useCallsEndedReasons(orgId, period);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'vapi');
 
   // Calcular dados de custo acumulado
@@ -381,14 +522,26 @@ export default function VapiPage() {
       </ChartCard>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Motivos de Finalização - Funil */}
+        <ChartCard
+          title="Motivos de Finalização"
+          subtitle="Por que as ligações foram encerradas"
+          isLoading={endedReasonsLoading}
+          isEmpty={!endedReasons?.length}
+        >
+          <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <EndedReasonsFunnel data={endedReasons || []} />
+          </div>
+        </ChartCard>
+
         <ChartCard
           title="Últimas 50 Ligações"
           subtitle="Eventos de chamada mais recentes"
           isLoading={callsLoading}
           isEmpty={!calls?.length}
         >
-          <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
             <CallsTable calls={calls || []} />
           </div>
         </ChartCard>
