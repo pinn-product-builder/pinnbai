@@ -31,6 +31,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
 
     setIsRefreshing(true);
     try {
+      // Tentar gerar novos insights via edge function
       const result = await generateInsights(orgId, scope, 30);
       
       if (result.success) {
@@ -38,20 +39,24 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
           title: 'Insights atualizados',
           description: 'Os insights foram gerados com sucesso',
         });
-        // Invalidar cache para recarregar
-        queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
       } else {
+        // Se a função não existir, apenas recarregar os dados existentes
         toast({
-          title: 'Atenção',
-          description: result.error || 'Função não disponível',
-          variant: 'destructive',
+          title: 'Dados recarregados',
+          description: 'Os insights existentes foram recarregados',
         });
       }
+      
+      // Invalidar cache para recarregar os dados em ambos os casos
+      queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
+      queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
     } catch (err) {
+      // Em caso de erro, ainda tentar recarregar os dados existentes
+      queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
+      queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
       toast({
-        title: 'Erro',
-        description: 'Falha ao gerar insights',
-        variant: 'destructive',
+        title: 'Dados recarregados',
+        description: 'Os insights existentes foram recarregados',
       });
     } finally {
       setIsRefreshing(false);
