@@ -512,20 +512,96 @@ export function useTopAds(orgId: string) {
   });
 }
 
-// VAPI hooks - usando tabela vapi_calls diretamente
-export function useCallsKpis(orgId: string, period: '7d' | '30d') {
+// VAPI hooks - usando tabela v3_calls_daily_v3
+// Suporta períodos customizados: 7d, 14d, 30d, 60d, 90d com comparação
+export function useCallsKpis(orgId: string, period: '7d' | '14d' | '30d' | '60d' | '90d' = '30d') {
   return useQuery({
     queryKey: ['calls-kpis', orgId, period],
     queryFn: async () => {
-      // Buscar total de ligações (sem filtro de data por enquanto para debug)
-      const { count, error } = await supabase
-        .from('vapi_calls')
-        .select('*', { count: 'exact', head: true });
+      const periodDays: Record<string, number> = {
+        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+      };
+      const days = periodDays[period] || 30;
+      
+      // Período atual
+      const currentEnd = new Date();
+      const currentStart = new Date();
+      currentStart.setDate(currentStart.getDate() - days);
+      
+      // Período anterior (para comparação)
+      const previousEnd = new Date(currentStart);
+      previousEnd.setDate(previousEnd.getDate() - 1);
+      const previousStart = new Date(previousEnd);
+      previousStart.setDate(previousStart.getDate() - days + 1);
+      
+      const currentStartStr = currentStart.toISOString().split('T')[0];
+      const previousStartStr = previousStart.toISOString().split('T')[0];
+      const previousEndStr = previousEnd.toISOString().split('T')[0];
+      
+      // Buscar dados da tabela v3_calls_daily_v3
+      const { data, error } = await supabase
+        .from('v3_calls_daily_v3')
+        .select('day,calls_done,calls_answered,total_minutes,avg_minutes,total_spent_usd')
+        .gte('day', previousStartStr)
+        .order('day', { ascending: true });
       
       if (error) throw error;
       
+      // Separar dados do período atual e anterior
+      const currentData = (data || []).filter(row => row.day >= currentStartStr);
+      const previousData = (data || []).filter(row => row.day >= previousStartStr && row.day <= previousEndStr);
+      
+      // Função para agregar totais
+      const aggregate = (rows: typeof data) => rows!.reduce((acc, row) => {
+        acc.calls_done += Number(row.calls_done) || 0;
+        acc.calls_answered += Number(row.calls_answered) || 0;
+        acc.total_minutes += Number(row.total_minutes) || 0;
+        acc.total_spent += Number(row.total_spent_usd) || 0;
+        return acc;
+      }, { calls_done: 0, calls_answered: 0, total_minutes: 0, total_spent: 0 });
+      
+      const current = aggregate(currentData);
+      const previous = aggregate(previousData);
+      
+      // Calcular métricas derivadas
+      const taxaAtendimento = current.calls_done > 0 ? (current.calls_answered / current.calls_done) * 100 : 0;
+      const avgMinutes = current.calls_answered > 0 ? current.total_minutes / current.calls_answered : 0;
+      const costPerCall = current.calls_done > 0 ? current.total_spent / current.calls_done : 0;
+      
+      const prevTaxaAtendimento = previous.calls_done > 0 ? (previous.calls_answered / previous.calls_done) * 100 : 0;
+      const prevAvgMinutes = previous.calls_answered > 0 ? previous.total_minutes / previous.calls_answered : 0;
+      const prevCostPerCall = previous.calls_done > 0 ? previous.total_spent / previous.calls_done : 0;
+      
+      // Função para calcular variação percentual
+      const calcChange = (curr: number, prev: number) => {
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return ((curr - prev) / prev) * 100;
+      };
+      
+      // Calcular variações
+      const changes = {
+        calls_done: calcChange(current.calls_done, previous.calls_done),
+        calls_answered: calcChange(current.calls_answered, previous.calls_answered),
+        total_minutes: calcChange(current.total_minutes, previous.total_minutes),
+        total_spent: calcChange(current.total_spent, previous.total_spent),
+        taxa_atendimento: calcChange(taxaAtendimento, prevTaxaAtendimento),
+        avg_minutes: calcChange(avgMinutes, prevAvgMinutes),
+        cost_per_call: calcChange(costPerCall, prevCostPerCall),
+      };
+      
+      const periodLabel = `vs ${days}d anteriores`;
+      
       return {
-        [`calls_total_${period}`]: count || 0,
+        calls_done: current.calls_done,
+        calls_answered: current.calls_answered,
+        total_minutes: current.total_minutes,
+        total_spent: current.total_spent,
+        taxa_atendimento: taxaAtendimento,
+        avg_minutes: avgMinutes,
+        cost_per_call: costPerCall,
+        changes,
+        periodLabel,
+        periodDays: days,
       };
     },
     enabled: !!orgId,
@@ -536,32 +612,27 @@ export function useCallsDaily(orgId: string) {
   return useQuery({
     queryKey: ['calls-daily', orgId],
     queryFn: async () => {
+      // Período de 60 dias para ter dados suficientes
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 60);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
       const { data, error } = await supabase
-        .from('v3_calls_by_assistant_daily_v3')
-        .select('day, calls_done, calls_answered, total_minutes')
+        .from('v3_calls_daily_v3')
+        .select('day,calls_done,calls_answered,total_minutes,avg_minutes,total_spent_usd')
+        .gte('day', cutoffStr)
         .order('day', { ascending: true });
       
       if (error) throw error;
       
-      // Agregar por dia (pode ter múltiplos assistentes)
-      const aggregated = (data || []).reduce((acc, row) => {
-        const existing = acc.find(a => a.day === row.day);
-        if (existing) {
-          existing.calls_done += row.calls_done || 0;
-          existing.calls_answered += row.calls_answered || 0;
-          existing.total_minutes += row.total_minutes || 0;
-        } else {
-          acc.push({
-            day: row.day,
-            calls_done: row.calls_done || 0,
-            calls_answered: row.calls_answered || 0,
-            total_minutes: row.total_minutes || 0,
-          });
-        }
-        return acc;
-      }, [] as Array<{ day: string; calls_done: number; calls_answered: number; total_minutes: number }>);
-      
-      return aggregated;
+      return (data || []).map(row => ({
+        day: row.day,
+        calls_done: Number(row.calls_done) || 0,
+        calls_answered: Number(row.calls_answered) || 0,
+        total_minutes: Number(row.total_minutes) || 0,
+        avg_minutes: Number(row.avg_minutes) || 0,
+        total_spent_usd: Number(row.total_spent_usd) || 0,
+      }));
     },
     enabled: !!orgId,
   });

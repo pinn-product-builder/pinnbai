@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Target, Clock } from 'lucide-react';
+import { Phone, Target, Clock, PhoneCall, Timer, DollarSign, Percent, TrendingUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
@@ -93,12 +93,22 @@ function CallsTable({ calls, isLoading }: { calls: CallEvent[]; isLoading?: bool
   );
 }
 
+// Helper para formatar trend
+function makeTrend(value: number | undefined, periodLabel: string) {
+  if (value === undefined || isNaN(value)) return undefined;
+  return {
+    value: Math.abs(value),
+    isPositive: value >= 0,
+    label: periodLabel,
+  };
+}
+
 export default function VapiPage() {
   const { filters } = useGlobalFilters();
   const orgId = filters.orgId;
+  const period = filters.period === 'custom' ? '30d' : filters.period;
 
-  const { data: kpis7d, isLoading: kpis7dLoading } = useCallsKpis(orgId, '7d');
-  const { data: kpis30d, isLoading: kpis30dLoading } = useCallsKpis(orgId, '30d');
+  const { data: kpis, isLoading: kpisLoading } = useCallsKpis(orgId, period);
   const { data: daily, isLoading: dailyLoading } = useCallsDaily(orgId);
   const { data: calls, isLoading: callsLoading } = useCallsLast50(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'vapi');
@@ -113,6 +123,8 @@ export default function VapiPage() {
     );
   }
 
+  const periodLabel = kpis?.periodLabel || `vs ${period} anteriores`;
+
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
@@ -122,30 +134,93 @@ export default function VapiPage() {
 
       {/* KPIs */}
       <Section title="Indicadores de Ligações">
-        <KpiGrid columns={2}>
+        <KpiGrid columns={4}>
           <KpiCard
-            title="Total de Ligações (7d)"
-            value={(kpis7d as any)?.calls_total_7d || 0}
-            kpiKey="calls_total_7d"
-            icon={<Phone className="w-5 h-5" />}
+            title="Ligações Realizadas"
+            value={kpis?.calls_done || 0}
+            kpiKey="calls_done"
+            icon={<PhoneCall className="w-5 h-5" />}
             variant="primary"
-            isLoading={kpis7dLoading}
+            isLoading={kpisLoading}
+            trend={makeTrend(kpis?.changes?.calls_done, periodLabel)}
+            description="Total de ligações realizadas no período selecionado"
           />
           <KpiCard
-            title="Total de Ligações (30d)"
-            value={(kpis30d as any)?.calls_total_30d || 0}
-            kpiKey="calls_total_30d"
+            title="Ligações Atendidas"
+            value={kpis?.calls_answered || 0}
+            kpiKey="calls_answered"
             icon={<Phone className="w-5 h-5" />}
             variant="success"
-            isLoading={kpis30dLoading}
+            isLoading={kpisLoading}
+            trend={makeTrend(kpis?.changes?.calls_answered, periodLabel)}
+            description="Total de ligações que foram atendidas"
+          />
+          <KpiCard
+            title="Taxa de Atendimento"
+            value={kpis?.taxa_atendimento || 0}
+            format="percent"
+            kpiKey="taxa_atendimento"
+            icon={<Percent className="w-5 h-5" />}
+            variant="primary"
+            isLoading={kpisLoading}
+            trend={makeTrend(kpis?.changes?.taxa_atendimento, periodLabel)}
+            description="Percentual de ligações atendidas sobre realizadas"
+          />
+          <KpiCard
+            title="Tempo Médio (min)"
+            value={Number((kpis?.avg_minutes || 0).toFixed(2))}
+            format="number"
+            kpiKey="avg_minutes"
+            icon={<Timer className="w-5 h-5" />}
+            variant="warning"
+            isLoading={kpisLoading}
+            trend={makeTrend(kpis?.changes?.avg_minutes, periodLabel)}
+            description="Duração média das ligações atendidas em minutos"
           />
         </KpiGrid>
+        <div className="mt-4">
+          <KpiGrid columns={3}>
+            <KpiCard
+              title="Tempo Total (min)"
+              value={Number((kpis?.total_minutes || 0).toFixed(1))}
+              format="number"
+              kpiKey="total_minutes"
+              icon={<Clock className="w-5 h-5" />}
+              variant="default"
+              isLoading={kpisLoading}
+              trend={makeTrend(kpis?.changes?.total_minutes, periodLabel)}
+              description="Somatório do tempo de todas as ligações atendidas"
+            />
+            <KpiCard
+              title="Custo Total (USD)"
+              value={kpis?.total_spent || 0}
+              format="currency"
+              kpiKey="total_spent"
+              icon={<DollarSign className="w-5 h-5" />}
+              variant="primary"
+              isLoading={kpisLoading}
+              trend={makeTrend(kpis?.changes?.total_spent, periodLabel)}
+              description="Custo total das ligações em dólares"
+            />
+            <KpiCard
+              title="Custo por Ligação"
+              value={kpis?.cost_per_call || 0}
+              format="currency"
+              kpiKey="cost_per_call"
+              icon={<TrendingUp className="w-5 h-5" />}
+              variant="success"
+              isLoading={kpisLoading}
+              trend={makeTrend(kpis?.changes?.cost_per_call, periodLabel)}
+              description="Custo médio por ligação realizada (USD)"
+            />
+          </KpiGrid>
+        </div>
       </Section>
 
       {/* Chart */}
       <ChartCard
         title="Ligações Diárias"
-        subtitle="Volume de ligações por dia (realizadas vs atendidas)"
+        subtitle="Volume de ligações por dia (realizadas vs atendidas) e custo"
         isLoading={dailyLoading}
         isEmpty={!daily?.length}
       >
@@ -154,10 +229,12 @@ export default function VapiPage() {
             day: d.day,
             calls_done: d.calls_done,
             calls_answered: d.calls_answered,
+            total_minutes: d.total_minutes,
           }))}
           lines={[
             { key: 'calls_done', name: 'Realizadas', color: 'primary' },
             { key: 'calls_answered', name: 'Atendidas', color: 'success' },
+            { key: 'total_minutes', name: 'Minutos', color: 'warning' },
           ]}
           height={280}
         />
