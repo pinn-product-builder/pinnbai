@@ -245,7 +245,8 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
         {meetings.map((meeting) => {
           const startDate = parseISO(meeting.start_at);
           const isPast = startDate < now;
-          const isDone = attendedIds?.has(meeting.id) || false;
+          const meetingId = meeting.provider_event_id || meeting.id;
+          const isDone = attendedIds?.has(meetingId) || false;
           const isToggling = toggleMutation.isPending;
           
           // Usar summary como nome do lead
@@ -254,7 +255,7 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
           
           return (
             <div 
-              key={meeting.id}
+              key={meetingId}
               className={cn(
                 "flex items-center gap-3 p-2 rounded-lg border transition-all",
                 isDone && "bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800",
@@ -293,7 +294,7 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
                     "h-7 w-7",
                     isDone && "text-green-600"
                   )}
-                  onClick={() => handleToggle(meeting.id, isDone)}
+                  onClick={() => handleToggle(meetingId, isDone)}
                   disabled={isToggling}
                   title={isDone ? "Desmarcar como realizada" : "Marcar como realizada"}
                 >
