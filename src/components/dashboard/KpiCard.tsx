@@ -168,7 +168,21 @@ export function KpiCard({
                         border: '1px solid hsl(27 100% 50% / 0.25)',
                       }}
                     >
-                      {definition.formula}
+                      <span className="opacity-70">Cálculo: </span>{definition.formula}
+                    </div>
+                  )}
+                  {(definition.period || definition.source) && (
+                    <div className="pt-2 mt-2 border-t border-white/10 space-y-1">
+                      {definition.period && (
+                        <p className="text-[10px] opacity-60">
+                          <span className="font-medium">Período:</span> {definition.period}
+                        </p>
+                      )}
+                      {definition.source && (
+                        <p className="text-[10px] opacity-60">
+                          <span className="font-medium">Fonte:</span> {definition.source}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -189,9 +203,14 @@ export function KpiCard({
         )}>
           {formattedValue}
         </span>
-
-        {/* Trend badges ocultados */}
       </div>
+      
+      {/* Diagnóstico para reuniões realizadas = 0 */}
+      {kpiKey && (kpiKey === 'meetings_done' || kpiKey === 'meetings_done_30d') && value === 0 && (
+        <p className="text-[10px] text-text-3 mt-2 leading-relaxed">
+          Nenhuma reunião foi marcada como realizada no período.
+        </p>
+      )}
     </div>
   );
 }

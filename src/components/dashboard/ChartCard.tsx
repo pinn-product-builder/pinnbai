@@ -6,6 +6,8 @@ import { InboxIcon } from 'lucide-react';
 interface ChartCardProps {
   title: string;
   subtitle?: string;
+  /** Explicação dos eixos do gráfico: ex: "Eixo X = tempo (dias), Eixo Y = quantidade" */
+  axisHint?: string;
   children: ReactNode;
   action?: ReactNode;
   isLoading?: boolean;
@@ -16,6 +18,7 @@ interface ChartCardProps {
 export function ChartCard({
   title,
   subtitle,
+  axisHint,
   children,
   action,
   isLoading,
@@ -24,11 +27,14 @@ export function ChartCard({
 }: ChartCardProps) {
   return (
     <div className={cn("glass-card p-6 relative overflow-hidden", className)}>
-      <div className="flex items-start justify-between mb-6 relative z-10">
+      <div className="flex items-start justify-between mb-4 relative z-10">
         <div>
           <h3 className="text-lg font-semibold text-text-1">{title}</h3>
           {subtitle && (
             <p className="text-sm text-text-3 mt-1">{subtitle}</p>
+          )}
+          {axisHint && (
+            <p className="text-xs text-text-3/70 mt-1 italic">{axisHint}</p>
           )}
         </div>
         {action}
