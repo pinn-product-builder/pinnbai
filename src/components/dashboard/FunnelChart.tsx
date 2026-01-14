@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -86,7 +86,14 @@ const indexColorStyles = [
 ];
 
 export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps) {
+  const [mounted, setMounted] = useState(false);
   const maxLeads = Math.max(...data.map(s => s.leads), 1);
+
+  // Trigger animation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (isLoading) {
     return (
@@ -140,12 +147,22 @@ export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps)
         const colorStyle = getStageColorStyle(stage.stage_name, index);
         const displayName = formatStageName(stage.stage_name);
 
+        // Staggered animation delay
+        const animationDelay = index * 100;
+
         return (
           <Tooltip key={stage.stage_key || index}>
             <TooltipTrigger asChild>
               <button
                 onClick={() => onStageClick?.(stage)}
-                className="w-full group focus:outline-none"
+                className={cn(
+                  "w-full group focus:outline-none",
+                  "opacity-0 translate-x-[-20px]",
+                  mounted && "opacity-100 translate-x-0"
+                )}
+                style={{
+                  transition: `opacity 0.4s ease-out ${animationDelay}ms, transform 0.4s ease-out ${animationDelay}ms`,
+                }}
               >
                 <div className="flex items-center gap-4">
                   {/* Stage name on the left */}
@@ -160,16 +177,17 @@ export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps)
                     {/* Background track */}
                     <div className="absolute inset-0 rounded-lg bg-muted/30" />
                     
-                    {/* Filled bar */}
+                    {/* Filled bar with width animation */}
                     <div 
                       className={cn(
-                        "absolute inset-y-0 left-0 rounded-lg transition-all duration-500 ease-out",
+                        "absolute inset-y-0 left-0 rounded-lg",
                         "group-hover:brightness-110"
                       )}
                       style={{ 
-                        width: `${Math.max(percentage, 5)}%`,
+                        width: mounted ? `${Math.max(percentage, 5)}%` : '0%',
                         background: colorStyle.bg,
                         boxShadow: `0 0 20px -4px ${colorStyle.glow}`,
+                        transition: `width 0.6s cubic-bezier(0.4, 0, 0.2, 1) ${animationDelay + 150}ms, filter 0.2s ease`,
                       }}
                     >
                       {/* Inner highlight */}
