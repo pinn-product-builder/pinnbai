@@ -638,6 +638,48 @@ export function useCallsDaily(orgId: string) {
   });
 }
 
+// Hook para buscar motivos de finalização das ligações
+export function useCallsEndedReasons(orgId: string, period: '7d' | '14d' | '30d' | '60d' | '90d' = '30d') {
+  return useQuery({
+    queryKey: ['calls-ended-reasons', orgId, period],
+    queryFn: async () => {
+      const periodDays: Record<string, number> = {
+        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+      };
+      const days = periodDays[period] || 30;
+      
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('v3_calls_ended_reason_daily')
+        .select('ended_reason,calls_done')
+        .gte('day_brt', cutoffStr);
+      
+      if (error) throw error;
+      
+      // Agregar por motivo de finalização
+      const aggregated: Record<string, number> = {};
+      (data || []).forEach(row => {
+        const reason = row.ended_reason || 'unknown';
+        aggregated[reason] = (aggregated[reason] || 0) + (Number(row.calls_done) || 0);
+      });
+      
+      // Converter para array e ordenar por quantidade decrescente
+      const result = Object.entries(aggregated)
+        .map(([reason, count]) => ({
+          reason,
+          count,
+        }))
+        .sort((a, b) => b.count - a.count);
+      
+      return result;
+    },
+    enabled: !!orgId,
+  });
+}
+
 export function useCallsLast50(orgId: string) {
   return useQuery({
     queryKey: ['calls-last-50', orgId],
