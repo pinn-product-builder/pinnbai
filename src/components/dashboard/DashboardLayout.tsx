@@ -8,7 +8,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Wrench,
   Monitor,
   X,
@@ -20,6 +19,32 @@ import { ViewModeDashboard } from './ViewModeDashboard';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthContext } from '@/contexts/AuthContext';
+
+// Pinn Logo SVG Component
+const PinnLogoIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 32 32" 
+    className={cn("w-5 h-5", className)}
+    fill="none"
+  >
+    <path 
+      d="M6 2 L6 10 L18 22" 
+      stroke="#FF8A3D" 
+      strokeWidth="4.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      fill="none"
+    />
+    <path 
+      d="M26 30 L26 22 L14 10" 
+      stroke="#C84E0A" 
+      strokeWidth="4.5" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+);
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -137,11 +162,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="h-16 flex items-center px-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow">
-                <Sparkles className="w-4 h-4 text-bg-0" />
+              <div className="w-8 h-8 rounded-xl bg-bg-2 flex items-center justify-center border border-border">
+                <PinnLogoIcon />
               </div>
               {!collapsed && (
-                <span className="font-semibold text-lg text-gradient-primary">Pinn</span>
+                <span className="font-semibold text-lg text-text-1">Afonsina</span>
               )}
             </div>
           </div>
