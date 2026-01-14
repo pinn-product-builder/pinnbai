@@ -49,8 +49,13 @@ export default function LoginPage() {
             <div className="w-14 h-14 rounded-2xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow mb-4">
               <Sparkles className="w-7 h-7 text-bg-0" />
             </div>
-            <h1 className="text-2xl font-bold text-gradient-primary">Pinn Dashboard</h1>
-            <p className="text-text-3 text-sm mt-2">Entre com suas credenciais</p>
+            <h1 className="text-3xl font-bold text-gradient-primary drop-shadow-[0_0_25px_hsl(var(--pinn-orange-500)/0.6)]">
+              Pinn Growth
+            </h1>
+            <p className="text-lg font-semibold text-pinn-gold-400 mt-2 drop-shadow-[0_0_20px_hsl(var(--pinn-gold-500)/0.5)]">
+              BAI Analytics Dashboard
+            </p>
+            <p className="text-text-3 text-sm mt-3">Entre com suas credenciais</p>
           </div>
 
           {/* Form */}
