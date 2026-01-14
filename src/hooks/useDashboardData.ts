@@ -190,6 +190,7 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
         leads_total_30d: current.leads,
         msg_in_30d: kpisData?.msg_in_30d || 0,
         meetings_scheduled_30d: current.meetings_scheduled,
+        meetings_done: current.meetings_done,
         meetings_cancelled_30d: kpisData?.meetings_cancelled_30d || 0,
         spend_30d: current.spend,
         cpl_30d: cpl,
@@ -200,7 +201,7 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
         changes,
         periodLabel,
         periodDays: days,
-      } as ExecutiveKpis & { changes: typeof changes; periodLabel: string; periodDays: number };
+      } as ExecutiveKpis & { changes: typeof changes; periodLabel: string; periodDays: number; meetings_done: number };
     },
     enabled: !!orgId,
   });

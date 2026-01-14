@@ -136,7 +136,7 @@ export function LeadsTable({ orgId, compact = false }: LeadsTableProps) {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
           </div>
         ) : (
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+          <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
             {displayLeads.map((lead: Lead, index: number) => (
               <div key={lead.id || index} className="flex items-center gap-3 p-2 rounded-lg border bg-card/50 hover:bg-muted/50">
                 <div className="flex-1 min-w-0">
