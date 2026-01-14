@@ -134,25 +134,30 @@ export function KpiCard({
         </div>
         
         {hasTooltip && (
-          <Tooltip>
+          <Tooltip delayDuration={100}>
             <TooltipTrigger asChild>
-              <button className="text-text-3 hover:text-text-2 transition-colors">
+              <button className="text-text-3 hover:text-text-2 hover:text-pinn-orange-500 transition-colors">
                 <Info className="w-4 h-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs pinn-tooltip">
+            <TooltipContent 
+              side="top" 
+              align="end"
+              sideOffset={8}
+              className="max-w-[280px] z-[100] bg-surface-2 border border-border/50 shadow-xl p-3 rounded-lg"
+            >
               {definition ? (
-                <div className="space-y-1">
-                  <p className="font-medium text-text-1">{definition.title}</p>
-                  <p className="text-xs text-text-2">{definition.definition}</p>
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm text-foreground">{definition.title}</p>
+                  <p className="text-xs leading-relaxed text-muted-foreground">{definition.definition}</p>
                   {definition.formula && (
-                    <p className="text-xs font-mono text-pinn-orange-500 bg-pinn-orange-500/10 px-2 py-1 rounded mt-1">
+                    <div className="text-xs font-mono text-pinn-orange-500 bg-pinn-orange-500/10 px-2 py-1.5 rounded border border-pinn-orange-500/20">
                       {definition.formula}
-                    </p>
+                    </div>
                   )}
                 </div>
               ) : description ? (
-                <p className="text-xs text-text-2">{description}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
               ) : null}
             </TooltipContent>
           </Tooltip>
