@@ -5,8 +5,9 @@ import {
   TrendingUp, 
   CalendarCheck,
   Target,
-  Table as TableIcon,
-  ScatterChart as ScatterIcon
+  ArrowDownToLine,
+  CalendarCheck2,
+  Percent
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
@@ -47,6 +48,8 @@ export default function TrafegoPage() {
     day: new Date(d.day + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
     spend: d.spend_total,
     leads: d.leads,
+    entradas: d.entradas,
+    meetings_booked: d.meetings_booked,
   }));
 
   return (
@@ -58,9 +61,9 @@ export default function TrafegoPage() {
 
       {/* KPIs 7d */}
       <Section title="Últimos 7 Dias">
-        <KpiGrid columns={5}>
+        <KpiGrid columns={4}>
           <KpiCard
-            title="Investimento (7d)"
+            title="Investimento"
             value={(kpis7d as any)?.spend_total_7d || 0}
             kpiKey="spend_total_7d"
             icon={<DollarSign className="w-5 h-5" />}
@@ -69,7 +72,7 @@ export default function TrafegoPage() {
             isLoading={kpis7dLoading}
           />
           <KpiCard
-            title="Leads (7d)"
+            title="Leads"
             value={(kpis7d as any)?.leads_7d || 0}
             kpiKey="leads_7d"
             icon={<Users className="w-5 h-5" />}
@@ -77,7 +80,24 @@ export default function TrafegoPage() {
             isLoading={kpis7dLoading}
           />
           <KpiCard
-            title="CPL (7d)"
+            title="Entradas"
+            value={(kpis7d as any)?.entradas_7d || 0}
+            kpiKey="entradas_7d"
+            icon={<ArrowDownToLine className="w-5 h-5" />}
+            isLoading={kpis7dLoading}
+          />
+          <KpiCard
+            title="Taxa de Entrada"
+            value={(kpis7d as any)?.taxa_entrada_7d || 0}
+            kpiKey="taxa_entrada_7d"
+            icon={<Percent className="w-5 h-5" />}
+            format="percent"
+            isLoading={kpis7dLoading}
+          />
+        </KpiGrid>
+        <KpiGrid columns={4} className="mt-4">
+          <KpiCard
+            title="CPL"
             value={(kpis7d as any)?.cpl_7d || 0}
             kpiKey="cpl_7d"
             icon={<TrendingUp className="w-5 h-5" />}
@@ -85,7 +105,7 @@ export default function TrafegoPage() {
             isLoading={kpis7dLoading}
           />
           <KpiCard
-            title="Reuniões Agendadas (7d)"
+            title="Reuniões Agendadas"
             value={(kpis7d as any)?.meetings_booked_7d || 0}
             kpiKey="meetings_booked_7d"
             icon={<CalendarCheck className="w-5 h-5" />}
@@ -93,7 +113,15 @@ export default function TrafegoPage() {
             isLoading={kpis7dLoading}
           />
           <KpiCard
-            title="Custo/Reunião (7d)"
+            title="Reuniões Realizadas"
+            value={(kpis7d as any)?.meetings_done_7d || 0}
+            kpiKey="meetings_done_7d"
+            icon={<CalendarCheck2 className="w-5 h-5" />}
+            variant="success"
+            isLoading={kpis7dLoading}
+          />
+          <KpiCard
+            title="Custo/Reunião"
             value={(kpis7d as any)?.cp_meeting_booked_7d || 0}
             kpiKey="cp_meeting_booked_7d"
             format="currency"
@@ -104,9 +132,9 @@ export default function TrafegoPage() {
 
       {/* KPIs 30d */}
       <Section title="Últimos 30 Dias">
-        <KpiGrid columns={5}>
+        <KpiGrid columns={4}>
           <KpiCard
-            title="Investimento (30d)"
+            title="Investimento"
             value={(kpis30d as any)?.spend_total_30d || 0}
             kpiKey="spend_total_30d"
             icon={<DollarSign className="w-5 h-5" />}
@@ -115,7 +143,7 @@ export default function TrafegoPage() {
             isLoading={kpis30dLoading}
           />
           <KpiCard
-            title="Leads (30d)"
+            title="Leads"
             value={(kpis30d as any)?.leads_30d || 0}
             kpiKey="leads_30d"
             icon={<Users className="w-5 h-5" />}
@@ -123,7 +151,24 @@ export default function TrafegoPage() {
             isLoading={kpis30dLoading}
           />
           <KpiCard
-            title="CPL (30d)"
+            title="Entradas"
+            value={(kpis30d as any)?.entradas_30d || 0}
+            kpiKey="entradas_30d"
+            icon={<ArrowDownToLine className="w-5 h-5" />}
+            isLoading={kpis30dLoading}
+          />
+          <KpiCard
+            title="Taxa de Entrada"
+            value={(kpis30d as any)?.taxa_entrada_30d || 0}
+            kpiKey="taxa_entrada_30d"
+            icon={<Percent className="w-5 h-5" />}
+            format="percent"
+            isLoading={kpis30dLoading}
+          />
+        </KpiGrid>
+        <KpiGrid columns={4} className="mt-4">
+          <KpiCard
+            title="CPL"
             value={(kpis30d as any)?.cpl_30d || 0}
             kpiKey="cpl_30d"
             icon={<TrendingUp className="w-5 h-5" />}
@@ -131,7 +176,7 @@ export default function TrafegoPage() {
             isLoading={kpis30dLoading}
           />
           <KpiCard
-            title="Reuniões Agendadas (30d)"
+            title="Reuniões Agendadas"
             value={(kpis30d as any)?.meetings_booked_30d || 0}
             kpiKey="meetings_booked_30d"
             icon={<CalendarCheck className="w-5 h-5" />}
@@ -139,7 +184,15 @@ export default function TrafegoPage() {
             isLoading={kpis30dLoading}
           />
           <KpiCard
-            title="Custo/Reunião (30d)"
+            title="Reuniões Realizadas"
+            value={(kpis30d as any)?.meetings_done_30d || 0}
+            kpiKey="meetings_done_30d"
+            icon={<CalendarCheck2 className="w-5 h-5" />}
+            variant="success"
+            isLoading={kpis30dLoading}
+          />
+          <KpiCard
+            title="Custo/Reunião"
             value={(kpis30d as any)?.cp_meeting_booked_30d || 0}
             kpiKey="cp_meeting_booked_30d"
             format="currency"
@@ -151,8 +204,8 @@ export default function TrafegoPage() {
       {/* Charts Row 1 - Performance diária e correlação */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
-          title="Performance Diária (30d)"
-          subtitle="Investimento, leads e reuniões"
+          title="Performance Diária"
+          subtitle="Leads, entradas e reuniões por dia"
           isLoading={dailyLoading}
           isEmpty={!daily?.length}
         >
@@ -161,10 +214,12 @@ export default function TrafegoPage() {
               day: d.day,
               spend_total: d.spend_total,
               leads: d.leads,
+              entradas: d.entradas,
               meetings_booked: d.meetings_booked,
             }))}
             lines={[
               { key: 'leads', name: 'Leads', color: 'primary' },
+              { key: 'entradas', name: 'Entradas', color: 'warning' },
               { key: 'meetings_booked', name: 'Reuniões', color: 'success' },
             ]}
             height={320}
@@ -172,8 +227,8 @@ export default function TrafegoPage() {
         </ChartCard>
 
         <ChartCard
-          title="Correlação Investimento × Leads"
-          subtitle="Análise de eficiência do investimento"
+          title="Eficiência do Investimento"
+          subtitle="Análise de correlação entre gasto e resultados"
           isLoading={dailyLoading}
           isEmpty={!daily?.length}
         >
@@ -187,7 +242,7 @@ export default function TrafegoPage() {
       {/* Charts Row 2 - Top ads e insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
-          title="Top 10 Anúncios (30d)"
+          title="Top 10 Anúncios"
           subtitle="Anúncios com maior investimento"
           isLoading={topAdsLoading}
           isEmpty={!topAds?.length}
@@ -214,8 +269,8 @@ export default function TrafegoPage() {
 
       {/* Tabela detalhada */}
       <ChartCard
-        title="Performance Diária Detalhada"
-        subtitle="Últimos 15 dias com indicadores de tendência"
+        title="Métricas Diárias Detalhadas"
+        subtitle="Últimos 20 dias com indicadores de tendência"
         isLoading={dailyLoading}
         isEmpty={!daily?.length}
       >
