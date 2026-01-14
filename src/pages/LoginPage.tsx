@@ -10,26 +10,26 @@ import { cn } from '@/lib/utils';
 // Pinn Logo SVG Component - matching original design
 const PinnLogo = ({ className }: { className?: string }) => (
   <div className={cn("flex items-center gap-2.5", className)}>
-    {/* Icon - Two interlocking angular brackets */}
+    {/* Icon - Two interlocking angular brackets forming S shape */}
     <svg 
-      viewBox="0 0 36 36" 
-      className="w-8 h-8"
+      viewBox="0 0 32 32" 
+      className="w-7 h-7"
       fill="none"
     >
-      {/* Top-right bracket (lighter orange) */}
+      {/* Top-left bracket: vertical down then diagonal to center-right (lighter orange) */}
       <path 
-        d="M8 4 L8 12 L16 20" 
+        d="M6 2 L6 10 L18 22" 
         stroke="#FF8A3D" 
-        strokeWidth="4" 
+        strokeWidth="4.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
         fill="none"
       />
-      {/* Bottom-left bracket (darker orange) */}
+      {/* Bottom-right bracket: vertical up then diagonal to center-left (darker orange) */}
       <path 
-        d="M28 32 L28 24 L20 16" 
-        stroke="#D45A0A" 
-        strokeWidth="4" 
+        d="M26 30 L26 22 L14 10" 
+        stroke="#C84E0A" 
+        strokeWidth="4.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
         fill="none"
