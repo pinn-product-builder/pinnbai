@@ -17,6 +17,7 @@ import { FunnelChart } from '@/components/dashboard/FunnelChart';
 import { MeetingsTable } from '@/components/dashboard/MeetingsTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { InsightsHistory } from '@/components/dashboard/InsightsHistory';
+import { LeadsTable } from '@/components/dashboard/LeadsTable';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
   useExecutiveKpis,
@@ -218,6 +219,17 @@ export default function ExecutivePage() {
           <InsightsPanel insight={insights || null} orgId={orgId} scope="executive" />
         </ChartCard>
       </div>
+
+      {/* Lista de Leads */}
+      <Section title="Lista de Leads" icon={<Users className="w-5 h-5" />}>
+        <ChartCard
+          title="Todos os Leads"
+          subtitle="Lista completa de leads no sistema"
+          isLoading={false}
+        >
+          <LeadsTable orgId={orgId} />
+        </ChartCard>
+      </Section>
 
       {/* Histórico de Insights */}
       <Section title="Histórico de Insights" icon={<History className="w-5 h-5" />}>
