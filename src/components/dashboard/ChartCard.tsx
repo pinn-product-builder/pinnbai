@@ -23,7 +23,7 @@ export function ChartCard({
   className,
 }: ChartCardProps) {
   return (
-    <div className={cn("glass-card-glow p-6 relative", className)}>
+    <div className={cn("glass-card p-6 relative overflow-hidden", className)}>
       <div className="flex items-start justify-between mb-6 relative z-10">
         <div>
           <h3 className="text-lg font-semibold text-text-1">{title}</h3>
@@ -34,7 +34,7 @@ export function ChartCard({
         {action}
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 overflow-hidden">
         {isLoading ? (
           <ChartLoadingSkeleton />
         ) : isEmpty ? (

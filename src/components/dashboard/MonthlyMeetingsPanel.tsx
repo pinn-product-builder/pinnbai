@@ -230,7 +230,7 @@ export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetings
       </div>
       
       {/* Meetings List - All meetings, scrollable */}
-      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-[280px] overflow-y-auto overflow-x-hidden pr-1">
         {meetings.map((meeting) => {
           const startDate = parseISO(meeting.start_at);
           const isPast = startDate < now;

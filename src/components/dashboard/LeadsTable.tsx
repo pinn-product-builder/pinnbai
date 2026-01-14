@@ -136,10 +136,10 @@ export function LeadsTable({ orgId, compact = false }: LeadsTableProps) {
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
           </div>
         ) : (
-          <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto overflow-x-hidden pr-1">
             {displayLeads.map((lead: Lead, index: number) => (
               <div key={lead.id || index} className="flex items-center gap-3 p-2 rounded-lg border bg-card/50 hover:bg-muted/50">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <p className="font-medium text-sm truncate">
                     {String(lead.name || lead.lead_name || '-')}
                   </p>
@@ -149,7 +149,7 @@ export function LeadsTable({ orgId, compact = false }: LeadsTableProps) {
                 </div>
                 <Badge 
                   variant="outline" 
-                  className={`text-xs ${getStageColor(lead.stage_name || lead.status)}`}
+                  className={`text-xs flex-shrink-0 ${getStageColor(lead.stage_name || lead.status)}`}
                 >
                   {(lead.stage_name || lead.status || '-').slice(0, 10)}
                 </Badge>
