@@ -297,9 +297,10 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
       const cutoffStr = cutoffDate.toISOString().split('T')[0];
       
       // Buscar dados da view vw_afonsina_custos_funil_dia com todas as métricas
+      // Nota: coluna é entrada_total (singular), não entradas_total
       const { data, error } = await supabase
         .from('vw_afonsina_custos_funil_dia')
-        .select('dia,custo_total,leads_total,entradas_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
+        .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
         .gte('dia', cutoffStr);
       
       if (error) throw error;
@@ -308,7 +309,7 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
       const totals = (data || []).reduce((acc, row) => {
         acc.spend += Number(row.custo_total) || 0;
         acc.leads += Number(row.leads_total) || 0;
-        acc.entradas += Number(row.entradas_total) || 0;
+        acc.entradas += Number(row.entrada_total) || 0;
         acc.meetings_booked += Number(row.reuniao_agendada_total) || 0;
         acc.meetings_done += Number(row.reuniao_realizada_total) || 0;
         return acc;
@@ -357,9 +358,10 @@ export function useTrafegoDaily(orgId: string) {
       cutoffDate.setDate(cutoffDate.getDate() - 60);
       const cutoffStr = cutoffDate.toISOString().split('T')[0];
       
+      // Nota: coluna é entrada_total (singular), não entradas_total
       const { data, error } = await supabase
         .from('vw_afonsina_custos_funil_dia')
-        .select('dia,custo_total,leads_total,entradas_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
+        .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total,cpl,custo_por_reuniao_agendada,taxa_entrada')
         .gte('dia', cutoffStr)
         .order('dia', { ascending: true });
       
@@ -370,7 +372,7 @@ export function useTrafegoDaily(orgId: string) {
         day: row.dia,
         spend_total: Number(row.custo_total) || 0,
         leads: Number(row.leads_total) || 0,
-        entradas: Number(row.entradas_total) || 0,
+        entradas: Number(row.entrada_total) || 0,
         meetings_booked: Number(row.reuniao_agendada_total) || 0,
         meetings_done: Number(row.reuniao_realizada_total) || 0,
         cpl: Number(row.cpl) || 0,
