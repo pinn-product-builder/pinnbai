@@ -21,6 +21,9 @@ import {
 } from '@/hooks/useDashboardData';
 import type { CallEvent } from '@/types/dashboard';
 
+// Taxa de câmbio USD → BRL (pode ser atualizada conforme necessário)
+const USD_TO_BRL = 5.80;
+
 // Interface para dados diários de ligações
 interface DailyCallData {
   day: string;
@@ -186,7 +189,7 @@ function DailyCallsTable({ data, isLoading }: { data: DailyCallData[]; isLoading
             <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Atendidas</th>
             <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Tempo (min)</th>
             <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Média (min)</th>
-            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Custo (USD)</th>
+            <th className="text-right text-xs font-medium text-muted-foreground py-3 px-2">Custo (BRL)</th>
           </tr>
         </thead>
         <tbody>
@@ -222,7 +225,7 @@ function DailyCallsTable({ data, isLoading }: { data: DailyCallData[]; isLoading
                 </td>
                 <td className="py-3 px-2 text-right">
                   <span className="text-sm font-medium text-primary">
-                    ${row.total_spent_usd.toFixed(2)}
+                    {(row.total_spent_usd * USD_TO_BRL).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </span>
                 </td>
               </tr>
@@ -449,26 +452,26 @@ export default function VapiPage() {
               description="Somatório do tempo de todas as ligações atendidas"
             />
             <KpiCard
-              title="Custo Total (USD)"
-              value={kpis?.total_spent || 0}
+              title="Custo Total"
+              value={(kpis?.total_spent || 0) * USD_TO_BRL}
               format="currency"
               kpiKey="total_spent"
               icon={<DollarSign className="w-5 h-5" />}
               variant="primary"
               isLoading={kpisLoading}
               trend={makeTrend(kpis?.changes?.total_spent, periodLabel)}
-              description="Custo total das ligações em dólares"
+              description="Custo total das ligações convertido para BRL (taxa: R$ 5,80/USD)"
             />
             <KpiCard
               title="Custo por Ligação"
-              value={kpis?.cost_per_call || 0}
+              value={(kpis?.cost_per_call || 0) * USD_TO_BRL}
               format="currency"
               kpiKey="cost_per_call"
               icon={<TrendingUp className="w-5 h-5" />}
               variant="success"
               isLoading={kpisLoading}
               trend={makeTrend(kpis?.changes?.cost_per_call, periodLabel)}
-              description="Custo médio por ligação realizada (USD)"
+              description="Custo médio por ligação realizada (BRL)"
             />
           </KpiGrid>
         </div>
