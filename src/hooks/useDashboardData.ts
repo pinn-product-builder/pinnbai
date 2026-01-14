@@ -79,48 +79,99 @@ export function useOrgOptions() {
   });
 }
 
-// Executive hooks - Integrado com investimento real
-export function useExecutiveKpis(orgId: string) {
+// Executive hooks - Com suporte a período customizado e comparação
+export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '60d' | '90d' = '30d') {
   return useQuery({
-    queryKey: ['executive-kpis', orgId],
+    queryKey: ['executive-kpis', orgId, period],
     queryFn: async () => {
-      // Buscar KPIs da view
-      const { data: kpiData, error: kpiError } = await supabase
-        .from('vw_dashboard_kpis_30d_v3')
-        .select('*')
-        .eq('org_id', orgId)
-        .maybeSingle();
+      const periodDays: Record<string, number> = {
+        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+      };
+      const days = periodDays[period] || 30;
       
-      if (kpiError) throw kpiError;
+      // Período atual
+      const currentEnd = new Date();
+      const currentStart = new Date();
+      currentStart.setDate(currentStart.getDate() - days);
       
-      // Buscar investimento real da tabela trafego (30d)
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
-      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      // Período anterior
+      const previousEnd = new Date(currentStart);
+      previousEnd.setDate(previousEnd.getDate() - 1);
+      const previousStart = new Date(previousEnd);
+      previousStart.setDate(previousStart.getDate() - days + 1);
       
-      const { data: trafegoData, error: trafegoError } = await supabase
-        .from('trafego')
-        .select('custo')
-        .eq('org_id', orgId)
-        .gte('data', cutoffStr);
+      const currentStartStr = currentStart.toISOString().split('T')[0];
+      const previousStartStr = previousStart.toISOString().split('T')[0];
+      const previousEndStr = previousEnd.toISOString().split('T')[0];
       
-      if (trafegoError) throw trafegoError;
+      // Buscar dados da view vw_afonsina_custos_funil_dia para ambos os períodos
+      const { data, error } = await supabase
+        .from('vw_afonsina_custos_funil_dia')
+        .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
+        .gte('dia', previousStartStr);
       
-      // Calcular investimento real
-      const spend_30d = (trafegoData || []).reduce((sum, row) => sum + (Number(row.custo) || 0), 0);
-      const leads = kpiData?.leads_total_30d || 0;
-      const meetings = kpiData?.meetings_scheduled_30d || 0;
+      if (error) throw error;
       
-      // Recalcular CPL e custo por reunião com investimento real
-      const cpl_30d = leads > 0 ? spend_30d / leads : 0;
-      const cpm_meeting_30d = meetings > 0 ? spend_30d / meetings : 0;
+      // Separar dados
+      const currentData = (data || []).filter(row => row.dia >= currentStartStr);
+      const previousData = (data || []).filter(row => row.dia >= previousStartStr && row.dia <= previousEndStr);
+      
+      // Agregar
+      const aggregate = (rows: typeof data) => rows!.reduce((acc, row) => {
+        acc.spend += Number(row.custo_total) || 0;
+        acc.leads += Number(row.leads_total) || 0;
+        acc.entradas += Number(row.entrada_total) || 0;
+        acc.meetings_scheduled += Number(row.reuniao_agendada_total) || 0;
+        acc.meetings_done += Number(row.reuniao_realizada_total) || 0;
+        return acc;
+      }, { spend: 0, leads: 0, entradas: 0, meetings_scheduled: 0, meetings_done: 0 });
+      
+      const current = aggregate(currentData);
+      const previous = aggregate(previousData);
+      
+      // Calcular métricas derivadas
+      const cpl = current.leads > 0 ? current.spend / current.leads : 0;
+      const cpm_meeting = current.meetings_scheduled > 0 ? current.spend / current.meetings_scheduled : 0;
+      const conv_lead_to_meeting = current.leads > 0 ? (current.meetings_scheduled / current.leads) : 0;
+      
+      const prevCpl = previous.leads > 0 ? previous.spend / previous.leads : 0;
+      const prevCpmMeeting = previous.meetings_scheduled > 0 ? previous.spend / previous.meetings_scheduled : 0;
+      const prevConvLeadToMeeting = previous.leads > 0 ? (previous.meetings_scheduled / previous.leads) : 0;
+      
+      // Função para calcular variação percentual
+      const calcChange = (curr: number, prev: number) => {
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return ((curr - prev) / prev) * 100;
+      };
+      
+      const changes = {
+        leads: calcChange(current.leads, previous.leads),
+        spend: calcChange(current.spend, previous.spend),
+        meetings_scheduled: calcChange(current.meetings_scheduled, previous.meetings_scheduled),
+        meetings_done: calcChange(current.meetings_done, previous.meetings_done),
+        cpl: calcChange(cpl, prevCpl),
+        cpm_meeting: calcChange(cpm_meeting, prevCpmMeeting),
+        conv_lead_to_meeting: calcChange(conv_lead_to_meeting, prevConvLeadToMeeting),
+      };
+      
+      const periodLabel = `vs ${days}d anteriores`;
       
       return {
-        ...kpiData,
-        spend_30d,
-        cpl_30d,
-        cpm_meeting_30d,
-      } as ExecutiveKpis;
+        org_id: orgId,
+        leads_total_30d: current.leads,
+        msg_in_30d: 0, // TODO: buscar de outra fonte se necessário
+        meetings_scheduled_30d: current.meetings_scheduled,
+        meetings_cancelled_30d: 0,
+        spend_30d: current.spend,
+        cpl_30d: cpl,
+        cpm_meeting_30d: cpm_meeting,
+        conv_lead_to_meeting_30d: conv_lead_to_meeting,
+        conv_lead_to_msg_30d: 0,
+        // Comparação
+        changes,
+        periodLabel,
+        periodDays: days,
+      } as ExecutiveKpis & { changes: typeof changes; periodLabel: string; periodDays: number };
     },
     enabled: !!orgId,
   });
@@ -286,12 +337,16 @@ export function useConversationsHeatmap(orgId: string) {
 }
 
 // Traffic hooks - Usa view vw_afonsina_custos_funil_dia para KPIs
-export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
+// Suporta períodos customizados: 7d, 14d, 30d, 60d, 90d
+export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60d' | '90d' = '30d') {
   return useQuery({
     queryKey: ['trafego-kpis', orgId, period],
     queryFn: async () => {
       // Calcular a data de corte baseado no período
-      const daysToInclude = period === '7d' ? 7 : 30;
+      const periodDays: Record<string, number> = {
+        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+      };
+      const daysToInclude = periodDays[period] || 30;
       
       // Período atual
       const currentEnd = new Date();
@@ -360,37 +415,24 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
         taxa_entrada: calcChange(taxaEntrada, prevTaxaEntrada),
       };
       
-      const periodLabel = period === '7d' ? 'vs 7d anteriores' : 'vs 30d anteriores';
+      const periodLabel = `vs ${daysToInclude}d anteriores`;
       
-      if (period === '7d') {
-        return {
-          spend_total_7d: current.spend,
-          leads_7d: current.leads,
-          entradas_7d: current.entradas,
-          cpl_7d: cpl,
-          meetings_booked_7d: current.meetings_booked,
-          meetings_done_7d: current.meetings_done,
-          cp_meeting_booked_7d: cpMeeting,
-          taxa_entrada_7d: taxaEntrada,
-          // Variações para comparação
-          changes,
-          periodLabel,
-        } as TrafficKpis7d & { changes: typeof changes; periodLabel: string };
-      } else {
-        return {
-          spend_total_30d: current.spend,
-          leads_30d: current.leads,
-          entradas_30d: current.entradas,
-          cpl_30d: cpl,
-          meetings_booked_30d: current.meetings_booked,
-          meetings_done_30d: current.meetings_done,
-          cp_meeting_booked_30d: cpMeeting,
-          taxa_entrada_30d: taxaEntrada,
-          // Variações para comparação
-          changes,
-          periodLabel,
-        } as TrafficKpis30d & { changes: typeof changes; periodLabel: string };
-      }
+      // Retornar valores com nomes genéricos para funcionar com qualquer período
+      return {
+        // Valores genéricos (funcionam com qualquer período)
+        spend_total: current.spend,
+        leads: current.leads,
+        entradas: current.entradas,
+        cpl: cpl,
+        meetings_booked: current.meetings_booked,
+        meetings_done: current.meetings_done,
+        cp_meeting_booked: cpMeeting,
+        taxa_entrada: taxaEntrada,
+        // Variações para comparação
+        changes,
+        periodLabel,
+        periodDays: daysToInclude,
+      };
     },
     enabled: !!orgId,
   });

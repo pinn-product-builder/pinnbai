@@ -26,9 +26,19 @@ import {
 export default function TrafegoPage() {
   const { filters } = useGlobalFilters();
   const orgId = filters.orgId;
+  
+  // Mapear período global para o hook (excluir 'custom')
+  const periodMap: Record<string, '7d' | '14d' | '30d' | '60d' | '90d'> = {
+    '7d': '7d',
+    '14d': '14d',
+    '30d': '30d',
+    '60d': '60d',
+    '90d': '90d',
+    'custom': '30d',
+  };
+  const period = periodMap[filters.period] || '30d';
 
-  const { data: kpis7d, isLoading: kpis7dLoading } = useTrafegoKpis(orgId, '7d');
-  const { data: kpis30d, isLoading: kpis30dLoading } = useTrafegoKpis(orgId, '30d');
+  const { data: kpis, isLoading: kpisLoading } = useTrafegoKpis(orgId, period);
   const { data: daily, isLoading: dailyLoading } = useTrafegoDaily(orgId);
   const { data: topAds, isLoading: topAdsLoading } = useTopAds(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'trafego');
@@ -63,175 +73,98 @@ export default function TrafegoPage() {
   };
 
   // Extrair changes e periodLabel dos KPIs
-  const changes7d = (kpis7d as any)?.changes;
-  const label7d = (kpis7d as any)?.periodLabel || 'vs 7d anteriores';
-  const changes30d = (kpis30d as any)?.changes;
-  const label30d = (kpis30d as any)?.periodLabel || 'vs 30d anteriores';
+  const changes = (kpis as any)?.changes;
+  const periodLabel = (kpis as any)?.periodLabel || `vs ${period} anteriores`;
+
+  // Mapear número de dias para exibição
+  const periodDays: Record<string, number> = {
+    '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+  };
+  const days = periodDays[period] || 30;
 
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
         title="Tráfego Pago"
-        description="Performance de investimento em mídia"
+        description={`Performance de investimento em mídia - últimos ${days} dias`}
       />
 
-      {/* KPIs 7d */}
-      <Section title="Últimos 7 Dias">
+      {/* KPIs do período selecionado */}
+      <Section title={`Últimos ${days} Dias`}>
         <KpiGrid columns={4}>
           <KpiCard
             title="Investimento"
-            value={(kpis7d as any)?.spend_total_7d || 0}
-            kpiKey="spend_total_7d"
-            icon={<DollarSign className="w-5 h-5" />}
-            format="currency"
-            variant="warning"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.spend, label7d)}
-          />
-          <KpiCard
-            title="Leads"
-            value={(kpis7d as any)?.leads_7d || 0}
-            kpiKey="leads_7d"
-            icon={<Users className="w-5 h-5" />}
-            variant="primary"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.leads, label7d)}
-          />
-          <KpiCard
-            title="Entradas"
-            value={(kpis7d as any)?.entradas_7d || 0}
-            kpiKey="entradas_7d"
-            icon={<ArrowDownToLine className="w-5 h-5" />}
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.entradas, label7d)}
-          />
-          <KpiCard
-            title="Taxa de Entrada"
-            value={(kpis7d as any)?.taxa_entrada_7d || 0}
-            kpiKey="taxa_entrada_7d"
-            icon={<Percent className="w-5 h-5" />}
-            format="percent"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.taxa_entrada, label7d)}
-          />
-        </KpiGrid>
-        <KpiGrid columns={4} className="mt-4">
-          <KpiCard
-            title="CPL"
-            value={(kpis7d as any)?.cpl_7d || 0}
-            kpiKey="cpl_7d"
-            icon={<TrendingUp className="w-5 h-5" />}
-            format="currency"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.cpl, label7d)}
-            invertTrend
-          />
-          <KpiCard
-            title="Reuniões Agendadas"
-            value={(kpis7d as any)?.meetings_booked_7d || 0}
-            kpiKey="meetings_booked_7d"
-            icon={<CalendarCheck className="w-5 h-5" />}
-            variant="success"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.meetings_booked, label7d)}
-          />
-          <KpiCard
-            title="Reuniões Realizadas"
-            value={(kpis7d as any)?.meetings_done_7d || 0}
-            kpiKey="meetings_done_7d"
-            icon={<CalendarCheck2 className="w-5 h-5" />}
-            variant="success"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.meetings_done, label7d)}
-          />
-          <KpiCard
-            title="Custo/Reunião"
-            value={(kpis7d as any)?.cp_meeting_booked_7d || 0}
-            kpiKey="cp_meeting_booked_7d"
-            format="currency"
-            isLoading={kpis7dLoading}
-            trend={makeTrend(changes7d?.cp_meeting, label7d)}
-            invertTrend
-          />
-        </KpiGrid>
-      </Section>
-
-      {/* KPIs 30d */}
-      <Section title="Últimos 30 Dias">
-        <KpiGrid columns={4}>
-          <KpiCard
-            title="Investimento"
-            value={(kpis30d as any)?.spend_total_30d || 0}
+            value={(kpis as any)?.spend_total || 0}
             kpiKey="spend_total_30d"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
             variant="warning"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.spend, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.spend, periodLabel)}
           />
           <KpiCard
             title="Leads"
-            value={(kpis30d as any)?.leads_30d || 0}
+            value={(kpis as any)?.leads || 0}
             kpiKey="leads_30d"
             icon={<Users className="w-5 h-5" />}
             variant="primary"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.leads, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.leads, periodLabel)}
           />
           <KpiCard
             title="Entradas"
-            value={(kpis30d as any)?.entradas_30d || 0}
+            value={(kpis as any)?.entradas || 0}
             kpiKey="entradas_30d"
             icon={<ArrowDownToLine className="w-5 h-5" />}
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.entradas, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.entradas, periodLabel)}
           />
           <KpiCard
             title="Taxa de Entrada"
-            value={(kpis30d as any)?.taxa_entrada_30d || 0}
+            value={(kpis as any)?.taxa_entrada || 0}
             kpiKey="taxa_entrada_30d"
             icon={<Percent className="w-5 h-5" />}
             format="percent"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.taxa_entrada, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.taxa_entrada, periodLabel)}
           />
         </KpiGrid>
         <KpiGrid columns={4} className="mt-4">
           <KpiCard
             title="CPL"
-            value={(kpis30d as any)?.cpl_30d || 0}
+            value={(kpis as any)?.cpl || 0}
             kpiKey="cpl_30d"
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.cpl, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.cpl, periodLabel)}
             invertTrend
           />
           <KpiCard
             title="Reuniões Agendadas"
-            value={(kpis30d as any)?.meetings_booked_30d || 0}
+            value={(kpis as any)?.meetings_booked || 0}
             kpiKey="meetings_booked_30d"
             icon={<CalendarCheck className="w-5 h-5" />}
             variant="success"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.meetings_booked, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.meetings_booked, periodLabel)}
           />
           <KpiCard
             title="Reuniões Realizadas"
-            value={(kpis30d as any)?.meetings_done_30d || 0}
+            value={(kpis as any)?.meetings_done || 0}
             kpiKey="meetings_done_30d"
             icon={<CalendarCheck2 className="w-5 h-5" />}
             variant="success"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.meetings_done, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.meetings_done, periodLabel)}
           />
           <KpiCard
             title="Custo/Reunião"
-            value={(kpis30d as any)?.cp_meeting_booked_30d || 0}
+            value={(kpis as any)?.cp_meeting_booked || 0}
             kpiKey="cp_meeting_booked_30d"
             format="currency"
-            isLoading={kpis30dLoading}
-            trend={makeTrend(changes30d?.cp_meeting, label30d)}
+            isLoading={kpisLoading}
+            trend={makeTrend(changes?.cp_meeting, periodLabel)}
             invertTrend
           />
         </KpiGrid>
