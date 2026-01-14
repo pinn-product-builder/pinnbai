@@ -265,7 +265,6 @@ export function useCallsDaily(orgId: string) {
       const { data, error } = await supabase
         .from('v3_calls_by_assistant_daily_v3')
         .select('day, calls_done, calls_answered, total_minutes')
-        .eq('org_id', orgId)
         .order('day', { ascending: true });
       
       if (error) throw error;
