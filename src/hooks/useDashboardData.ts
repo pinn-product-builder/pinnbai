@@ -103,6 +103,8 @@ export function useMeetingsUpcoming(orgId: string) {
         .from('vw_calendar_events_current_v3')
         .select('*')
         .eq('org_id', orgId)
+        .neq('status', 'cancelled')
+        .not('meeting_url', 'is', null)
         .gte('start_at', today)
         .order('start_at', { ascending: true })
         .limit(50);
