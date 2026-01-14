@@ -16,13 +16,13 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Pinn Design System Colors
+// Pinn Design System Colors (Orange Theme)
 export const chartColors = {
-  primary: 'hsl(187, 87%, 40%)',      // --pinn-cyan-500
-  secondary: 'hsl(220, 87%, 57%)',    // --pinn-blue-500
-  success: 'hsl(160, 65%, 36%)',      // --success
-  warning: 'hsl(38, 75%, 44%)',       // --warning
-  destructive: 'hsl(4, 72%, 50%)',    // --destructive
+  primary: 'hsl(27, 100%, 50%)',        // --pinn-orange-500
+  secondary: 'hsl(40, 100%, 65%)',      // --pinn-gold-500
+  success: 'hsl(155, 65%, 40%)',        // --success
+  warning: 'hsl(40, 75%, 48%)',         // --warning
+  destructive: 'hsl(4, 72%, 50%)',      // --destructive
   purple: 'hsl(280, 65%, 55%)',
   pink: 'hsl(340, 70%, 55%)',
   orange: 'hsl(25, 90%, 50%)',
@@ -31,16 +31,16 @@ export const chartColors = {
   rose: 'hsl(350, 85%, 55%)',
 };
 
-// Grid and axis styling (Pinn)
+// Grid and axis styling (Pinn Orange Theme)
 const commonAxisProps = {
-  stroke: 'hsl(215, 35%, 20%)',       // --border-strong
+  stroke: 'hsl(27, 100%, 50% / 0.22)',  // --border-strong
   fontSize: 11,
   tickLine: false,
   axisLine: false,
-  tick: { fill: 'hsl(215, 15%, 50%)' } // --text-3
+  tick: { fill: 'hsl(35, 30%, 95% / 0.55)' } // --text-3
 };
 
-const gridColor = 'rgba(255, 255, 255, 0.06)'; // --gridline
+const gridColor = 'rgba(246, 241, 234, 0.06)'; // --gridline
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -159,7 +159,7 @@ export function BarChartHorizontal({
           dataKey="name" 
           {...commonAxisProps} 
           width={150}
-          tick={{ fill: 'hsl(215, 15%, 50%)', fontSize: 11 }}
+          tick={{ fill: 'hsl(35, 30%, 95% / 0.55)', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
         <Bar 
@@ -247,8 +247,8 @@ export function AccumulatedChart({
             <stop offset="100%" stopColor={chartColors.success} stopOpacity={0.05} />
           </linearGradient>
           <linearGradient id="gradient-daily" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={chartColors.warning} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={chartColors.warning} stopOpacity={0} />
+            <stop offset="0%" stopColor={chartColors.primary} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={chartColors.primary} stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
@@ -283,7 +283,7 @@ export function AccumulatedChart({
             type="monotone"
             dataKey="daily"
             name="Custo Diário"
-            stroke={chartColors.warning}
+            stroke={chartColors.primary}
             strokeWidth={2}
             fill="url(#gradient-daily)"
           />
@@ -309,8 +309,8 @@ interface StackedTrendChartProps {
 }
 
 const stackedColors = [
-  chartColors.primary,      // Pinn cyan
-  chartColors.secondary,    // Pinn blue
+  chartColors.primary,      // Pinn orange
+  chartColors.secondary,    // Pinn gold
   chartColors.success,
   chartColors.warning,
   chartColors.orange,

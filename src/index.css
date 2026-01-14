@@ -2,38 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/600.css';
-@import '@fontsource/dm-sans/700.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* ============================================
-   PINN DESIGN SYSTEM — Dark Premium + Cyan/Blue
+   PINN DESIGN SYSTEM — Dark Warm + Orange Brand
+   Inspirado no pinnpb.com
    ============================================ */
 
 @layer base {
   :root {
-    /* === PINN Brand Colors === */
-    --pinn-cyan-500: 187 87% 40%;
-    --pinn-cyan-600: 187 87% 33%;
-    --pinn-blue-500: 220 87% 57%;
-    --pinn-blue-600: 220 78% 46%;
+    /* === PINN Brand Colors (Laranja) === */
+    --pinn-orange-500: 27 100% 50%;
+    --pinn-orange-600: 27 100% 45%;
+    --pinn-gold-500: 40 100% 65%;
     
-    /* === Backgrounds (Dark) === */
-    --bg-0: 220 50% 4%;
-    --bg-1: 220 45% 6%;
-    --bg-2: 220 42% 8%;
-    --bg-3: 220 40% 11%;
+    /* === Backgrounds (Dark Warm) === */
+    --bg-0: 20 100% 3%;
+    --bg-1: 20 100% 4%;
+    --bg-2: 20 80% 6%;
+    --bg-3: 20 60% 8%;
     
-    /* === Text === */
-    --text-1: 200 25% 92%;
-    --text-2: 210 18% 70%;
-    --text-3: 215 15% 50%;
+    /* === Text (Warm White) === */
+    --text-1: 35 30% 95%;
+    --text-2: 35 30% 95% / 0.78;
+    --text-3: 35 30% 95% / 0.55;
     
-    /* === Borders === */
-    --border-default: 215 35% 14%;
-    --border-strong: 215 35% 20%;
-    --gridline: 0 0% 100% / 0.06;
+    /* === Borders (Warm Orange Tint) === */
+    --border-default: 27 100% 50% / 0.10;
+    --border-strong: 27 100% 50% / 0.22;
+    --gridline: 35 30% 95% / 0.06;
     
     /* === Semantic Tokens (mapped) === */
     --background: var(--bg-0);
@@ -45,8 +42,8 @@
     --popover: var(--bg-3);
     --popover-foreground: var(--text-1);
 
-    --primary: var(--pinn-cyan-500);
-    --primary-foreground: 220 50% 4%;
+    --primary: var(--pinn-orange-500);
+    --primary-foreground: 20 100% 4%;
 
     --secondary: var(--bg-2);
     --secondary-foreground: var(--text-1);
@@ -58,47 +55,47 @@
     --accent-foreground: var(--text-1);
 
     /* States */
-    --success: 160 65% 36%;
-    --success-foreground: 220 50% 4%;
+    --success: 155 65% 40%;
+    --success-foreground: 20 100% 4%;
 
-    --warning: 38 75% 44%;
-    --warning-foreground: 220 50% 4%;
+    --warning: 40 75% 48%;
+    --warning-foreground: 20 100% 4%;
 
     --destructive: 4 72% 50%;
     --destructive-foreground: var(--text-1);
 
-    --info: var(--pinn-blue-500);
+    --info: var(--pinn-orange-500);
 
     --border: var(--border-default);
     --input: var(--bg-1);
-    --ring: var(--pinn-cyan-500);
+    --ring: var(--pinn-orange-500);
 
     --radius: 1rem;
 
     /* === Sidebar === */
-    --sidebar-background: var(--bg-0);
+    --sidebar-background: var(--bg-1);
     --sidebar-foreground: var(--text-2);
-    --sidebar-primary: var(--pinn-cyan-500);
-    --sidebar-primary-foreground: 220 50% 4%;
+    --sidebar-primary: var(--pinn-orange-500);
+    --sidebar-primary-foreground: 20 100% 4%;
     --sidebar-accent: var(--bg-2);
     --sidebar-accent-foreground: var(--text-1);
     --sidebar-border: var(--border-default);
-    --sidebar-ring: var(--pinn-cyan-500);
+    --sidebar-ring: var(--pinn-orange-500);
 
-    /* === Focus === */
-    --focus: 187 87% 40% / 0.35;
+    /* === Focus (Warm Glow) === */
+    --focus: 27 100% 50% / 0.28;
 
     /* === Glass effects === */
-    --glass-bg: 220 45% 6% / 0.7;
-    --glass-border: 215 35% 20% / 0.5;
-    --glow-primary: 187 87% 40% / 0.12;
-    --glow-success: 160 65% 36% / 0.12;
-    --glow-warning: 38 75% 44% / 0.12;
+    --glass-bg: 20 100% 4% / 0.7;
+    --glass-border: 27 100% 50% / 0.15;
+    --glow-primary: 27 100% 50% / 0.12;
+    --glow-success: 155 65% 40% / 0.12;
+    --glow-warning: 40 75% 48% / 0.12;
     --glow-destructive: 4 72% 50% / 0.12;
 
     /* === Chart colors === */
-    --chart-1: var(--pinn-cyan-500);
-    --chart-2: var(--pinn-blue-500);
+    --chart-1: var(--pinn-orange-500);
+    --chart-2: var(--pinn-gold-500);
     --chart-3: var(--success);
     --chart-4: var(--warning);
     --chart-5: var(--destructive);
@@ -116,15 +113,15 @@
   }
 
   html {
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    /* Radial overlay for depth */
+    /* Radial overlay for depth - warm glow like pinnpb.com */
     background: 
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--pinn-cyan-500) / 0.06), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--pinn-blue-500) / 0.04), transparent),
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(27 100% 50% / 0.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(40 100% 65% / 0.06), transparent),
       hsl(var(--bg-0));
     background-attachment: fixed;
   }
@@ -145,7 +142,7 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--pinn-cyan-500) / 0.5);
+    background: hsl(var(--pinn-orange-500) / 0.5);
   }
 }
 
@@ -157,7 +154,7 @@
     border: 1px solid hsl(var(--border-default));
     box-shadow: 
       0 0 0 1px hsl(var(--border-default) / 0.3),
-      0 8px 32px -8px hsl(220 50% 2% / 0.6),
+      0 8px 32px -8px hsl(20 100% 2% / 0.6),
       inset 0 1px 0 0 hsl(var(--text-1) / 0.02);
   }
 
@@ -173,11 +170,11 @@
 
   .glass-card-glow::before {
     content: '';
-    @apply absolute -top-px left-0 right-0 h-[2px] opacity-50;
+    @apply absolute -top-px left-0 right-0 h-[2px] opacity-60;
     background: linear-gradient(90deg, 
       transparent, 
-      hsl(var(--pinn-cyan-500) / 0.5) 20%,
-      hsl(var(--pinn-blue-500) / 0.5) 80%,
+      hsl(var(--pinn-orange-500) / 0.6) 20%,
+      hsl(var(--pinn-gold-500) / 0.6) 80%,
       transparent
     );
   }
@@ -187,7 +184,7 @@
     @apply absolute inset-0 opacity-0 transition-opacity duration-300 pointer-events-none;
     background: radial-gradient(
       600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      hsl(var(--pinn-cyan-500) / 0.08),
+      hsl(var(--pinn-orange-500) / 0.08),
       transparent 40%
     );
   }
@@ -199,8 +196,8 @@
   /* === Glow Effects === */
   .glow-primary {
     box-shadow: 
-      0 0 20px -5px hsl(var(--pinn-cyan-500) / 0.25),
-      0 0 40px -10px hsl(var(--pinn-cyan-500) / 0.15);
+      0 0 20px -5px hsl(var(--pinn-orange-500) / 0.25),
+      0 0 40px -10px hsl(var(--pinn-orange-500) / 0.15);
   }
 
   .glow-success {
@@ -218,7 +215,7 @@
   /* === Text Gradient === */
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+    background-image: linear-gradient(135deg, hsl(var(--pinn-orange-500)), hsl(var(--pinn-gold-500)));
   }
 
   /* === Sidebar Items === */
@@ -234,28 +231,28 @@
 
   .sidebar-item-active {
     @apply sidebar-item relative;
-    background: hsl(var(--pinn-cyan-500) / 0.12);
-    border: 1px solid hsl(var(--pinn-cyan-500) / 0.25);
+    background: hsl(var(--pinn-orange-500) / 0.12);
+    border: 1px solid hsl(var(--pinn-orange-500) / 0.25);
     color: hsl(var(--text-1));
   }
 
   .sidebar-item-active::before {
     content: '';
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full;
-    background: linear-gradient(180deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+    background: linear-gradient(180deg, hsl(var(--pinn-orange-500)), hsl(var(--pinn-gold-500)));
   }
 
   /* === Button Primary (Gradient CTA) === */
   .btn-primary {
     @apply relative px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200;
-    background: linear-gradient(135deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
-    color: hsl(var(--text-1));
-    box-shadow: 0 4px 14px -4px hsl(var(--pinn-cyan-500) / 0.4);
+    background: linear-gradient(135deg, hsl(var(--pinn-orange-500)), hsl(var(--pinn-gold-500)));
+    color: hsl(20 100% 4%);
+    box-shadow: 0 4px 14px -4px hsl(var(--pinn-orange-500) / 0.4);
   }
 
   .btn-primary:hover {
     filter: brightness(1.1);
-    box-shadow: 0 6px 20px -4px hsl(var(--pinn-cyan-500) / 0.5);
+    box-shadow: 0 6px 20px -4px hsl(var(--pinn-orange-500) / 0.5);
   }
 
   .btn-primary:focus-visible {
@@ -289,20 +286,20 @@
   .kpi-accent::before {
     content: '';
     @apply absolute -left-px top-3 bottom-3 w-[3px] rounded-r-full;
-    background: linear-gradient(180deg, hsl(var(--pinn-cyan-500)), hsl(var(--pinn-blue-500)));
+    background: linear-gradient(180deg, hsl(var(--pinn-orange-500)), hsl(var(--pinn-gold-500)));
   }
 
   /* === Delta Badges === */
   .delta-positive {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
-    background: hsl(var(--success) / 0.12);
+    background: hsl(var(--success) / 0.10);
     color: hsl(var(--success));
     border: 1px solid hsl(var(--success) / 0.2);
   }
 
   .delta-negative {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
-    background: hsl(var(--destructive) / 0.12);
+    background: hsl(var(--destructive) / 0.10);
     color: hsl(var(--destructive));
     border: 1px solid hsl(var(--destructive) / 0.2);
   }
@@ -351,7 +348,7 @@
 
   .pinn-input:focus {
     outline: none;
-    border-color: hsl(var(--pinn-cyan-500) / 0.45);
+    border-color: hsl(var(--pinn-orange-500) / 0.45);
     box-shadow: 0 0 0 3px hsl(var(--focus));
   }
 
@@ -361,11 +358,11 @@
   }
 
   .pinn-toggle[data-state="checked"] {
-    background: hsl(var(--pinn-cyan-500) / 0.35);
+    background: hsl(var(--pinn-orange-500) / 0.35);
   }
 
   .pinn-toggle[data-state="checked"] span {
-    background: hsl(var(--pinn-cyan-500));
+    background: hsl(var(--pinn-orange-500));
   }
 
   /* === Tooltip === */
@@ -374,7 +371,7 @@
     background: hsl(var(--bg-3));
     border: 1px solid hsl(var(--border-strong));
     color: hsl(var(--text-1));
-    box-shadow: 0 8px 24px -8px hsl(220 50% 2% / 0.6);
+    box-shadow: 0 8px 24px -8px hsl(20 100% 2% / 0.6);
   }
 
   /* === Empty State === */
@@ -395,10 +392,10 @@
 
   @keyframes glow {
     from {
-      box-shadow: 0 0 10px -5px hsl(var(--pinn-cyan-500) / 0.3);
+      box-shadow: 0 0 10px -5px hsl(var(--pinn-orange-500) / 0.3);
     }
     to {
-      box-shadow: 0 0 24px -5px hsl(var(--pinn-cyan-500) / 0.5);
+      box-shadow: 0 0 24px -5px hsl(var(--pinn-orange-500) / 0.5);
     }
   }
 
@@ -412,6 +409,6 @@
   }
 
   .hover-glow:hover {
-    box-shadow: 0 0 16px -4px hsl(var(--pinn-cyan-500) / 0.3);
+    box-shadow: 0 0 16px -4px hsl(var(--pinn-orange-500) / 0.3);
   }
 }

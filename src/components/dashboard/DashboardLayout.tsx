@@ -119,7 +119,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <aside 
           className={cn(
             "fixed left-0 top-0 h-full z-40 transition-all duration-300 ease-in-out",
-            "bg-bg-0 border-r border-border",
+            "bg-bg-1 border-r border-border",
             collapsed ? "w-16" : "w-60"
           )}
         >
@@ -127,7 +127,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="h-16 flex items-center px-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow">
-                <Sparkles className="w-4 h-4 text-white" />
+                <Sparkles className="w-4 h-4 text-bg-0" />
               </div>
               {!collapsed && (
                 <span className="font-semibold text-lg text-gradient-primary">Pinn</span>
@@ -146,14 +146,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
                     isActive 
-                      ? "bg-pinn-cyan-500/12 border border-pinn-cyan-500/25 text-text-1" 
+                      ? "bg-pinn-orange-500/12 border border-pinn-orange-500/25 text-text-1" 
                       : "text-text-2 hover:text-text-1 hover:bg-bg-2 border border-transparent"
                   )}
                 >
                   {isActive && (
                     <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-pinn-gradient" />
                   )}
-                  <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-pinn-cyan-500")} />
+                  <item.icon className={cn("w-5 h-5 flex-shrink-0", isActive && "text-pinn-orange-500")} />
                   {!collapsed && <span>{item.label}</span>}
                 </NavLink>
               );
@@ -169,7 +169,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     "text-text-2 hover:text-text-1 hover:bg-bg-2",
-                    "border border-dashed border-border hover:border-pinn-cyan-500/50"
+                    "border border-dashed border-border hover:border-pinn-orange-500/50"
                   )}
                 >
                   <Monitor className="w-5 h-5 flex-shrink-0" />
@@ -189,7 +189,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               "absolute bottom-4 right-0 translate-x-1/2 w-6 h-6 rounded-full",
               "bg-bg-2 border border-border",
               "flex items-center justify-center text-text-3",
-              "hover:bg-pinn-cyan-500 hover:border-pinn-cyan-500 hover:text-white",
+              "hover:bg-pinn-orange-500 hover:border-pinn-orange-500 hover:text-bg-0",
               "transition-all duration-200"
             )}
           >
