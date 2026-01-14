@@ -188,11 +188,17 @@ export function useConversationsHeatmap(orgId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_kommo_msg_in_heatmap_30d_v3')
-        .select('*')
+        .select('dow,hour,msg_in_total')
         .eq('org_id', orgId);
       
       if (error) throw error;
-      return (data || []) as ConversationHeatmap[];
+      
+      // Mapear para o formato esperado pelo HeatmapChart
+      return (data || []).map(row => ({
+        dow: row.dow,
+        hour: row.hour,
+        msg_in_total: row.msg_in_total || 0,
+      })) as ConversationHeatmap[];
     },
     enabled: !!orgId,
   });
