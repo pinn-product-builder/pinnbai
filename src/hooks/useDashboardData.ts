@@ -105,12 +105,22 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
       const previousEndStr = previousEnd.toISOString().split('T')[0];
       
       // Buscar dados da view vw_afonsina_custos_funil_dia para ambos os períodos
-      const { data, error } = await supabase
-        .from('vw_afonsina_custos_funil_dia')
-        .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
-        .gte('dia', previousStartStr);
+      const [funnelResult, kpisResult] = await Promise.all([
+        supabase
+          .from('vw_afonsina_custos_funil_dia')
+          .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
+          .gte('dia', previousStartStr),
+        // Buscar msg_in_30d da view de KPIs
+        supabase
+          .from('vw_dashboard_kpis_30d_v3')
+          .select('msg_in_30d,meetings_cancelled_30d')
+          .eq('org_id', orgId)
+          .maybeSingle()
+      ]);
       
-      if (error) throw error;
+      if (funnelResult.error) throw funnelResult.error;
+      const data = funnelResult.data;
+      const kpisData = kpisResult.data;
       
       // Separar dados
       const currentData = (data || []).filter(row => row.dia >= currentStartStr);
@@ -159,9 +169,9 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
       return {
         org_id: orgId,
         leads_total_30d: current.leads,
-        msg_in_30d: 0, // TODO: buscar de outra fonte se necessário
+        msg_in_30d: kpisData?.msg_in_30d || 0,
         meetings_scheduled_30d: current.meetings_scheduled,
-        meetings_cancelled_30d: 0,
+        meetings_cancelled_30d: kpisData?.meetings_cancelled_30d || 0,
         spend_30d: current.spend,
         cpl_30d: cpl,
         cpm_meeting_30d: cpm_meeting,
