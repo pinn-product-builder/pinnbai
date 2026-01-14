@@ -143,6 +143,7 @@ export default function ExecutivePage() {
               { key: 'leads_new', name: 'Novos Leads', color: 'primary' },
               { key: 'msg_in', name: 'Mensagens', color: 'success' },
               { key: 'meetings_scheduled', name: 'Reuniões', color: 'warning' },
+              { key: 'spend', name: 'Investimento (R$)', color: 'destructive' },
             ]}
             height={320}
           />
