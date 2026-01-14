@@ -7,56 +7,46 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
-// Pinn Logo SVG Component
+// Pinn Logo SVG Component - matching original design
 const PinnLogo = ({ className }: { className?: string }) => (
-  <div className={cn("flex items-center gap-2", className)}>
-    {/* Icon */}
+  <div className={cn("flex items-center gap-2.5", className)}>
+    {/* Icon - S-shaped interlocking brackets */}
     <svg 
-      viewBox="0 0 40 40" 
-      className="w-8 h-8"
+      viewBox="0 0 32 32" 
+      className="w-7 h-7"
       fill="none"
     >
-      {/* Top right arrow */}
+      {/* Top bracket - going down-right */}
       <path 
-        d="M28 8 L36 8 L36 16" 
-        stroke="url(#gradient1)" 
-        strokeWidth="4" 
+        d="M6 6 L14 6 L14 10 L10 10 L10 16 L18 16" 
+        stroke="url(#pinnGradient)" 
+        strokeWidth="3.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
+        fill="none"
       />
+      {/* Bottom bracket - going up-left */}
       <path 
-        d="M36 8 L24 20" 
-        stroke="url(#gradient1)" 
-        strokeWidth="4" 
-        strokeLinecap="round"
-      />
-      {/* Bottom left arrow */}
-      <path 
-        d="M12 32 L4 32 L4 24" 
-        stroke="url(#gradient2)" 
-        strokeWidth="4" 
+        d="M26 26 L18 26 L18 22 L22 22 L22 16 L14 16" 
+        stroke="url(#pinnGradient2)" 
+        strokeWidth="3.5" 
         strokeLinecap="round" 
         strokeLinejoin="round"
-      />
-      <path 
-        d="M4 32 L16 20" 
-        stroke="url(#gradient2)" 
-        strokeWidth="4" 
-        strokeLinecap="round"
+        fill="none"
       />
       <defs>
-        <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF8C42" />
+        <linearGradient id="pinnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FF8A3D" />
           <stop offset="100%" stopColor="#E85D04" />
         </linearGradient>
-        <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#E85D04" />
-          <stop offset="100%" stopColor="#C44D04" />
+        <linearGradient id="pinnGradient2" x1="100%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#C44D04" />
+          <stop offset="100%" stopColor="#E85D04" />
         </linearGradient>
       </defs>
     </svg>
     {/* Text */}
-    <span className="text-2xl font-bold text-white tracking-tight">Pinn</span>
+    <span className="text-xl font-bold text-white tracking-tight">Pinn</span>
   </div>
 );
 
