@@ -203,7 +203,7 @@ export interface KpiDefinition {
 }
 
 // Filter types
-export type PeriodFilter = '7d' | '30d' | '60d' | 'custom';
+export type PeriodFilter = '7d' | '14d' | '30d' | '60d' | '90d' | 'custom';
 
 export interface GlobalFilters {
   orgId: string;
