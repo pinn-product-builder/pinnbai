@@ -22,6 +22,7 @@ interface Lead {
 
 interface LeadsTableProps {
   orgId: string;
+  compact?: boolean;
 }
 
 // Hook para buscar leads individuais da tabela leads_v2
@@ -78,7 +79,7 @@ function formatDate(dateStr: string | undefined): string {
   }
 }
 
-export function LeadsTable({ orgId }: LeadsTableProps) {
+export function LeadsTable({ orgId, compact = false }: LeadsTableProps) {
   const { data: result, isLoading, error } = useLeadsList(orgId);
   const [search, setSearch] = useState('');
   
@@ -97,6 +98,8 @@ export function LeadsTable({ orgId }: LeadsTableProps) {
     );
   });
 
+  const displayLeads = compact ? filteredLeads.slice(0, 8) : filteredLeads;
+
   if (error) {
     return (
       <div className="p-6 text-center text-destructive">
@@ -104,6 +107,62 @@ export function LeadsTable({ orgId }: LeadsTableProps) {
         <p className="text-sm text-muted-foreground mt-2">
           Verifique se a tabela de leads existe e tem permissões corretas.
         </p>
+      </div>
+    );
+  }
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">{filteredLeads.length} leads</span>
+          </div>
+          <div className="relative flex-1 max-w-[160px]">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-7 h-7 text-xs"
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
+            {displayLeads.map((lead: Lead, index: number) => (
+              <div key={lead.id || index} className="flex items-center gap-3 p-2 rounded-lg border bg-card/50 hover:bg-muted/50">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {String(lead.name || lead.lead_name || '-')}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {String(lead.phone || lead.lead_phone || lead.email || '-')}
+                  </p>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${getStageColor(lead.stage_name || lead.status)}`}
+                >
+                  {(lead.stage_name || lead.status || '-').slice(0, 10)}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {filteredLeads.length > 8 && (
+          <p className="text-xs text-center text-muted-foreground">
+            +{filteredLeads.length - 8} leads
+          </p>
+        )}
       </div>
     );
   }
@@ -165,7 +224,7 @@ export function LeadsTable({ orgId }: LeadsTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLeads.map((lead: Lead, index: number) => (
+              {displayLeads.map((lead: Lead, index: number) => (
                 <TableRow key={lead.id || index} className="hover:bg-muted/50">
                   <TableCell className="text-muted-foreground text-sm">
                     {index + 1}
