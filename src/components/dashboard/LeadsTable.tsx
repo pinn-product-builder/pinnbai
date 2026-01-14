@@ -32,10 +32,7 @@ export function useLeadsList(orgId: string) {
       // Tenta buscar da view de leads com detalhes do funil
       // Se não existir, tenta tabelas alternativas
       const tables = [
-        'vw_leads_current', // View com leads atuais
-        'leads', // Tabela base de leads
-        'kommo_leads', // Leads do Kommo CRM
-        'vw_funnel_leads_detail', // View detalhada do funil
+        'leads_v2', // Tabela principal de leads
       ];
       
       for (const table of tables) {
