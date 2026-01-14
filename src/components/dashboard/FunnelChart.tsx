@@ -43,6 +43,13 @@ export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps)
   }, {} as Record<string, FunnelStage[]>);
 
   const groupColors: Record<string, string> = {
+    'ia': 'from-primary/80 to-primary/40',
+    'bot': 'from-blue-500/80 to-blue-500/40',
+    'reuniao': 'from-success/80 to-success/40',
+    'remarketing': 'from-warning/80 to-warning/40',
+    'fechamento': 'from-emerald-500/80 to-emerald-500/40',
+    'outros': 'from-muted to-muted/40',
+    // Fallbacks para nomes antigos
     'Entrada': 'from-primary/80 to-primary/40',
     'Qualificação': 'from-warning/80 to-warning/40',
     'Conversão': 'from-success/80 to-success/40',

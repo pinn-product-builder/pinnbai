@@ -82,13 +82,22 @@ export function useFunnelCurrent(orgId: string) {
     queryKey: ['funnel-current', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_funnel_current_exec')
-        .select('*')
+        .from('vw_funnel_current_v3')
+        .select('stage_group,stage_name,stage_order,leads')
         .eq('org_id', orgId)
         .order('stage_order', { ascending: true });
       
       if (error) throw error;
-      return (data || []) as FunnelStage[];
+      
+      // Mapear para o formato esperado
+      return (data || []).map(row => ({
+        org_id: orgId,
+        stage_key: row.stage_name?.toLowerCase().replace(/\s+/g, '_') || '',
+        stage_name: row.stage_name || '',
+        stage_order: row.stage_order || 0,
+        stage_group: row.stage_group || 'outros',
+        leads: row.leads || 0,
+      })) as FunnelStage[];
     },
     enabled: !!orgId,
   });
