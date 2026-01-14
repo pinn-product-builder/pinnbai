@@ -171,7 +171,7 @@ export default function VapiPage() {
           isLoading={callsLoading}
           isEmpty={!calls?.length}
         >
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[500px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
             <CallsTable calls={calls || []} />
           </div>
         </ChartCard>
