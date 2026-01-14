@@ -167,21 +167,40 @@ export function KpiCard({
     }
   }, [value, format]);
 
-  const glowClass = {
-    default: '',
-    primary: 'glow-primary',
-    success: 'glow-success',
-    warning: 'glow-warning',
-    destructive: 'glow-destructive',
-  }[variant];
+  const variantStyles = {
+    default: {
+      glow: '',
+      icon: 'text-text-3',
+      value: 'text-text-1',
+      accent: '',
+    },
+    primary: {
+      glow: 'glow-primary',
+      icon: 'text-pinn-cyan-500',
+      value: 'text-pinn-cyan-500',
+      accent: 'kpi-accent',
+    },
+    success: {
+      glow: 'glow-success',
+      icon: 'text-success',
+      value: 'text-success',
+      accent: '',
+    },
+    warning: {
+      glow: 'glow-warning',
+      icon: 'text-warning',
+      value: 'text-warning',
+      accent: '',
+    },
+    destructive: {
+      glow: 'glow-destructive',
+      icon: 'text-destructive',
+      value: 'text-destructive',
+      accent: '',
+    },
+  };
 
-  const iconColorClass = {
-    default: 'text-muted-foreground',
-    primary: 'text-primary',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[variant];
+  const styles = variantStyles[variant];
 
   if (isLoading) {
     return (
@@ -209,8 +228,9 @@ export function KpiCard({
   return (
     <div 
       className={cn(
-        "glass-card-glow p-5 transition-all duration-300 hover:scale-[1.02]",
-        glowClass,
+        "glass-card-glow p-5 transition-all duration-200 hover:scale-[1.01]",
+        styles.glow,
+        styles.accent,
         hasAnimated && "animate-scale-in"
       )}
       style={{
@@ -220,30 +240,30 @@ export function KpiCard({
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          {icon && <span className={cn("w-5 h-5", iconColorClass)}>{icon}</span>}
-          <span className="text-sm font-medium text-muted-foreground">{title}</span>
+          {icon && <span className={cn("w-5 h-5", styles.icon)}>{icon}</span>}
+          <span className="text-sm font-medium text-text-2">{title}</span>
         </div>
         
         {hasTooltip && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              <button className="text-text-3 hover:text-text-2 transition-colors">
                 <Info className="w-4 h-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs bg-popover border border-border shadow-lg">
+            <TooltipContent side="top" className="max-w-xs pinn-tooltip">
               {definition ? (
                 <div className="space-y-1">
-                  <p className="font-medium text-foreground">{definition.title}</p>
-                  <p className="text-xs text-muted-foreground">{definition.definition}</p>
+                  <p className="font-medium text-text-1">{definition.title}</p>
+                  <p className="text-xs text-text-2">{definition.definition}</p>
                   {definition.formula && (
-                    <p className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded mt-1">
+                    <p className="text-xs font-mono text-pinn-cyan-500 bg-pinn-cyan-500/10 px-2 py-1 rounded mt-1">
                       {definition.formula}
                     </p>
                   )}
                 </div>
               ) : description ? (
-                <p className="text-xs text-muted-foreground">{description}</p>
+                <p className="text-xs text-text-2">{description}</p>
               ) : null}
             </TooltipContent>
           </Tooltip>
@@ -253,10 +273,7 @@ export function KpiCard({
       <div className="flex items-end justify-between gap-2">
         <span className={cn(
           "text-2xl font-bold tracking-tight",
-          variant === 'primary' && "text-primary",
-          variant === 'success' && "text-success",
-          variant === 'warning' && "text-warning",
-          variant === 'destructive' && "text-destructive",
+          styles.value
         )}>
           {formattedValue}
         </span>
@@ -265,10 +282,10 @@ export function KpiCard({
           <Tooltip>
             <TooltipTrigger asChild>
               <div className={cn(
-                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full cursor-help",
+                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full cursor-help transition-all duration-200",
                 isTrendPositive 
-                  ? "bg-success/10 text-success" 
-                  : "bg-destructive/10 text-destructive"
+                  ? "delta-positive" 
+                  : "delta-negative"
               )}>
                 {isTrendPositive ? (
                   <TrendingUp className="w-3 h-3" />
@@ -278,7 +295,7 @@ export function KpiCard({
                 <span>{trend.value > 0 ? '+' : ''}{trend.value.toFixed(1)}%</span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-popover border border-border">
+            <TooltipContent side="bottom" className="pinn-tooltip">
               <p className="text-xs">
                 {trend.label || 'vs período anterior'}
               </p>

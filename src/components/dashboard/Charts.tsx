@@ -16,40 +16,46 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Pinn Design System Colors
 export const chartColors = {
-  primary: 'hsl(187, 85%, 53%)',
-  success: 'hsl(152, 69%, 45%)',
-  warning: 'hsl(38, 92%, 50%)',
-  destructive: 'hsl(0, 72%, 51%)',
-  purple: 'hsl(280, 65%, 60%)',
-  pink: 'hsl(340, 75%, 55%)',
-  orange: 'hsl(25, 95%, 53%)',
-  cyan: 'hsl(190, 90%, 50%)',
-  lime: 'hsl(84, 81%, 44%)',
-  rose: 'hsl(350, 89%, 60%)',
+  primary: 'hsl(187, 87%, 40%)',      // --pinn-cyan-500
+  secondary: 'hsl(220, 87%, 57%)',    // --pinn-blue-500
+  success: 'hsl(160, 65%, 36%)',      // --success
+  warning: 'hsl(38, 75%, 44%)',       // --warning
+  destructive: 'hsl(4, 72%, 50%)',    // --destructive
+  purple: 'hsl(280, 65%, 55%)',
+  pink: 'hsl(340, 70%, 55%)',
+  orange: 'hsl(25, 90%, 50%)',
+  cyan: 'hsl(190, 85%, 45%)',
+  lime: 'hsl(84, 75%, 40%)',
+  rose: 'hsl(350, 85%, 55%)',
 };
 
+// Grid and axis styling (Pinn)
 const commonAxisProps = {
-  stroke: 'hsl(222, 30%, 30%)',
+  stroke: 'hsl(215, 35%, 20%)',       // --border-strong
   fontSize: 11,
   tickLine: false,
   axisLine: false,
+  tick: { fill: 'hsl(215, 15%, 50%)' } // --text-3
 };
+
+const gridColor = 'rgba(255, 255, 255, 0.06)'; // --gridline
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="glass-card p-3 border border-border/50 shadow-xl">
-      <p className="text-xs text-muted-foreground mb-2">{label}</p>
+    <div className="pinn-tooltip">
+      <p className="text-xs text-text-3 mb-2">{label}</p>
       {payload.map((entry: any, index: number) => (
         <div key={index} className="flex items-center gap-2 text-sm">
           <span 
             className="w-2 h-2 rounded-full" 
             style={{ backgroundColor: entry.color }} 
           />
-          <span className="text-muted-foreground">{entry.name}:</span>
-          <span className="font-medium">{entry.value?.toLocaleString('pt-BR')}</span>
+          <span className="text-text-2">{entry.name}:</span>
+          <span className="font-medium text-text-1">{entry.value?.toLocaleString('pt-BR')}</span>
         </div>
       ))}
     </div>
@@ -84,13 +90,13 @@ export function DailyChart({ data, lines, height = 300 }: DailyChartProps) {
             </linearGradient>
           ))}
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <XAxis dataKey="dayLabel" {...commonAxisProps} />
         <YAxis {...commonAxisProps} />
         <Tooltip content={<CustomTooltip />} />
         <Legend 
           wrapperStyle={{ paddingTop: 20 }}
-          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+          formatter={(value) => <span className="text-xs text-text-3">{value}</span>}
         />
         {lines.map((line) => 
           line.type === 'line' ? (
@@ -146,14 +152,14 @@ export function BarChartHorizontal({
             <stop offset="100%" stopColor={chartColors[color]} stopOpacity={0.4} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
         <XAxis type="number" {...commonAxisProps} tickFormatter={formatValue} />
         <YAxis 
           type="category" 
           dataKey="name" 
           {...commonAxisProps} 
           width={150}
-          tick={{ fill: 'hsl(215, 20%, 55%)', fontSize: 11 }}
+          tick={{ fill: 'hsl(215, 15%, 50%)', fontSize: 11 }}
         />
         <Tooltip content={<CustomTooltip />} />
         <Bar 
@@ -191,7 +197,7 @@ export function HourlyChart({ data, color = 'primary', height = 200 }: HourlyCha
             <stop offset="100%" stopColor={chartColors[color]} stopOpacity={0.3} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <XAxis dataKey="hourLabel" {...commonAxisProps} interval={2} />
         <YAxis {...commonAxisProps} />
         <Tooltip content={<CustomTooltip />} />
@@ -245,23 +251,23 @@ export function AccumulatedChart({
             <stop offset="100%" stopColor={chartColors.warning} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <XAxis dataKey="dayLabel" {...commonAxisProps} />
         <YAxis {...commonAxisProps} tickFormatter={(v) => `${valuePrefix}${v}`} />
         <Tooltip 
           content={({ active, payload, label }) => {
             if (!active || !payload?.length) return null;
             return (
-              <div className="glass-card p-3 border border-border/50 shadow-xl">
-                <p className="text-xs text-muted-foreground mb-2">{label}</p>
+              <div className="pinn-tooltip">
+                <p className="text-xs text-text-3 mb-2">{label}</p>
                 {payload.map((entry: any, index: number) => (
                   <div key={index} className="flex items-center gap-2 text-sm">
                     <span 
                       className="w-2 h-2 rounded-full" 
                       style={{ backgroundColor: entry.color }} 
                     />
-                    <span className="text-muted-foreground">{entry.name}:</span>
-                    <span className="font-medium">{formatValue(entry.value)}</span>
+                    <span className="text-text-2">{entry.name}:</span>
+                    <span className="font-medium text-text-1">{formatValue(entry.value)}</span>
                   </div>
                 ))}
               </div>
@@ -270,7 +276,7 @@ export function AccumulatedChart({
         />
         <Legend 
           wrapperStyle={{ paddingTop: 20 }}
-          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
+          formatter={(value) => <span className="text-xs text-text-3">{value}</span>}
         />
         {formattedData[0]?.daily !== undefined && (
           <Area
@@ -303,13 +309,13 @@ interface StackedTrendChartProps {
 }
 
 const stackedColors = [
+  chartColors.primary,      // Pinn cyan
+  chartColors.secondary,    // Pinn blue
   chartColors.success,
   chartColors.warning,
   chartColors.orange,
-  chartColors.primary,
   chartColors.purple,
   chartColors.pink,
-  chartColors.destructive,
   chartColors.lime,
 ];
 
@@ -335,23 +341,23 @@ export function StackedTrendChart({
             </linearGradient>
           ))}
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
         <XAxis dataKey="dayLabel" {...commonAxisProps} />
         <YAxis {...commonAxisProps} />
         <Tooltip 
           content={({ active, payload, label }) => {
             if (!active || !payload?.length) return null;
             return (
-              <div className="glass-card p-3 border border-border/50 shadow-xl max-w-xs">
-                <p className="text-xs text-muted-foreground mb-2">{label}</p>
+              <div className="pinn-tooltip max-w-xs">
+                <p className="text-xs text-text-3 mb-2">{label}</p>
                 {payload.map((entry: any, index: number) => (
                   <div key={index} className="flex items-center gap-2 text-sm">
                     <span 
                       className="w-2 h-2 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: entry.color }} 
                     />
-                    <span className="text-muted-foreground truncate">{labels[entry.dataKey] || entry.dataKey}:</span>
-                    <span className="font-medium">{entry.value?.toLocaleString('pt-BR')}</span>
+                    <span className="text-text-2 truncate">{labels[entry.dataKey] || entry.dataKey}:</span>
+                    <span className="font-medium text-text-1">{entry.value?.toLocaleString('pt-BR')}</span>
                   </div>
                 ))}
               </div>
@@ -361,7 +367,7 @@ export function StackedTrendChart({
         <Legend 
           wrapperStyle={{ paddingTop: 20 }}
           formatter={(value) => (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-text-3">
               {labels[value] || value}
             </span>
           )}
