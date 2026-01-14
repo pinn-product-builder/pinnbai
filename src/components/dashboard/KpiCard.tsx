@@ -278,30 +278,7 @@ export function KpiCard({
           {formattedValue}
         </span>
 
-        {trend && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className={cn(
-                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full cursor-help transition-all duration-200",
-                isTrendPositive 
-                  ? "delta-positive" 
-                  : "delta-negative"
-              )}>
-                {isTrendPositive ? (
-                  <TrendingUp className="w-3 h-3" />
-                ) : (
-                  <TrendingDown className="w-3 h-3" />
-                )}
-                <span>{trend.value > 0 ? '+' : ''}{trend.value.toFixed(1)}%</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="pinn-tooltip">
-              <p className="text-xs">
-                {trend.label || 'vs período anterior'}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        )}
+        {/* Trend badges ocultados */}
       </div>
     </div>
   );
