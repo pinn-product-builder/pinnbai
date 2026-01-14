@@ -23,8 +23,8 @@ export function ChartCard({
   className,
 }: ChartCardProps) {
   return (
-    <div className={cn("glass-card-glow p-6", className)}>
-      <div className="flex items-start justify-between mb-6">
+    <div className={cn("glass-card-glow p-6 relative", className)}>
+      <div className="flex items-start justify-between mb-6 relative z-10">
         <div>
           <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           {subtitle && (
@@ -34,13 +34,15 @@ export function ChartCard({
         {action}
       </div>
 
-      {isLoading ? (
-        <ChartLoadingSkeleton />
-      ) : isEmpty ? (
-        <EmptyState />
-      ) : (
-        children
-      )}
+      <div className="relative z-10">
+        {isLoading ? (
+          <ChartLoadingSkeleton />
+        ) : isEmpty ? (
+          <EmptyState />
+        ) : (
+          children
+        )}
+      </div>
     </div>
   );
 }

@@ -143,9 +143,9 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
   const hasContent = text || summary || (alerts?.length) || (recommendations?.length) || (anomalies?.length) || (insightsData?.length);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
       {/* Header com botão de atualizar */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 relative z-20">
         {insight?.created_at && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
@@ -156,12 +156,17 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
           <Button
             variant="outline"
             size="sm"
-            onClick={handleRefresh}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleRefresh();
+            }}
             disabled={isRefreshing || isLoading}
             className={cn(
-              "h-8 text-xs gap-1.5 transition-all duration-300",
+              "h-8 text-xs gap-1.5 transition-all duration-300 relative z-30 cursor-pointer pointer-events-auto",
               isRefreshing && "bg-primary/10 border-primary/30"
             )}
+            style={{ pointerEvents: 'auto' }}
           >
             {isRefreshing ? (
               <>
@@ -186,9 +191,14 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
             <Button
               variant="default"
               size="sm"
-              onClick={handleRefresh}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRefresh();
+              }}
               disabled={isRefreshing || isLoading}
-              className="mt-3 gap-1.5"
+              className="mt-3 gap-1.5 relative z-30 cursor-pointer pointer-events-auto"
+              style={{ pointerEvents: 'auto' }}
             >
               {isRefreshing ? (
                 <>
