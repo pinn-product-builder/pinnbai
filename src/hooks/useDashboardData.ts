@@ -239,20 +239,21 @@ export function useTopAds(orgId: string) {
   });
 }
 
-// VAPI hooks
+// VAPI hooks - usando tabela vapi_calls diretamente
 export function useCallsKpis(orgId: string, period: '7d' | '30d') {
   return useQuery({
     queryKey: ['calls-kpis', orgId, period],
     queryFn: async () => {
-      const view = period === '7d' ? 'vw_calls_kpis_7d' : 'vw_calls_kpis_30d';
-      const { data, error } = await supabase
-        .from(view)
-        .select('*')
-        .eq('org_id', orgId)
-        .maybeSingle();
+      // Buscar total de ligações (sem filtro de data por enquanto para debug)
+      const { count, error } = await supabase
+        .from('vapi_calls')
+        .select('*', { count: 'exact', head: true });
       
       if (error) throw error;
-      return data as (CallsKpis7d | CallsKpis30d) | null;
+      
+      return {
+        [`calls_total_${period}`]: count || 0,
+      };
     },
     enabled: !!orgId,
   });
@@ -298,14 +299,25 @@ export function useCallsLast50(orgId: string) {
     queryKey: ['calls-last-50', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_calls_last_50')
+        .from('vapi_calls')
         .select('*')
-        .eq('org_id', orgId)
-        .order('event_ts', { ascending: false })
         .limit(50);
       
       if (error) throw error;
-      return (data || []) as CallEvent[];
+      
+      // Mapear para o formato esperado
+      return (data || []).map((call: any) => ({
+        org_id: call.org_id || '',
+        event_ts: call.started_at || call.created_at || new Date().toISOString(),
+        event_type: call.ended_reason || call.status || 'call',
+        actor: call.assistant_id?.slice(0, 8) || 'assistant',
+        lead_id: call.customer_number || '',
+        payload: {
+          direction: call.direction,
+          duration_seconds: call.duration_seconds,
+          cost: call.cost,
+        },
+      })) as CallEvent[];
     },
     enabled: !!orgId,
   });
