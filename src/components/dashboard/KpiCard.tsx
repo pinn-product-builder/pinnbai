@@ -141,23 +141,41 @@ export function KpiCard({
               </button>
             </TooltipTrigger>
             <TooltipContent 
-              side="top" 
-              align="end"
-              sideOffset={8}
-              className="max-w-[280px] z-[100] bg-surface-2 border border-border/50 shadow-xl p-3 rounded-lg"
+              side="right" 
+              align="start"
+              sideOffset={12}
+              className="max-w-[300px] z-[9999] p-4 rounded-xl shadow-2xl"
+              style={{
+                background: 'hsl(20 80% 8%)',
+                border: '1px solid hsl(27 100% 50% / 0.3)',
+                boxShadow: '0 20px 40px -10px hsl(20 100% 2% / 0.8), 0 0 0 1px hsl(27 100% 50% / 0.1)',
+              }}
             >
               {definition ? (
-                <div className="space-y-2">
-                  <p className="font-semibold text-sm text-foreground">{definition.title}</p>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{definition.definition}</p>
+                <div className="space-y-2.5">
+                  <p className="font-semibold text-sm" style={{ color: 'hsl(35 30% 95%)' }}>
+                    {definition.title}
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: 'hsl(35 30% 95% / 0.75)' }}>
+                    {definition.definition}
+                  </p>
                   {definition.formula && (
-                    <div className="text-xs font-mono text-pinn-orange-500 bg-pinn-orange-500/10 px-2 py-1.5 rounded border border-pinn-orange-500/20">
+                    <div 
+                      className="text-xs font-mono px-2.5 py-2 rounded-lg mt-2"
+                      style={{
+                        color: 'hsl(27 100% 55%)',
+                        background: 'hsl(27 100% 50% / 0.12)',
+                        border: '1px solid hsl(27 100% 50% / 0.25)',
+                      }}
+                    >
                       {definition.formula}
                     </div>
                   )}
                 </div>
               ) : description ? (
-                <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+                <p className="text-xs leading-relaxed" style={{ color: 'hsl(35 30% 95% / 0.75)' }}>
+                  {description}
+                </p>
               ) : null}
             </TooltipContent>
           </Tooltip>
