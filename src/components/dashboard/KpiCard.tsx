@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { Info } from 'lucide-react';
+import React, { ReactNode, useState, useEffect } from 'react';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,15 +109,18 @@ interface KpiCardProps {
   title: string;
   value: string | number;
   kpiKey?: string;
-  description?: string; // Nova prop para descrição direta
+  description?: string;
   icon?: ReactNode;
   trend?: {
     value: number;
     isPositive: boolean;
+    label?: string; // ex: "vs semana anterior"
   };
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
   format?: 'number' | 'currency' | 'percent';
   isLoading?: boolean;
+  /** Indica se valores menores são melhores (ex: CPL, Custo/Reunião) */
+  invertTrend?: boolean;
 }
 
 export function KpiCard({
@@ -130,8 +133,17 @@ export function KpiCard({
   variant = 'default',
   format = 'number',
   isLoading,
+  invertTrend = false,
 }: KpiCardProps) {
   const { data: dictionary } = useKpiDictionary();
+  const [hasAnimated, setHasAnimated] = useState(false);
+  
+  // Trigger animation when loading completes
+  useEffect(() => {
+    if (!isLoading && !hasAnimated) {
+      setHasAnimated(true);
+    }
+  }, [isLoading, hasAnimated]);
   
   // Prioridade: dictionary > LOCAL_KPI_DEFINITIONS > description prop
   const definition = kpiKey 
@@ -188,9 +200,24 @@ export function KpiCard({
   }
 
   const hasTooltip = definition || description;
+  
+  // Determina se a tendência é positiva considerando invertTrend
+  const isTrendPositive = trend 
+    ? (invertTrend ? !trend.isPositive : trend.isPositive)
+    : undefined;
 
   return (
-    <div className={cn("glass-card-glow p-5 transition-all duration-300 hover:scale-[1.02]", glowClass)}>
+    <div 
+      className={cn(
+        "glass-card-glow p-5 transition-all duration-300 hover:scale-[1.02]",
+        glowClass,
+        hasAnimated && "animate-scale-in"
+      )}
+      style={{
+        animationDuration: '0.4s',
+        animationFillMode: 'both',
+      }}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           {icon && <span className={cn("w-5 h-5", iconColorClass)}>{icon}</span>}
@@ -223,7 +250,7 @@ export function KpiCard({
         )}
       </div>
 
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-2">
         <span className={cn(
           "text-2xl font-bold tracking-tight",
           variant === 'primary' && "text-primary",
@@ -235,19 +262,34 @@ export function KpiCard({
         </span>
 
         {trend && (
-          <span className={cn(
-            "text-xs font-medium px-2 py-1 rounded-full",
-            trend.isPositive 
-              ? "bg-success/10 text-success" 
-              : "bg-destructive/10 text-destructive"
-          )}>
-            {trend.isPositive ? '+' : ''}{trend.value.toFixed(1)}%
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className={cn(
+                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full cursor-help",
+                isTrendPositive 
+                  ? "bg-success/10 text-success" 
+                  : "bg-destructive/10 text-destructive"
+              )}>
+                {isTrendPositive ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : (
+                  <TrendingDown className="w-3 h-3" />
+                )}
+                <span>{trend.value > 0 ? '+' : ''}{trend.value.toFixed(1)}%</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-popover border border-border">
+              <p className="text-xs">
+                {trend.label || 'vs período anterior'}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </div>
   );
 }
+
 interface KpiGridProps {
   children: ReactNode;
   columns?: 2 | 3 | 4 | 5;

@@ -52,6 +52,22 @@ export default function TrafegoPage() {
     meetings_booked: d.meetings_booked,
   }));
 
+  // Helper para criar objeto trend
+  const makeTrend = (change: number | undefined, label: string) => {
+    if (change === undefined || isNaN(change)) return undefined;
+    return {
+      value: change,
+      isPositive: change >= 0,
+      label,
+    };
+  };
+
+  // Extrair changes e periodLabel dos KPIs
+  const changes7d = (kpis7d as any)?.changes;
+  const label7d = (kpis7d as any)?.periodLabel || 'vs 7d anteriores';
+  const changes30d = (kpis30d as any)?.changes;
+  const label30d = (kpis30d as any)?.periodLabel || 'vs 30d anteriores';
+
   return (
     <div className="space-y-8 animate-fade-in">
       <PageHeader
@@ -70,6 +86,7 @@ export default function TrafegoPage() {
             format="currency"
             variant="warning"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.spend, label7d)}
           />
           <KpiCard
             title="Leads"
@@ -78,6 +95,7 @@ export default function TrafegoPage() {
             icon={<Users className="w-5 h-5" />}
             variant="primary"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.leads, label7d)}
           />
           <KpiCard
             title="Entradas"
@@ -85,6 +103,7 @@ export default function TrafegoPage() {
             kpiKey="entradas_7d"
             icon={<ArrowDownToLine className="w-5 h-5" />}
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.entradas, label7d)}
           />
           <KpiCard
             title="Taxa de Entrada"
@@ -93,6 +112,7 @@ export default function TrafegoPage() {
             icon={<Percent className="w-5 h-5" />}
             format="percent"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.taxa_entrada, label7d)}
           />
         </KpiGrid>
         <KpiGrid columns={4} className="mt-4">
@@ -103,6 +123,8 @@ export default function TrafegoPage() {
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.cpl, label7d)}
+            invertTrend
           />
           <KpiCard
             title="Reuniões Agendadas"
@@ -111,6 +133,7 @@ export default function TrafegoPage() {
             icon={<CalendarCheck className="w-5 h-5" />}
             variant="success"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.meetings_booked, label7d)}
           />
           <KpiCard
             title="Reuniões Realizadas"
@@ -119,6 +142,7 @@ export default function TrafegoPage() {
             icon={<CalendarCheck2 className="w-5 h-5" />}
             variant="success"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.meetings_done, label7d)}
           />
           <KpiCard
             title="Custo/Reunião"
@@ -126,6 +150,8 @@ export default function TrafegoPage() {
             kpiKey="cp_meeting_booked_7d"
             format="currency"
             isLoading={kpis7dLoading}
+            trend={makeTrend(changes7d?.cp_meeting, label7d)}
+            invertTrend
           />
         </KpiGrid>
       </Section>
@@ -141,6 +167,7 @@ export default function TrafegoPage() {
             format="currency"
             variant="warning"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.spend, label30d)}
           />
           <KpiCard
             title="Leads"
@@ -149,6 +176,7 @@ export default function TrafegoPage() {
             icon={<Users className="w-5 h-5" />}
             variant="primary"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.leads, label30d)}
           />
           <KpiCard
             title="Entradas"
@@ -156,6 +184,7 @@ export default function TrafegoPage() {
             kpiKey="entradas_30d"
             icon={<ArrowDownToLine className="w-5 h-5" />}
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.entradas, label30d)}
           />
           <KpiCard
             title="Taxa de Entrada"
@@ -164,6 +193,7 @@ export default function TrafegoPage() {
             icon={<Percent className="w-5 h-5" />}
             format="percent"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.taxa_entrada, label30d)}
           />
         </KpiGrid>
         <KpiGrid columns={4} className="mt-4">
@@ -174,6 +204,8 @@ export default function TrafegoPage() {
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.cpl, label30d)}
+            invertTrend
           />
           <KpiCard
             title="Reuniões Agendadas"
@@ -182,6 +214,7 @@ export default function TrafegoPage() {
             icon={<CalendarCheck className="w-5 h-5" />}
             variant="success"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.meetings_booked, label30d)}
           />
           <KpiCard
             title="Reuniões Realizadas"
@@ -190,6 +223,7 @@ export default function TrafegoPage() {
             icon={<CalendarCheck2 className="w-5 h-5" />}
             variant="success"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.meetings_done, label30d)}
           />
           <KpiCard
             title="Custo/Reunião"
@@ -197,6 +231,8 @@ export default function TrafegoPage() {
             kpiKey="cp_meeting_booked_30d"
             format="currency"
             isLoading={kpis30dLoading}
+            trend={makeTrend(changes30d?.cp_meeting, label30d)}
+            invertTrend
           />
         </KpiGrid>
       </Section>
