@@ -171,36 +171,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          {/* User Info & Logout */}
-          <div className="px-3 py-2 border-t border-border mt-2">
-            {!collapsed && user && (
-              <div className="text-xs text-text-3 mb-2 truncate px-1">
-                {user.email}
-              </div>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleLogout}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
-                    "text-text-3 hover:text-danger hover:bg-danger/10"
-                  )}
-                >
-                  <LogOut className="w-4 h-4 flex-shrink-0" />
-                  {!collapsed && <span>Sair</span>}
-                </button>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right" className="pinn-tooltip">
-                  <p>Sair</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </div>
-
-          {/* View Mode Button */}
-          <div className="absolute bottom-16 left-0 right-0 px-3">
+          {/* Bottom Actions: View Mode + Logout */}
+          <div className="absolute bottom-16 left-0 right-0 px-3 space-y-2">
+            {/* View Mode Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -217,6 +190,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </TooltipTrigger>
               <TooltipContent side="right" className="pinn-tooltip">
                 <p>Apresentação em tela cheia (Ctrl+Shift+V)</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Logout Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                    "text-text-3 hover:text-danger hover:bg-danger/10"
+                  )}
+                >
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  {!collapsed && <span>Sair</span>}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="pinn-tooltip">
+                <p>Desconectar</p>
               </TooltipContent>
             </Tooltip>
           </div>
