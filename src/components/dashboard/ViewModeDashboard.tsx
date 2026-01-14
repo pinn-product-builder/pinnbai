@@ -11,7 +11,9 @@ import {
   Timer,
   Percent,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  X,
+  Monitor
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,6 +23,8 @@ import { DailyChart } from './Charts';
 import { FunnelChart } from './FunnelChart';
 import { ChartCard, Section } from './ChartCard';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
+import { Button } from '@/components/ui/button';
+import { useSidebarContext } from './DashboardLayout';
 import {
   useExecutiveKpis,
   useExecutiveDaily,
@@ -37,6 +41,7 @@ interface ViewModeDashboardProps {
 
 export function ViewModeDashboard({ refreshInterval = 60 }: ViewModeDashboardProps) {
   const { filters } = useGlobalFilters();
+  const { setViewMode } = useSidebarContext();
   const orgId = filters.orgId;
   const period = filters.period === 'custom' ? '30d' : filters.period;
   
@@ -101,7 +106,7 @@ export function ViewModeDashboard({ refreshInterval = 60 }: ViewModeDashboardPro
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header com status de refresh */}
+      {/* Header com status de refresh e botão sair */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -126,6 +131,16 @@ export function ViewModeDashboard({ refreshInterval = 60 }: ViewModeDashboardPro
               {nextRefreshIn}s
             </span>
           </div>
+          {/* Botão Sair do Modo View */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode(false)}
+            className="gap-2 border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <X className="w-4 h-4" />
+            Sair
+          </Button>
         </div>
       </div>
 
