@@ -166,12 +166,17 @@ export function useConversationsByHour(orgId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_kommo_msg_in_by_hour_7d_v3')
-        .select('*')
+        .select('hour,msg_in_total')
         .eq('org_id', orgId)
         .order('hour', { ascending: true });
       
       if (error) throw error;
-      return (data || []) as ConversationByHour[];
+      
+      // Mapear para o formato esperado
+      return (data || []).map(row => ({
+        hour: row.hour,
+        msg_in_total: row.msg_in_total || 0,
+      })) as ConversationByHour[];
     },
     enabled: !!orgId,
   });
