@@ -25,6 +25,43 @@ import type {
   KpiDefinition,
 } from '@/types/dashboard';
 
+// ===== HOOK COMPARTILHADO DE INVESTIMENTO =====
+// Fonte única de verdade para cálculo de investimento (tabela trafego)
+export function useInvestimento(orgId: string, period: '7d' | '30d' | '60d' = '30d') {
+  return useQuery({
+    queryKey: ['investimento', orgId, period],
+    queryFn: async () => {
+      const daysMap = { '7d': 7, '30d': 30, '60d': 60 };
+      const days = daysMap[period];
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('trafego')
+        .select('data,custo')
+        .eq('org_id', orgId)
+        .gte('data', cutoffStr);
+      
+      if (error) throw error;
+      
+      // Agregar por dia
+      const byDay: Record<string, number> = {};
+      let total = 0;
+      
+      (data || []).forEach(row => {
+        const day = row.data;
+        const custo = Number(row.custo) || 0;
+        byDay[day] = (byDay[day] || 0) + custo;
+        total += custo;
+      });
+      
+      return { total, byDay };
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Org options
 export function useOrgOptions() {
   return useQuery({
@@ -42,19 +79,48 @@ export function useOrgOptions() {
   });
 }
 
-// Executive hooks
+// Executive hooks - Integrado com investimento real
 export function useExecutiveKpis(orgId: string) {
   return useQuery({
     queryKey: ['executive-kpis', orgId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Buscar KPIs da view
+      const { data: kpiData, error: kpiError } = await supabase
         .from('vw_dashboard_kpis_30d_v3')
         .select('*')
         .eq('org_id', orgId)
         .maybeSingle();
       
-      if (error) throw error;
-      return data as ExecutiveKpis | null;
+      if (kpiError) throw kpiError;
+      
+      // Buscar investimento real da tabela trafego (30d)
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - 30);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
+      const { data: trafegoData, error: trafegoError } = await supabase
+        .from('trafego')
+        .select('custo')
+        .eq('org_id', orgId)
+        .gte('data', cutoffStr);
+      
+      if (trafegoError) throw trafegoError;
+      
+      // Calcular investimento real
+      const spend_30d = (trafegoData || []).reduce((sum, row) => sum + (Number(row.custo) || 0), 0);
+      const leads = kpiData?.leads_total_30d || 0;
+      const meetings = kpiData?.meetings_scheduled_30d || 0;
+      
+      // Recalcular CPL e custo por reunião com investimento real
+      const cpl_30d = leads > 0 ? spend_30d / leads : 0;
+      const cpm_meeting_30d = meetings > 0 ? spend_30d / meetings : 0;
+      
+      return {
+        ...kpiData,
+        spend_30d,
+        cpl_30d,
+        cpm_meeting_30d,
+      } as ExecutiveKpis;
     },
     enabled: !!orgId,
   });
