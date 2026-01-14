@@ -162,8 +162,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="h-16 flex items-center px-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-bg-2 flex items-center justify-center border border-border">
-                <PinnLogoIcon />
+              <div className="w-8 h-8 rounded-xl bg-pinn-gradient flex items-center justify-center shadow-pinn-glow">
+                <PinnLogoIcon className="w-4 h-4 [&_path]:stroke-bg-0" />
               </div>
               {!collapsed && (
                 <span className="font-semibold text-lg text-text-1">Afonsina</span>
