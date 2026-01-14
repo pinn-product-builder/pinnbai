@@ -1,9 +1,11 @@
 import React from 'react';
-import { MessageSquare, Users, Target, Percent, CalendarCheck, TrendingUp } from 'lucide-react';
+import { MessageSquare, Users, Target, Percent, CalendarCheck, TrendingUp, Table as TableIcon } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
 import { DailyChart, HourlyChart } from '@/components/dashboard/Charts';
 import { HeatmapChart } from '@/components/dashboard/HeatmapChart';
+import { ConversationTrendChart } from '@/components/dashboard/ConversationTrendChart';
+import { ConversationTable } from '@/components/dashboard/ConversationTable';
 import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import {
@@ -152,8 +154,24 @@ export default function ConversasPage() {
         </ChartCard>
       </div>
 
-      {/* Bottom Row */}
+      {/* Tendência e Heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard
+          title="Tendência de Conversão (60d)"
+          subtitle="Taxa de mensagens por lead ao longo do tempo"
+          isLoading={dailyLoading}
+          isEmpty={!daily?.length}
+        >
+          <ConversationTrendChart
+            data={(daily || []).map(d => ({
+              day: d.day,
+              msg_in_total: d.msg_in_total,
+              leads_with_msg_in: d.leads_with_msg_in,
+            }))}
+            height={280}
+          />
+        </ChartCard>
+
         <ChartCard
           title="Mapa de Calor (30d)"
           subtitle="Mensagens por dia da semana e hora"
@@ -165,6 +183,24 @@ export default function ConversasPage() {
               dow: h.dow,
               hour: h.hour,
               value: h.msg_in_total,
+            }))}
+          />
+        </ChartCard>
+      </div>
+
+      {/* Tabela e Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard
+          title="Métricas Diárias Detalhadas"
+          subtitle="Últimos 15 dias com indicadores de tendência"
+          isLoading={dailyLoading}
+          isEmpty={!daily?.length}
+        >
+          <ConversationTable
+            data={(daily || []).map(d => ({
+              day: d.day,
+              msg_in_total: d.msg_in_total,
+              leads_with_msg_in: d.leads_with_msg_in,
             }))}
           />
         </ChartCard>
