@@ -16,13 +16,17 @@ import {
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-const chartColors = {
+export const chartColors = {
   primary: 'hsl(187, 85%, 53%)',
   success: 'hsl(152, 69%, 45%)',
   warning: 'hsl(38, 92%, 50%)',
   destructive: 'hsl(0, 72%, 51%)',
   purple: 'hsl(280, 65%, 60%)',
   pink: 'hsl(340, 75%, 55%)',
+  orange: 'hsl(25, 95%, 53%)',
+  cyan: 'hsl(190, 90%, 50%)',
+  lime: 'hsl(84, 81%, 44%)',
+  rose: 'hsl(350, 89%, 60%)',
 };
 
 const commonAxisProps = {
@@ -286,6 +290,94 @@ export function AccumulatedChart({
           strokeWidth={2}
           fill="url(#gradient-accumulated)"
         />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+interface StackedTrendChartProps {
+  data: any[];
+  keys: string[];
+  labels: Record<string, string>;
+  height?: number;
+}
+
+const stackedColors = [
+  chartColors.success,
+  chartColors.warning,
+  chartColors.orange,
+  chartColors.primary,
+  chartColors.purple,
+  chartColors.pink,
+  chartColors.destructive,
+  chartColors.lime,
+];
+
+export function StackedTrendChart({ 
+  data, 
+  keys, 
+  labels,
+  height = 300,
+}: StackedTrendChartProps) {
+  const formattedData = data.map((d) => ({
+    ...d,
+    dayLabel: format(parseISO(d.day), 'dd/MM', { locale: ptBR }),
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <defs>
+          {keys.map((key, index) => (
+            <linearGradient key={key} id={`gradient-stacked-${key}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={stackedColors[index % stackedColors.length]} stopOpacity={0.6} />
+              <stop offset="100%" stopColor={stackedColors[index % stackedColors.length]} stopOpacity={0.1} />
+            </linearGradient>
+          ))}
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 14%)" vertical={false} />
+        <XAxis dataKey="dayLabel" {...commonAxisProps} />
+        <YAxis {...commonAxisProps} />
+        <Tooltip 
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null;
+            return (
+              <div className="glass-card p-3 border border-border/50 shadow-xl max-w-xs">
+                <p className="text-xs text-muted-foreground mb-2">{label}</p>
+                {payload.map((entry: any, index: number) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <span 
+                      className="w-2 h-2 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: entry.color }} 
+                    />
+                    <span className="text-muted-foreground truncate">{labels[entry.dataKey] || entry.dataKey}:</span>
+                    <span className="font-medium">{entry.value?.toLocaleString('pt-BR')}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          }}
+        />
+        <Legend 
+          wrapperStyle={{ paddingTop: 20 }}
+          formatter={(value) => (
+            <span className="text-xs text-muted-foreground">
+              {labels[value] || value}
+            </span>
+          )}
+        />
+        {keys.map((key, index) => (
+          <Area
+            key={key}
+            type="monotone"
+            dataKey={key}
+            name={key}
+            stackId="1"
+            stroke={stackedColors[index % stackedColors.length]}
+            strokeWidth={1}
+            fill={`url(#gradient-stacked-${key})`}
+          />
+        ))}
       </AreaChart>
     </ResponsiveContainer>
   );

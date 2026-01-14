@@ -680,6 +680,78 @@ export function useCallsEndedReasons(orgId: string, period: '7d' | '14d' | '30d'
   });
 }
 
+// Hook para buscar tendência diária dos motivos de finalização
+export function useCallsEndedReasonsTrend(orgId: string, period: '7d' | '14d' | '30d' | '60d' | '90d' = '30d') {
+  return useQuery({
+    queryKey: ['calls-ended-reasons-trend', orgId, period],
+    queryFn: async () => {
+      const periodDays: Record<string, number> = {
+        '7d': 7, '14d': 14, '30d': 30, '60d': 60, '90d': 90
+      };
+      const days = periodDays[period] || 30;
+      
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('v3_calls_ended_reason_daily')
+        .select('day_brt,ended_reason,calls_done')
+        .gte('day_brt', cutoffStr)
+        .order('day_brt', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Identificar os top 5 motivos mais frequentes
+      const reasonTotals: Record<string, number> = {};
+      (data || []).forEach(row => {
+        const reason = row.ended_reason || 'unknown';
+        reasonTotals[reason] = (reasonTotals[reason] || 0) + (Number(row.calls_done) || 0);
+      });
+      
+      const topReasons = Object.entries(reasonTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([reason]) => reason);
+      
+      // Agrupar por dia, com cada motivo como coluna
+      const byDay: Record<string, Record<string, number>> = {};
+      
+      (data || []).forEach(row => {
+        const day = row.day_brt?.split('T')[0] || row.day_brt;
+        const reason = row.ended_reason || 'unknown';
+        const count = Number(row.calls_done) || 0;
+        
+        if (!byDay[day]) {
+          byDay[day] = {};
+          topReasons.forEach(r => byDay[day][r] = 0);
+          byDay[day]['outros'] = 0;
+        }
+        
+        if (topReasons.includes(reason)) {
+          byDay[day][reason] = (byDay[day][reason] || 0) + count;
+        } else {
+          byDay[day]['outros'] = (byDay[day]['outros'] || 0) + count;
+        }
+      });
+      
+      // Converter para array
+      const result = Object.entries(byDay)
+        .map(([day, reasons]) => ({
+          day,
+          ...reasons,
+        }))
+        .sort((a, b) => a.day.localeCompare(b.day));
+      
+      return {
+        data: result,
+        topReasons: [...topReasons, 'outros'],
+      };
+    },
+    enabled: !!orgId,
+  });
+}
+
 export function useCallsLast50(orgId: string) {
   return useQuery({
     queryKey: ['calls-last-50', orgId],
