@@ -11,13 +11,15 @@ import {
   Sparkles,
   Wrench,
   Monitor,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
 import { ViewModeDashboard } from './ViewModeDashboard';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface SidebarContextType {
   collapsed: boolean;
@@ -35,13 +37,14 @@ const SidebarContext = createContext<SidebarContextType>({
 
 export const useSidebarContext = () => useContext(SidebarContext);
 
+// Itens de navegação com flag de admin
 const navItems = [
-  { path: '/dash/executivo', label: 'Executivo', icon: LayoutDashboard },
-  { path: '/dash/conversas', label: 'Conversas', icon: MessageSquare },
-  { path: '/dash/trafego', label: 'Tráfego', icon: TrendingUp },
-  { path: '/dash/vapi', label: 'VAPI', icon: Phone },
-  { path: '/dash/admin', label: 'Admin', icon: Settings },
-  { path: '/dash/config', label: 'Config', icon: Wrench },
+  { path: '/dash/executivo', label: 'Executivo', icon: LayoutDashboard, adminOnly: false },
+  { path: '/dash/conversas', label: 'Conversas', icon: MessageSquare, adminOnly: false },
+  { path: '/dash/trafego', label: 'Tráfego', icon: TrendingUp, adminOnly: false },
+  { path: '/dash/vapi', label: 'VAPI', icon: Phone, adminOnly: false },
+  { path: '/dash/admin', label: 'Admin', icon: Settings, adminOnly: true },
+  { path: '/dash/config', label: 'Config', icon: Wrench, adminOnly: true },
 ];
 
 interface DashboardLayoutProps {
@@ -52,6 +55,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const location = useLocation();
+  const { isAdmin, user, signOut } = useAuthContext();
+
+  // Filtrar itens de navegação baseado na role
+  const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   // Atalho de teclado ESC para sair do modo view
   useEffect(() => {
@@ -137,7 +148,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="p-3 space-y-1">
-            {navItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <NavLink
@@ -159,6 +170,34 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               );
             })}
           </nav>
+
+          {/* User Info & Logout */}
+          <div className="px-3 py-2 border-t border-border mt-2">
+            {!collapsed && user && (
+              <div className="text-xs text-text-3 mb-2 truncate px-1">
+                {user.email}
+              </div>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleLogout}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200",
+                    "text-text-3 hover:text-danger hover:bg-danger/10"
+                  )}
+                >
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  {!collapsed && <span>Sair</span>}
+                </button>
+              </TooltipTrigger>
+              {collapsed && (
+                <TooltipContent side="right" className="pinn-tooltip">
+                  <p>Sair</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </div>
 
           {/* View Mode Button */}
           <div className="absolute bottom-16 left-0 right-0 px-3">
