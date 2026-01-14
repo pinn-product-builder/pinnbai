@@ -350,7 +350,8 @@ export function useInsights(orgId: string, scope: string) {
   return useQuery({
     queryKey: ['insights', orgId, scope],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primeiro tenta buscar pelo scope específico
+      let { data, error } = await supabase
         .from('ai_insights')
         .select('*')
         .eq('org_id', orgId)
@@ -358,6 +359,20 @@ export function useInsights(orgId: string, scope: string) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+      
+      // Fallback: busca qualquer insight da org se não encontrar pelo scope
+      if (!data && !error) {
+        const fallback = await supabase
+          .from('ai_insights')
+          .select('*')
+          .eq('org_id', orgId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        data = fallback.data;
+        error = fallback.error;
+      }
       
       if (error) throw error;
       return data as AIInsight | null;
