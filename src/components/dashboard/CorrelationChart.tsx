@@ -8,7 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  Label,
+  ZAxis,
+  Legend,
 } from 'recharts';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,8 @@ interface CorrelationData {
   day: string;
   spend: number;
   leads: number;
+  entradas?: number;
+  meetings_booked?: number;
 }
 
 interface CorrelationChartProps {
@@ -49,6 +52,11 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
     return denominator === 0 ? 0 : numerator / denominator;
   };
   
+  // Calcular CPL médio
+  const totalSpend = filteredData.reduce((s, d) => s + d.spend, 0);
+  const totalLeads = filteredData.reduce((s, d) => s + d.leads, 0);
+  const avgCpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
+  
   const correlation = calculateCorrelation();
   
   const formatCurrency = (value: number) => {
@@ -62,10 +70,10 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
 
   const getCorrelationLabel = (r: number) => {
     const absR = Math.abs(r);
-    if (absR >= 0.7) return { label: 'Forte', color: 'text-emerald-500' };
-    if (absR >= 0.4) return { label: 'Moderada', color: 'text-yellow-500' };
-    if (absR >= 0.2) return { label: 'Fraca', color: 'text-orange-500' };
-    return { label: 'Muito fraca', color: 'text-muted-foreground' };
+    if (absR >= 0.7) return { label: 'Forte', color: 'text-emerald-500', bg: 'bg-emerald-500/10' };
+    if (absR >= 0.4) return { label: 'Moderada', color: 'text-yellow-500', bg: 'bg-yellow-500/10' };
+    if (absR >= 0.2) return { label: 'Fraca', color: 'text-orange-500', bg: 'bg-orange-500/10' };
+    return { label: 'Muito fraca', color: 'text-muted-foreground', bg: 'bg-muted' };
   };
   
   const correlationInfo = getCorrelationLabel(correlation);
@@ -78,26 +86,45 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
     );
   }
 
+  // Enriquecer dados com tamanho do ponto baseado em entradas
+  const enrichedData = filteredData.map(d => ({
+    ...d,
+    size: Math.max(50, (d.entradas || 0) * 20 + 50),
+    cpl: d.leads > 0 ? d.spend / d.leads : 0,
+  }));
+
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Indicador de correlação */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Correlação:</span>
-          <span className={cn("text-sm font-bold", correlationInfo.color)}>
+      {/* Cards de métricas */}
+      <div className="grid grid-cols-3 gap-2 px-2">
+        <div className={cn("rounded-lg p-2 text-center", correlationInfo.bg)}>
+          <div className={cn("text-lg font-bold", correlationInfo.color)}>
             {(correlation * 100).toFixed(0)}%
-          </span>
-          <span className={cn("text-xs", correlationInfo.color)}>
-            ({correlationInfo.label})
-          </span>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Correlação ({correlationInfo.label})
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {filteredData.length} pontos analisados
+        <div className="rounded-lg bg-primary/10 p-2 text-center">
+          <div className="text-lg font-bold text-primary">
+            {formatCurrency(avgCpl)}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            CPL Médio
+          </div>
+        </div>
+        <div className="rounded-lg bg-muted p-2 text-center">
+          <div className="text-lg font-bold text-foreground">
+            {filteredData.length}
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Dias analisados
+          </div>
         </div>
       </div>
       
-      <ResponsiveContainer width="100%" height={height}>
-        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 20 }}>
+      <ResponsiveContainer width="100%" height={height - 80}>
+        <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
           <CartesianGrid 
             strokeDasharray="3 3" 
             stroke="hsl(var(--border))" 
@@ -110,58 +137,79 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
             name="Investimento"
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
             tickFormatter={(v) => `R$${v}`}
-          >
-            <Label 
-              value="Investimento (R$)" 
-              offset={-15} 
-              position="insideBottom" 
-              style={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            />
-          </XAxis>
+            label={{ 
+              value: 'Investimento Diário (R$)', 
+              position: 'insideBottom',
+              offset: -10,
+              style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))' }
+            }}
+          />
           
           <YAxis 
             type="number" 
             dataKey="leads" 
             name="Leads"
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-          >
-            <Label 
-              value="Leads" 
-              angle={-90} 
-              position="insideLeft" 
-              style={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', textAnchor: 'middle' }}
-            />
-          </YAxis>
+            label={{ 
+              value: 'Leads Gerados', 
+              angle: -90, 
+              position: 'insideLeft',
+              offset: 10,
+              style: { fontSize: 10, fill: 'hsl(var(--muted-foreground))', textAnchor: 'middle' }
+            }}
+          />
+          
+          <ZAxis type="number" dataKey="size" range={[50, 200]} />
           
           {/* Linhas de referência para médias */}
           <ReferenceLine 
             x={avgSpend} 
             stroke="hsl(var(--primary))" 
             strokeDasharray="5 5"
-            strokeOpacity={0.5}
+            strokeOpacity={0.6}
+            label={{ 
+              value: 'Média', 
+              position: 'top', 
+              style: { fontSize: 9, fill: 'hsl(var(--primary))' } 
+            }}
           />
           <ReferenceLine 
             y={avgLeads} 
             stroke="hsl(var(--primary))" 
             strokeDasharray="5 5"
-            strokeOpacity={0.5}
+            strokeOpacity={0.6}
           />
           
           <Tooltip
             cursor={{ strokeDasharray: '3 3' }}
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
-                const data = payload[0].payload;
+                const d = payload[0].payload;
                 return (
                   <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm">
-                    <p className="font-medium text-foreground mb-1">{data.day}</p>
-                    <p className="text-warning">Investimento: {formatCurrency(data.spend)}</p>
-                    <p className="text-primary">Leads: {data.leads}</p>
-                    {data.leads > 0 && (
-                      <p className="text-muted-foreground mt-1">
-                        CPL: {formatCurrency(data.spend / data.leads)}
+                    <p className="font-medium text-foreground mb-2">{d.day}</p>
+                    <div className="space-y-1">
+                      <p className="text-warning flex justify-between gap-4">
+                        <span>Investimento:</span>
+                        <span className="font-medium">{formatCurrency(d.spend)}</span>
                       </p>
-                    )}
+                      <p className="text-primary flex justify-between gap-4">
+                        <span>Leads:</span>
+                        <span className="font-medium">{d.leads}</span>
+                      </p>
+                      {d.entradas > 0 && (
+                        <p className="text-secondary-foreground flex justify-between gap-4">
+                          <span>Entradas:</span>
+                          <span className="font-medium">{d.entradas}</span>
+                        </p>
+                      )}
+                      {d.cpl > 0 && (
+                        <p className="text-muted-foreground flex justify-between gap-4 pt-1 border-t">
+                          <span>CPL do dia:</span>
+                          <span className="font-medium">{formatCurrency(d.cpl)}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               }
@@ -171,7 +219,7 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
           
           <Scatter 
             name="Dias" 
-            data={filteredData} 
+            data={enrichedData} 
             fill="hsl(var(--primary))"
             fillOpacity={0.7}
           />
@@ -179,8 +227,8 @@ export function CorrelationChart({ data, height = 300, className }: CorrelationC
       </ResponsiveContainer>
       
       {/* Legenda */}
-      <div className="text-[10px] text-muted-foreground text-center">
-        Cada ponto representa um dia • Linhas tracejadas = médias
+      <div className="text-[10px] text-muted-foreground text-center px-2">
+        Cada ponto = 1 dia • Tamanho do ponto = nº de entradas • Linhas tracejadas = médias
       </div>
     </div>
   );

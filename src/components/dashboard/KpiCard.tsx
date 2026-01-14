@@ -137,9 +137,10 @@ export function KpiCard({
 interface KpiGridProps {
   children: ReactNode;
   columns?: 2 | 3 | 4 | 5;
+  className?: string;
 }
 
-export function KpiGrid({ children, columns = 4 }: KpiGridProps) {
+export function KpiGrid({ children, columns = 4, className }: KpiGridProps) {
   const gridCols = {
     2: 'grid-cols-1 md:grid-cols-2',
     3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
@@ -148,7 +149,7 @@ export function KpiGrid({ children, columns = 4 }: KpiGridProps) {
   }[columns];
 
   return (
-    <div className={cn("grid gap-4", gridCols)}>
+    <div className={cn("grid gap-4", gridCols, className)}>
       {children}
     </div>
   );

@@ -77,23 +77,29 @@ export interface ConversationHeatmap {
   msg_in_total: number;
 }
 
-// Traffic Views
+// Traffic Views - Usando vw_afonsina_custos_funil_dia
 export interface TrafficKpis7d {
   org_id: string;
   spend_total_7d: number;
   leads_7d: number;
+  entradas_7d: number;
   cpl_7d: number;
   meetings_booked_7d: number;
+  meetings_done_7d: number;
   cp_meeting_booked_7d: number;
+  taxa_entrada_7d: number;
 }
 
 export interface TrafficKpis30d {
   org_id: string;
   spend_total_30d: number;
   leads_30d: number;
+  entradas_30d: number;
   cpl_30d: number;
   meetings_booked_30d: number;
+  meetings_done_30d: number;
   cp_meeting_booked_30d: number;
+  taxa_entrada_30d: number;
 }
 
 export interface TrafficDaily {
@@ -101,9 +107,12 @@ export interface TrafficDaily {
   day: string;
   spend_total: number;
   leads: number;
+  entradas: number;
   cpl: number;
   meetings_booked: number;
+  meetings_done: number;
   cp_meeting_booked: number;
+  taxa_entrada: number;
 }
 
 export interface TopAd {
