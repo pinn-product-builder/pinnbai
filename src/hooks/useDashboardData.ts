@@ -204,20 +204,60 @@ export function useConversationsHeatmap(orgId: string) {
   });
 }
 
-// Traffic hooks
+// Traffic hooks - Calcula KPIs a partir da view diária
 export function useTrafegoKpis(orgId: string, period: '7d' | '30d') {
   return useQuery({
     queryKey: ['trafego-kpis', orgId, period],
     queryFn: async () => {
-      const view = period === '7d' ? 'vw_trafego_kpis_7d' : 'vw_trafego_kpis_30d';
+      // Buscar dados diários da view
       const { data, error } = await supabase
-        .from(view)
-        .select('*')
+        .from('vw_trafego_daily_30d')
+        .select('day,spend_total,leads,cpl,meetings_booked,cp_meeting_booked')
         .eq('org_id', orgId)
-        .maybeSingle();
+        .order('day', { ascending: false });
       
       if (error) throw error;
-      return data as (TrafficKpis7d | TrafficKpis30d) | null;
+      
+      // Calcular a data de corte baseado no período
+      const daysToInclude = period === '7d' ? 7 : 30;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToInclude);
+      
+      // Filtrar e agregar os dados
+      const filteredData = (data || []).filter(row => {
+        const rowDate = new Date(row.day);
+        return rowDate >= cutoffDate;
+      });
+      
+      // Somar os valores
+      const totals = filteredData.reduce((acc, row) => {
+        acc.spend_total += Number(row.spend_total) || 0;
+        acc.leads += Number(row.leads) || 0;
+        acc.meetings_booked += Number(row.meetings_booked) || 0;
+        return acc;
+      }, { spend_total: 0, leads: 0, meetings_booked: 0 });
+      
+      // Calcular CPL e Custo por Reunião
+      const cpl = totals.leads > 0 ? totals.spend_total / totals.leads : 0;
+      const cpMeeting = totals.meetings_booked > 0 ? totals.spend_total / totals.meetings_booked : 0;
+      
+      if (period === '7d') {
+        return {
+          spend_total_7d: totals.spend_total,
+          leads_7d: totals.leads,
+          cpl_7d: cpl,
+          meetings_booked_7d: totals.meetings_booked,
+          cp_meeting_booked_7d: cpMeeting,
+        } as TrafficKpis7d;
+      } else {
+        return {
+          spend_total_30d: totals.spend_total,
+          leads_30d: totals.leads,
+          cpl_30d: cpl,
+          meetings_booked_30d: totals.meetings_booked,
+          cp_meeting_booked_30d: cpMeeting,
+        } as TrafficKpis30d;
+      }
     },
     enabled: !!orgId,
   });
@@ -229,12 +269,22 @@ export function useTrafegoDaily(orgId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_trafego_daily_30d')
-        .select('*')
+        .select('day,spend_total,leads,cpl,meetings_booked,cp_meeting_booked')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
       
       if (error) throw error;
-      return (data || []) as TrafficDaily[];
+      
+      // Mapear para o formato esperado
+      return (data || []).map(row => ({
+        org_id: orgId,
+        day: row.day,
+        spend_total: Number(row.spend_total) || 0,
+        leads: Number(row.leads) || 0,
+        cpl: Number(row.cpl) || 0,
+        meetings_booked: Number(row.meetings_booked) || 0,
+        cp_meeting_booked: Number(row.cp_meeting_booked) || 0,
+      })) as TrafficDaily[];
     },
     enabled: !!orgId,
   });
@@ -244,15 +294,35 @@ export function useTopAds(orgId: string) {
   return useQuery({
     queryKey: ['top-ads', orgId],
     queryFn: async () => {
+      // Buscar dados da tabela trafego e agregar por anúncio
       const { data, error } = await supabase
-        .from('vw_spend_top_ads_30d_v2')
-        .select('*')
-        .eq('org_id', orgId)
-        .order('spend_total', { ascending: false })
-        .limit(10);
+        .from('trafego')
+        .select('anuncio,custo')
+        .eq('org_id', orgId);
       
       if (error) throw error;
-      return (data || []) as TopAd[];
+      
+      // Agregar por nome do anúncio
+      const adTotals = (data || []).reduce((acc, row) => {
+        const adName = row.anuncio || 'Sem nome';
+        if (!acc[adName]) {
+          acc[adName] = 0;
+        }
+        acc[adName] += Number(row.custo) || 0;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Converter para array e ordenar
+      const topAds = Object.entries(adTotals)
+        .map(([ad_name, spend_total]) => ({
+          org_id: orgId,
+          ad_name,
+          spend_total,
+        }))
+        .sort((a, b) => b.spend_total - a.spend_total)
+        .slice(0, 10);
+      
+      return topAds as TopAd[];
     },
     enabled: !!orgId,
   });
