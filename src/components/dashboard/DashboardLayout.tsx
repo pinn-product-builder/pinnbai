@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
+import { ViewModeDashboard } from './ViewModeDashboard';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -69,7 +70,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [viewMode]);
 
-  // Modo View - tela cheia sem sidebar
+  // Modo View - tela cheia sem sidebar com dashboard consolidado
   if (viewMode) {
     return (
       <SidebarContext.Provider value={{ collapsed, setCollapsed, viewMode, setViewMode }}>
@@ -102,9 +103,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
 
-          {/* Page Content - tela cheia */}
+          {/* Dashboard Consolidado com auto-refresh */}
           <main className="w-full min-h-screen p-6 overflow-auto">
-            {children}
+            <ViewModeDashboard refreshInterval={60} />
           </main>
         </div>
       </SidebarContext.Provider>
