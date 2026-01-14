@@ -120,6 +120,7 @@ export default function ConversasPage() {
         <ChartCard
           title="Mensagens Diárias (60d)"
           subtitle="Volume de mensagens recebidas por dia"
+          chartKey="mensagens_diarias"
           isLoading={dailyLoading}
           isEmpty={!daily?.length}
         >
@@ -140,6 +141,7 @@ export default function ConversasPage() {
         <ChartCard
           title="Distribuição por Hora (7d)"
           subtitle="Horários de maior engajamento"
+          chartKey="distribuicao_hora"
           isLoading={byHourLoading}
           isEmpty={!byHour?.length}
         >
@@ -159,6 +161,7 @@ export default function ConversasPage() {
         <ChartCard
           title="Tendência de Conversão (60d)"
           subtitle="Taxa de mensagens por lead ao longo do tempo"
+          chartKey="tendencia_conversao"
           isLoading={dailyLoading}
           isEmpty={!daily?.length}
         >
@@ -175,6 +178,7 @@ export default function ConversasPage() {
         <ChartCard
           title="Mapa de Calor (30d)"
           subtitle="Mensagens por dia da semana e hora"
+          chartKey="mapa_calor"
           isLoading={heatmapLoading}
           isEmpty={!heatmap?.length}
         >
@@ -193,6 +197,7 @@ export default function ConversasPage() {
         <ChartCard
           title="Métricas Diárias Detalhadas"
           subtitle="Últimos 15 dias com indicadores de tendência"
+          chartKey="metricas_diarias"
           isLoading={dailyLoading}
           isEmpty={!daily?.length}
         >

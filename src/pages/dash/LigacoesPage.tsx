@@ -481,6 +481,7 @@ export default function VapiPage() {
       <ChartCard
         title="Ligações Diárias"
         subtitle="Volume de ligações por dia (realizadas vs atendidas) e custo"
+        chartKey="ligacoes_diarias"
         isLoading={dailyLoading}
         isEmpty={!daily?.length}
       >
@@ -504,6 +505,7 @@ export default function VapiPage() {
       <ChartCard
         title="Custo Acumulado"
         subtitle="Evolução do custo total ao longo do tempo"
+        chartKey="custo_acumulado"
         isLoading={dailyLoading}
         isEmpty={!accumulatedCostData?.length}
       >
@@ -518,6 +520,7 @@ export default function VapiPage() {
       <ChartCard
         title="Tendência de Motivos de Finalização"
         subtitle="Evolução dos motivos de encerramento ao longo do tempo"
+        chartKey="tendencia_motivos"
         isLoading={endedReasonsTrendLoading}
         isEmpty={!endedReasonsTrend?.data?.length}
       >
@@ -533,6 +536,7 @@ export default function VapiPage() {
       <ChartCard
         title="Dados Diários de Ligações"
         subtitle="Detalhamento por dia com quantidade, tempo e custo"
+        chartKey="tabela_ligacoes_diarias"
         isLoading={dailyLoading}
         isEmpty={!daily?.length}
       >
@@ -547,6 +551,7 @@ export default function VapiPage() {
         <ChartCard
           title="Motivos de Finalização"
           subtitle="Por que as ligações foram encerradas"
+          chartKey="motivos_finalizacao"
           isLoading={endedReasonsLoading}
           isEmpty={!endedReasons?.length}
         >
@@ -568,7 +573,7 @@ export default function VapiPage() {
 
         <ChartCard
           title="Insights IA"
-          subtitle="Análises automáticas de VAPI"
+          subtitle="Análises automáticas de Ligações"
           isLoading={insightsLoading}
         >
           <InsightsPanel insight={insights || null} orgId={orgId} scope="vapi" />
