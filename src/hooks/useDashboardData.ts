@@ -263,13 +263,32 @@ export function useCallsDaily(orgId: string) {
     queryKey: ['calls-daily', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vw_calls_daily_30d')
-        .select('*')
+        .from('v3_calls_by_assistant_daily_v3')
+        .select('day, calls_done, calls_answered, total_minutes')
         .eq('org_id', orgId)
         .order('day', { ascending: true });
       
       if (error) throw error;
-      return (data || []) as CallsDaily[];
+      
+      // Agregar por dia (pode ter múltiplos assistentes)
+      const aggregated = (data || []).reduce((acc, row) => {
+        const existing = acc.find(a => a.day === row.day);
+        if (existing) {
+          existing.calls_done += row.calls_done || 0;
+          existing.calls_answered += row.calls_answered || 0;
+          existing.total_minutes += row.total_minutes || 0;
+        } else {
+          acc.push({
+            day: row.day,
+            calls_done: row.calls_done || 0,
+            calls_answered: row.calls_answered || 0,
+            total_minutes: row.total_minutes || 0,
+          });
+        }
+        return acc;
+      }, [] as Array<{ day: string; calls_done: number; calls_answered: number; total_minutes: number }>);
+      
+      return aggregated;
     },
     enabled: !!orgId,
   });
