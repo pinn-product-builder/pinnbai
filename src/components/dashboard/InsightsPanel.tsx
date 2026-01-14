@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, AlertCircle, Info, Lightbulb, TrendingDown } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, Lightbulb, TrendingDown, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AIInsight } from '@/types/dashboard';
 
@@ -29,7 +29,32 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
     );
   }
 
-  const { alerts, recommendations, anomalies } = insight.payload;
+  // Parse payload - pode ser string JSON ou objeto
+  let parsedPayload: Record<string, unknown>;
+  if (typeof insight.payload === 'string') {
+    try {
+      parsedPayload = JSON.parse(insight.payload);
+    } catch {
+      // Se não for JSON válido, exibe como texto
+      return (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-primary/30 bg-primary/5">
+            <FileText className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="text-sm whitespace-pre-wrap">{insight.payload}</div>
+          </div>
+        </div>
+      );
+    }
+  } else {
+    parsedPayload = insight.payload as Record<string, unknown>;
+  }
+
+  const alerts = parsedPayload.alerts as Array<{ type: string; message: string }> | undefined;
+  const recommendations = parsedPayload.recommendations as string[] | undefined;
+  const anomalies = parsedPayload.anomalies as string[] | undefined;
+  const summary = parsedPayload.summary as string | undefined;
+  const text = parsedPayload.text as string | undefined;
+  const insights = parsedPayload.insights as string[] | undefined;
 
   const getAlertIcon = (type: string) => {
     switch (type) {
@@ -52,6 +77,35 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
         return 'border-primary/30 bg-primary/5';
     }
   };
+
+  // Se tiver texto ou summary simples, exibe diretamente
+  if (text || summary) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-primary/30 bg-primary/5">
+          <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+          <div className="text-sm whitespace-pre-wrap">{text || summary}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se tiver array de insights genéricos
+  if (insights && insights.length > 0) {
+    return (
+      <div className="space-y-2">
+        {insights.map((item, i) => (
+          <div
+            key={i}
+            className="flex items-start gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5"
+          >
+            <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <p className="text-sm">{item}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -118,6 +172,16 @@ export function InsightsPanel({ insight, isLoading }: InsightsPanelProps) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Fallback: se não tiver nenhum campo conhecido, mostra o JSON */}
+      {!alerts?.length && !recommendations?.length && !anomalies?.length && (
+        <div className="flex items-start gap-3 p-4 rounded-lg border border-muted/30 bg-muted/5">
+          <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <pre className="text-sm whitespace-pre-wrap overflow-auto">
+            {JSON.stringify(parsedPayload, null, 2)}
+          </pre>
         </div>
       )}
     </div>

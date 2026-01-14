@@ -175,7 +175,11 @@ export interface AIInsight {
     }>;
     recommendations?: string[];
     anomalies?: string[];
-  };
+    summary?: string;
+    text?: string;
+    insights?: string[];
+    [key: string]: unknown;
+  } | string;
   created_at: string;
 }
 
