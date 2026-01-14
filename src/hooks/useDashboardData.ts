@@ -636,6 +636,44 @@ export function useInsights(orgId: string, scope: string) {
   });
 }
 
+// Histórico de insights - todos os insights da org
+export function useInsightsHistory(orgId: string, scope?: string, limit: number = 20) {
+  return useQuery({
+    queryKey: ['insights-history', orgId, scope, limit],
+    queryFn: async () => {
+      let query = supabase
+        .from('ai_insights')
+        .select('payload,created_at,scope')
+        .eq('org_id', orgId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      
+      // Se scope específico, filtrar por variantes
+      if (scope) {
+        const scopeVariants = [scope];
+        if (scope === 'executive') scopeVariants.push('executivo');
+        if (scope === 'executivo') scopeVariants.push('executive');
+        if (scope === 'conversas') scopeVariants.push('conversations');
+        if (scope === 'trafego') scopeVariants.push('traffic');
+        if (scope === 'vapi') scopeVariants.push('calls');
+        query = query.in('scope', scopeVariants);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) throw error;
+      
+      return (data || []).map(item => ({
+        org_id: orgId,
+        scope: item.scope,
+        payload: item.payload,
+        created_at: item.created_at,
+      })) as AIInsight[];
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Função para gerar insights via edge function
 export async function generateInsights(orgId: string, scope: string, windowDays: number = 30) {
   try {
