@@ -60,10 +60,10 @@ export function useMonthlyMeetings(orgId: string) {
 
 interface MonthlyMeetingsPanelProps {
   orgId: string;
+  compact?: boolean;
 }
 
-export function MonthlyMeetingsPanel({ orgId }: MonthlyMeetingsPanelProps) {
-  const queryClient = useQueryClient();
+export function MonthlyMeetingsPanel({ orgId, compact = false }: MonthlyMeetingsPanelProps) {
   const { data: meetings, isLoading } = useMonthlyMeetings(orgId);
   const [markedDone, setMarkedDone] = useState<Set<string>>(new Set());
   
@@ -84,9 +84,9 @@ export function MonthlyMeetingsPanel({ orgId }: MonthlyMeetingsPanelProps) {
   
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <Skeleton key={i} className="h-40 w-full rounded-xl" />
+      <div className="space-y-2">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-16 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -94,9 +94,9 @@ export function MonthlyMeetingsPanel({ orgId }: MonthlyMeetingsPanelProps) {
   
   if (!meetings?.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-        <Calendar className="w-12 h-12 mb-3 opacity-50" />
-        <p className="text-sm">Nenhuma reunião válida este mês</p>
+      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+        <Calendar className="w-8 h-8 mb-2 opacity-50" />
+        <p className="text-sm">Nenhuma reunião este mês</p>
       </div>
     );
   }
@@ -104,128 +104,90 @@ export function MonthlyMeetingsPanel({ orgId }: MonthlyMeetingsPanelProps) {
   const now = new Date();
   const doneCount = markedDone.size;
   const totalCount = meetings.length;
+  const displayMeetings = compact ? meetings.slice(0, 5) : meetings;
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Summary */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            <span className="font-medium">
-              {format(now, "MMMM 'de' yyyy", { locale: ptBR })}
-            </span>
-          </div>
-          <Badge variant="secondary" className="text-sm">
+      <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border text-sm">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          <span className="font-medium">
+            {format(now, "MMM/yy", { locale: ptBR })}
+          </span>
+          <Badge variant="secondary" className="text-xs">
             {totalCount} reuniões
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-green-500" />
-          <span className="text-sm font-medium">
-            {doneCount} / {totalCount} realizadas
-          </span>
+        <div className="flex items-center gap-1 text-xs">
+          <CheckCircle2 className="w-3 h-3 text-green-500" />
+          <span>{doneCount}/{totalCount}</span>
         </div>
       </div>
       
-      {/* Meetings Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {meetings.map((meeting) => {
+      {/* Meetings List - Compact */}
+      <div className="space-y-2 max-h-[280px] overflow-y-auto">
+        {displayMeetings.map((meeting) => {
           const startDate = parseISO(meeting.start_at);
           const isPast = startDate < now;
           const isDone = markedDone.has(meeting.id);
           
           return (
-            <Card 
+            <div 
               key={meeting.id}
               className={cn(
-                "relative overflow-hidden transition-all duration-300",
-                isDone && "ring-2 ring-green-500/50 bg-green-50/50 dark:bg-green-950/20",
-                !isDone && isPast && "opacity-75"
+                "flex items-center gap-3 p-2 rounded-lg border transition-all",
+                isDone && "bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800",
+                !isDone && isPast && "opacity-60"
               )}
             >
-              {isDone && (
-                <div className="absolute top-2 right-2">
-                  <Badge className="bg-green-500 text-white">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Realizada
-                  </Badge>
-                </div>
-              )}
+              {/* Date */}
+              <div className="flex flex-col items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary flex-shrink-0">
+                <span className="text-sm font-bold leading-none">{format(startDate, 'dd')}</span>
+                <span className="text-[9px] uppercase">{format(startDate, 'MMM', { locale: ptBR })}</span>
+              </div>
               
-              <CardContent className="p-4 space-y-3">
-                {/* Date & Time */}
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary">
-                    <span className="text-lg font-bold leading-none">{format(startDate, 'dd')}</span>
-                    <span className="text-[10px] uppercase">{format(startDate, 'MMM', { locale: ptBR })}</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {format(startDate, 'EEEE', { locale: ptBR })}
-                    </p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {format(startDate, 'HH:mm')}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Lead Info */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium text-sm truncate">
-                      {meeting.lead_name || meeting.summary || 'Lead sem nome'}
-                    </span>
-                  </div>
-                  {meeting.lead_phone && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Phone className="w-3 h-3" />
-                      <span>{meeting.lead_phone}</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-2 pt-2">
-                  {(meeting.meeting_url || meeting.html_link) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1"
-                      asChild
-                    >
-                      <a
-                        href={meeting.meeting_url || meeting.html_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Video className="w-3 h-3" />
-                        Entrar
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant={isDone ? "secondary" : "default"}
-                    size="sm"
-                    className={cn(
-                      "flex-1 gap-1",
-                      isDone && "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
-                    )}
-                    onClick={() => toggleDone(meeting.id)}
-                  >
-                    <CheckCircle2 className="w-3 h-3" />
-                    {isDone ? 'Desfazer' : 'Realizada'}
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {meeting.lead_name || 'Lead sem nome'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {format(startDate, 'HH:mm')} • {meeting.lead_phone || 'Sem telefone'}
+                </p>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {(meeting.meeting_url || meeting.html_link) && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                    <a href={meeting.meeting_url || meeting.html_link} target="_blank" rel="noopener noreferrer">
+                      <Video className="w-3.5 h-3.5" />
+                    </a>
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+                <Button
+                  variant={isDone ? "ghost" : "ghost"}
+                  size="icon"
+                  className={cn(
+                    "h-7 w-7",
+                    isDone && "text-green-600"
+                  )}
+                  onClick={() => toggleDone(meeting.id)}
+                >
+                  <CheckCircle2 className={cn("w-4 h-4", isDone && "fill-current")} />
+                </Button>
+              </div>
+            </div>
           );
         })}
       </div>
+      
+      {compact && meetings.length > 5 && (
+        <p className="text-xs text-center text-muted-foreground">
+          +{meetings.length - 5} reuniões
+        </p>
+      )}
     </div>
   );
 }

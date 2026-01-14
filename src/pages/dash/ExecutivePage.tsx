@@ -219,27 +219,24 @@ export default function ExecutivePage() {
         </ChartCard>
       </div>
 
-      {/* Lista de Leads */}
-      <Section title="Lista de Leads" icon={<Users className="w-5 h-5" />}>
+      {/* Leads e Reuniões - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
-          title="Todos os Leads"
-          subtitle="Lista completa de leads no sistema"
+          title="Reuniões do Mês"
+          subtitle="Controle de comparecimento"
           isLoading={false}
         >
-          <LeadsTable orgId={orgId} />
+          <MonthlyMeetingsPanel orgId={orgId} compact />
         </ChartCard>
-      </Section>
 
-      {/* Reuniões do Mês */}
-      <Section title="Reuniões do Mês" icon={<Calendar className="w-5 h-5" />}>
         <ChartCard
-          title="Controle de Reuniões"
-          subtitle="Marque as reuniões realizadas para acompanhar a taxa de comparecimento"
+          title="Lista de Leads"
+          subtitle="Leads recentes"
           isLoading={false}
         >
-          <MonthlyMeetingsPanel orgId={orgId} />
+          <LeadsTable orgId={orgId} compact />
         </ChartCard>
-      </Section>
+      </div>
     </div>
   );
 }
