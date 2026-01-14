@@ -83,8 +83,8 @@ export function useFunnelCurrent(orgId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vw_funnel_current_v3')
-        .select('stage_group,stage_name,stage_order,leads')
-        .order('stage_order', { ascending: true });
+        .select('stage_rank,stage_name,leads_total')
+        .order('stage_rank', { ascending: true });
       
       if (error) throw error;
       
@@ -93,9 +93,9 @@ export function useFunnelCurrent(orgId: string) {
         org_id: orgId,
         stage_key: row.stage_name?.toLowerCase().replace(/\s+/g, '_') || '',
         stage_name: row.stage_name || '',
-        stage_order: row.stage_order || 0,
-        stage_group: row.stage_group || 'outros',
-        leads: row.leads || 0,
+        stage_order: row.stage_rank || 0,
+        stage_group: 'pipeline',
+        leads: row.leads_total || 0,
       })) as FunnelStage[];
     },
     enabled: !!orgId,
