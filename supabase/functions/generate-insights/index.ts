@@ -1,7 +1,10 @@
-// DEPLOY v5.0 - 2026-01-15T11:42:00Z - FORCE REBUILD
-// Using title+description format, NOT text format
+// DEPLOY v6.0 - 2026-01-15T11:50:00Z - COMPLETE REBUILD
+// CRITICAL: Using title+description format, NOT text format
+// This version includes enhanced logging for debugging
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const FUNCTION_VERSION = "6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -274,7 +277,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating AI insights for org_id: ${org_id}, scope: ${scope}`);
+    console.log(`[v${FUNCTION_VERSION}] Generating AI insights for org_id: ${org_id}, scope: ${scope}`);
 
     // Fetch KPIs
     const { data: kpis, error: kpisError } = await supabase
@@ -309,7 +312,7 @@ serve(async (req) => {
       funnelData || []
     );
 
-    console.log("Generated AI insights:", JSON.stringify(result));
+    console.log(`[v${FUNCTION_VERSION}] Generated AI insights with title/description format:`, JSON.stringify(result));
 
     // Calculate period dates
     const now = new Date();
