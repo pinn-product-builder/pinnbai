@@ -1,5 +1,5 @@
-// Edge function for generating AI insights with detailed analysis
-// Version 2.0 - Enhanced prompts with market benchmarks
+// Edge function v3.0 - Enhanced AI insights with detailed analysis
+// Updated: 2026-01-15 - Fixed OpenAI parameters and improved prompts
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.68.0";
@@ -10,8 +10,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -19,7 +17,10 @@ serve(async (req) => {
   }
 
   try {
+    const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY") });
     const { org_id, scope, metrics } = await req.json();
+
+    console.log("Generate insights called with org_id:", org_id, "scope:", scope);
 
     if (!org_id) {
       return new Response(
@@ -42,14 +43,20 @@ serve(async (req) => {
       const thirtyDaysAgo = new Date(today);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: dailyData } = await supabase
+      const { data: dailyData, error: fetchError } = await supabase
         .from("vw_afonsina_custos_funil_dia")
         .select("*")
         .gte("dia", thirtyDaysAgo.toISOString().split("T")[0])
         .order("dia", { ascending: true });
 
+      if (fetchError) {
+        console.error("Error fetching metrics:", fetchError);
+      }
+
       metricsData = dailyData || [];
     }
+
+    console.log("Metrics data points:", metricsData.length);
 
     // Calculate aggregated metrics
     const totalInvestimento = metricsData.reduce((sum: number, d: any) => sum + (d.custo_total || 0), 0);
@@ -62,6 +69,7 @@ serve(async (req) => {
     const taxaConversao = totalLeads > 0 ? (totalReunioes / totalLeads) * 100 : 0;
     const taxaRealizacao = totalReunioes > 0 ? (totalRealizadas / totalReunioes) * 100 : 0;
     const taxaEntrada = totalLeads > 0 ? (totalEntradas / totalLeads) * 100 : 0;
+    const custoReuniao = totalRealizadas > 0 ? totalInvestimento / totalRealizadas : 0;
 
     // Calculate week-over-week comparison
     const midPoint = Math.floor(metricsData.length / 2);
@@ -76,106 +84,100 @@ serve(async (req) => {
     const secondHalfCost = secondHalf.reduce((sum: number, d: any) => sum + (d.custo_total || 0), 0);
     const costTrend = firstHalfCost > 0 ? ((secondHalfCost - firstHalfCost) / firstHalfCost) * 100 : 0;
 
-    // Build the analysis prompt
-    const systemPrompt = `Você é um consultor estratégico sênior de marketing digital especializado em tráfego pago e funil de vendas para o mercado imobiliário brasileiro. 
+    console.log("Calculated metrics - CPL:", cpl.toFixed(2), "Taxa Conversão:", taxaConversao.toFixed(1));
 
-Você deve analisar os dados fornecidos e gerar insights MUITO DETALHADOS, ESPECÍFICOS E ACIONÁVEIS.
+    // Build the analysis prompt with explicit JSON structure
+    const systemPrompt = `Você é um consultor estratégico sênior de marketing digital especializado em tráfego pago e funil de vendas para o mercado imobiliário brasileiro.
 
-## REGRAS IMPORTANTES:
-1. Cada insight deve ter um TÍTULO CLARO e DESCRITIVO (não genérico como "Insight 1")
-2. A descrição deve ser EXPLICATIVA com contexto de mercado e números específicos
-3. Use linguagem direta e profissional, evite jargões técnicos desnecessários
-4. Compare SEMPRE com benchmarks do mercado imobiliário
-5. Forneça AÇÕES CONCRETAS que o usuário pode executar
+VOCÊ DEVE RETORNAR UM JSON VÁLIDO COM A ESTRUTURA EXATA ABAIXO. NÃO USE FORMATO ANTIGO.
 
-## FORMATO DE RESPOSTA (JSON):
+## REGRAS CRÍTICAS:
+1. Cada item DEVE ter campos "title" e "description" - NUNCA use apenas "text"
+2. Os títulos devem ser DESCRITIVOS e ESPECÍFICOS com números (não "Insight 1" ou "Recomendação 1")
+3. Use comparações com benchmarks do mercado imobiliário brasileiro
+4. Forneça ações concretas e acionáveis
+
+## ESTRUTURA JSON OBRIGATÓRIA:
 {
-  "summary": "Resumo executivo em 3-4 frases destacando os pontos mais críticos",
+  "summary": "Resumo executivo de 2-3 frases com os pontos principais",
   "alerts": [
     {
-      "type": "warning" | "danger" | "success",
-      "title": "Título descritivo do alerta (ex: 'CPL acima do benchmark de mercado')",
-      "description": "Explicação detalhada do problema ou situação com números concretos",
-      "metric_value": "R$ XX,XX ou XX%",
-      "benchmark": "Referência de mercado para comparação",
-      "action": "Ação específica e imediata recomendada"
+      "type": "warning",
+      "title": "CPL de R$ X está Y% acima do benchmark",
+      "description": "Explicação detalhada...",
+      "metric_value": "R$ X",
+      "benchmark": "R$ 15-30",
+      "action": "Ação específica recomendada"
     }
   ],
   "insights": [
     {
-      "title": "Título descritivo do insight (ex: 'Taxa de conversão acima da média do setor')",
-      "description": "Análise detalhada explicando o contexto, causas prováveis e significado para o negócio",
-      "current_value": "Valor atual da métrica",
-      "comparison": "Comparação com período anterior ou benchmark do mercado",
-      "impact": "Impacto estimado no negócio em termos de receita ou economia",
-      "recommendation": "Recomendação específica baseada neste insight"
+      "title": "Taxa de conversão de X% supera média do mercado em Y%",
+      "description": "Análise completa com contexto de mercado...",
+      "current_value": "X%",
+      "comparison": "Média do mercado: Y%",
+      "impact": "Impacto estimado no negócio",
+      "recommendation": "Sugestão baseada neste insight"
     }
   ],
   "recommendations": [
     {
-      "priority": "high" | "medium" | "low",
-      "title": "Título da ação recomendada (ex: 'Otimizar segmentação de público para reduzir CPL')",
-      "description": "Descrição detalhada do que fazer e por que",
-      "expected_impact": "Estimativa de melhoria esperada com números (ex: 'Redução de 15-20% no CPL')",
-      "effort": "Baixo" | "Médio" | "Alto",
-      "steps": ["Passo 1 detalhado", "Passo 2 detalhado", "Passo 3 detalhado"]
+      "priority": "high",
+      "title": "Otimizar campanhas para reduzir CPL em 20%",
+      "description": "Descrição detalhada da ação...",
+      "expected_impact": "Economia estimada de R$ X/mês",
+      "effort": "Médio",
+      "steps": ["Passo 1", "Passo 2", "Passo 3"]
     }
   ],
-  "anomalies": [
-    {
-      "title": "Descrição da anomalia detectada",
-      "description": "Detalhes sobre o que foi identificado como fora do padrão",
-      "possible_causes": ["Causa provável 1", "Causa provável 2"],
-      "investigation_steps": ["Como investigar 1", "Como investigar 2"]
-    }
-  ]
+  "anomalies": []
 }
 
-## BENCHMARKS DE REFERÊNCIA (Mercado imobiliário brasileiro):
-- CPL excelente: < R$ 15
-- CPL bom: R$ 15-30
-- CPL aceitável: R$ 30-50
-- CPL alto/preocupante: R$ 50-80
-- CPL crítico: > R$ 80
-- Taxa de entrada no funil: 40-60% é considerado bom
-- Taxa de agendamento (Lead → Reunião): 10-20% é bom, >25% é excelente
-- Taxa de realização de reuniões: 60-80% é bom, >80% é excelente
-- Custo por reunião realizada: R$ 150-300 é aceitável
+## BENCHMARKS DO MERCADO IMOBILIÁRIO BRASILEIRO:
+- CPL excelente: < R$ 15 | bom: R$ 15-30 | aceitável: R$ 30-50 | alto: R$ 50-80 | crítico: > R$ 80
+- Taxa de entrada no funil: bom 40-60%
+- Taxa de agendamento (Lead → Reunião): bom 10-20%, excelente >25%
+- Taxa de realização de reuniões: bom 60-80%, excelente >80%
+- Custo por reunião realizada: aceitável R$ 150-300
 
-## EXEMPLOS DE BONS TÍTULOS DE INSIGHTS:
-- "Taxa de conversão de 46% supera benchmark em 130%"
-- "CPL de R$ 25 está 20% abaixo da média do setor"
-- "Queda de 15% no volume de leads na última quinzena"
-- "Taxa de comparecimento abaixo do esperado impacta ROI"
+## EXEMPLOS DE TÍTULOS CORRETOS:
+- "Taxa de conversão de 46% está 130% acima do benchmark de 20%"
+- "CPL de R$ 25,80 dentro da faixa ideal de R$ 15-30"
+- "Volume de leads caiu 15% na segunda quinzena"
+- "Taxa de comparecimento de 65% precisa melhorar para atingir 80%"
 
-IMPORTANTE: Seja específico, use números reais dos dados fornecidos, e sempre contextualize com o mercado imobiliário brasileiro.`;
+IMPORTANTE: NUNCA retorne {"text": "..."} - SEMPRE use {"title": "...", "description": "..."}`;
 
-    const userPrompt = `Analise os seguintes dados dos últimos 30 dias:
+    const userPrompt = `Analise estes dados dos últimos 30 dias e gere insights detalhados:
 
-MÉTRICAS AGREGADAS:
+📊 MÉTRICAS AGREGADAS:
 - Investimento Total: R$ ${totalInvestimento.toFixed(2)}
 - Total de Leads: ${totalLeads}
 - Total de Entradas: ${totalEntradas}
 - Reuniões Agendadas: ${totalReunioes}
 - Reuniões Realizadas: ${totalRealizadas}
 
-INDICADORES CALCULADOS:
+📈 INDICADORES CALCULADOS:
 - CPL (Custo por Lead): R$ ${cpl.toFixed(2)}
 - Taxa de Entrada: ${taxaEntrada.toFixed(1)}%
 - Taxa de Conversão (Lead → Reunião): ${taxaConversao.toFixed(1)}%
 - Taxa de Realização: ${taxaRealizacao.toFixed(1)}%
+- Custo por Reunião Realizada: R$ ${custoReuniao.toFixed(2)}
 
-TENDÊNCIAS (comparando primeira e segunda metade do período):
+📉 TENDÊNCIAS (primeira vs segunda metade do período):
 - Variação de Leads: ${leadsTrend > 0 ? "+" : ""}${leadsTrend.toFixed(1)}%
 - Variação de Investimento: ${costTrend > 0 ? "+" : ""}${costTrend.toFixed(1)}%
 
-ESCOPO DA ANÁLISE: ${scope || "geral"}
+Escopo: ${scope || "executivo"}
 
-Gere uma análise detalhada com insights acionáveis, considerando benchmarks de mercado e tendências.`;
+Gere 2-3 insights detalhados, 1-2 recomendações prioritárias, e alertas se houver métricas fora do benchmark.
+LEMBRE-SE: Use SEMPRE o formato com "title" e "description", NUNCA apenas "text".`;
+
+    console.log("Calling OpenAI API...");
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -185,11 +187,29 @@ Gere uma análise detalhada com insights acionáveis, considerando benchmarks de
 
     const aiResponse = completion.choices[0]?.message?.content;
     
+    console.log("OpenAI response received:", aiResponse?.substring(0, 200));
+
     if (!aiResponse) {
       throw new Error("Resposta vazia da OpenAI");
     }
 
     const parsedResponse = JSON.parse(aiResponse);
+
+    // Validate the response has the correct structure
+    if (parsedResponse.insights) {
+      parsedResponse.insights = parsedResponse.insights.map((item: any, idx: number) => {
+        if (!item.title || item.title.startsWith("Insight ")) {
+          return {
+            ...item,
+            title: item.title || `Insight sobre ${item.current_value || 'métricas'}`,
+            description: item.description || item.text || ''
+          };
+        }
+        return item;
+      });
+    }
+
+    console.log("Saving insights to database...");
 
     // Save insights to database
     const { error: insertError } = await supabase.from("ai_insights").insert({
@@ -201,6 +221,8 @@ Gere uma análise detalhada com insights acionáveis, considerando benchmarks de
 
     if (insertError) {
       console.error("Error saving insights:", insertError);
+    } else {
+      console.log("Insights saved successfully");
     }
 
     return new Response(
@@ -213,6 +235,7 @@ Gere uma análise detalhada com insights acionáveis, considerando benchmarks de
           cpl,
           taxa_conversao: taxaConversao,
           taxa_realizacao: taxaRealizacao,
+          custo_reuniao: custoReuniao,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
