@@ -175,7 +175,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-text-3 text-xs mt-6 animate-fade-in [animation-delay:800ms]">
-          © 2024 Pinn. Todos os direitos reservados.
+          © {new Date().getFullYear()} Pinn. Todos os direitos reservados.
         </p>
       </div>
     </div>
