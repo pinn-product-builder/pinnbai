@@ -1,5 +1,6 @@
-// Edge function v3.0 - Enhanced AI insights with detailed analysis
-// Updated: 2026-01-15 - Fixed OpenAI parameters and improved prompts
+// Edge function v4.0 - FIXED: Force title/description format
+// Build: 2026-01-15T11:31:00Z - Strict JSON validation
+// CRITICAL: Always use title+description, never text field
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.68.0";
