@@ -30,7 +30,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { generateLocalInsights, type GeneratedInsights } from '@/lib/insightGenerator';
+import { 
+  generateLocalInsights, 
+  generateConversationInsights, 
+  generateTrafficInsights, 
+  generateCallsInsights,
+  type GeneratedInsights 
+} from '@/lib/insightGenerator';
 
 interface DashboardKpis {
   leads_total_30d?: number;
@@ -112,13 +118,26 @@ export function InsightsPanel({ insight, isLoading, orgId, scope, kpis, funnel, 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Gerar insights locais baseados nos KPIs reais
+  // Gerar insights locais baseados nos KPIs reais e no escopo
   const localInsights = useMemo(() => {
-    if (kpis) {
-      return generateLocalInsights(kpis, funnel || null, totalLeads || 0);
+    if (!kpis) return null;
+    
+    // Usar gerador específico baseado no escopo
+    switch (scope) {
+      case 'conversas':
+        return generateConversationInsights(kpis as any);
+      case 'trafego':
+        return generateTrafficInsights(kpis as any);
+      case 'vapi':
+      case 'ligacoes':
+        return generateCallsInsights(kpis as any);
+      case 'executive':
+      case 'executivo':
+      case 'vendas':
+      default:
+        return generateLocalInsights(kpis as any, funnel || null, totalLeads || 0);
     }
-    return null;
-  }, [kpis, funnel, totalLeads]);
+  }, [kpis, funnel, totalLeads, scope]);
 
   const toggleExpanded = (key: string) => {
     setExpandedItems(prev => {

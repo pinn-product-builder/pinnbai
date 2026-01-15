@@ -19,6 +19,7 @@ import {
   useCallsEndedReasonsTrend,
   useInsights,
 } from '@/hooks/useDashboardData';
+
 import type { CallEvent } from '@/types/dashboard';
 
 // Taxa de câmbio USD → BRL (pode ser atualizada conforme necessário)
@@ -357,6 +358,17 @@ export default function VapiPage() {
   const { data: endedReasonsTrend, isLoading: endedReasonsTrendLoading } = useCallsEndedReasonsTrend(orgId, period);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'vapi');
 
+  // Preparar KPIs para insights de ligações
+  const callsKpisForInsights = kpis ? {
+    calls_done: kpis.calls_done,
+    calls_answered: kpis.calls_answered,
+    taxa_atendimento: kpis.taxa_atendimento,
+    total_minutes: kpis.total_minutes,
+    avg_minutes: kpis.avg_minutes,
+    total_spent_usd: kpis.total_spent,
+    changes: kpis.changes,
+  } : null;
+
   // Calcular dados de custo acumulado
   const accumulatedCostData = useMemo(() => {
     if (!daily?.length) return [];
@@ -572,11 +584,19 @@ export default function VapiPage() {
         </ChartCard>
 
         <ChartCard
-          title="Insights IA"
-          subtitle="Análises automáticas de Ligações"
-          isLoading={insightsLoading}
+          title="Insights de Ligações"
+          subtitle="Análise de performance do agente de voz"
+          isLoading={insightsLoading || kpisLoading}
+          className="h-[420px] overflow-hidden"
         >
-          <InsightsPanel insight={insights || null} orgId={orgId} scope="vapi" />
+          <div className="h-[320px] overflow-y-auto scrollbar-thin pr-2">
+            <InsightsPanel 
+              insight={insights || null} 
+              orgId={orgId} 
+              scope="vapi"
+              kpis={callsKpisForInsights as any}
+            />
+          </div>
         </ChartCard>
       </div>
     </div>
