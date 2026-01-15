@@ -221,10 +221,17 @@ export default function ExecutivePage() {
 
         <ChartCard
           title="Insights IA"
-          subtitle="Análises e recomendações automáticas"
-          isLoading={insightsLoading}
+          subtitle="Análises baseadas nos dados reais"
+          isLoading={insightsLoading || kpisLoading}
         >
-          <InsightsPanel insight={insights || null} orgId={orgId} scope="executive" />
+          <InsightsPanel 
+            insight={insights || null} 
+            orgId={orgId} 
+            scope="executive"
+            kpis={kpis}
+            funnel={funnel?.map(f => ({ stage_name: f.stage_name, leads: f.leads, stage_order: f.stage_order }))}
+            totalLeads={leadsCount || 0}
+          />
         </ChartCard>
       </div>
 

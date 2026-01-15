@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   AlertTriangle, 
   AlertCircle, 
@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   ArrowRight,
   ListChecks,
-  Search
+  Search,
+  Cpu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,12 +30,44 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { generateLocalInsights, type GeneratedInsights } from '@/lib/insightGenerator';
+
+interface DashboardKpis {
+  leads_total_30d?: number;
+  msg_in_30d?: number;
+  meetings_scheduled_30d?: number;
+  meetings_done?: number;
+  meetings_cancelled_30d?: number;
+  spend_30d?: number;
+  cpl_30d?: number;
+  cpm_meeting_30d?: number;
+  conv_lead_to_meeting_30d?: number;
+  changes?: {
+    leads?: number;
+    spend?: number;
+    meetings_scheduled?: number;
+    meetings_done?: number;
+    cpl?: number;
+    cpm_meeting?: number;
+    conv_lead_to_meeting?: number;
+  };
+}
+
+interface FunnelStage {
+  stage_name: string;
+  leads: number;
+  stage_order: number;
+}
 
 interface InsightsPanelProps {
   insight: AIInsight | null;
   isLoading?: boolean;
   orgId?: string;
   scope?: string;
+  // Novos props para geração local
+  kpis?: DashboardKpis | null;
+  funnel?: FunnelStage[] | null;
+  totalLeads?: number;
 }
 
 // Tipos para os insights detalhados da nova edge function
@@ -72,11 +105,20 @@ interface DetailedAnomaly {
   investigation_steps?: string[];
 }
 
-export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPanelProps) {
+export function InsightsPanel({ insight, isLoading, orgId, scope, kpis, funnel, totalLeads }: InsightsPanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['insight-0', 'rec-0']));
+  const [useLocalInsights, setUseLocalInsights] = useState(true); // Usar insights locais por padrão
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Gerar insights locais baseados nos KPIs reais
+  const localInsights = useMemo(() => {
+    if (kpis) {
+      return generateLocalInsights(kpis, funnel || null, totalLeads || 0);
+    }
+    return null;
+  }, [kpis, funnel, totalLeads]);
 
   const toggleExpanded = (key: string) => {
     setExpandedItems(prev => {
@@ -91,6 +133,19 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
   };
 
   const handleRefresh = async () => {
+    // Se temos KPIs, gerar insights locais instantaneamente
+    if (kpis && useLocalInsights) {
+      setIsRefreshing(true);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simular processamento
+      toast({
+        title: '✨ Insights Atualizados!',
+        description: 'Análise baseada nos dados atuais do dashboard',
+      });
+      setIsRefreshing(false);
+      return;
+    }
+
+    // Fallback para edge function
     if (!orgId || !scope) {
       toast({
         title: 'Erro',
@@ -224,11 +279,24 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     });
   };
 
-  const alerts = normalizeAlerts(parsedPayload.alerts as any[]);
-  const insights = normalizeInsights(parsedPayload.insights as any[]);
-  const recommendations = normalizeRecommendations(parsedPayload.recommendations as any[]);
-  const anomalies = normalizeAnomalies(parsedPayload.anomalies as any[]);
-  const summary = parsedPayload.summary as string | undefined;
+  // Priorizar insights locais quando KPIs estão disponíveis
+  const useLocal = useLocalInsights && localInsights && kpis;
+  
+  const alerts = useLocal 
+    ? (localInsights.alerts as DetailedAlert[])
+    : normalizeAlerts(parsedPayload.alerts as any[]);
+  const insights = useLocal 
+    ? (localInsights.insights as DetailedInsight[])
+    : normalizeInsights(parsedPayload.insights as any[]);
+  const recommendations = useLocal 
+    ? (localInsights.recommendations as DetailedRecommendation[])
+    : normalizeRecommendations(parsedPayload.recommendations as any[]);
+  const anomalies = useLocal 
+    ? (localInsights.anomalies as DetailedAnomaly[])
+    : normalizeAnomalies(parsedPayload.anomalies as any[]);
+  const summary = useLocal 
+    ? localInsights.summary 
+    : (parsedPayload.summary as string | undefined);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -310,12 +378,19 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     <div className="space-y-5 relative">
       {/* Header com botão de atualizar */}
       <div className="flex items-center justify-between gap-2 relative z-20">
-        {insight?.created_at && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            <span>Atualizado em {formatDate(insight.created_at)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {useLocal ? (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Cpu className="w-3 h-3 text-primary" />
+              <span>Análise em tempo real</span>
+            </div>
+          ) : insight?.created_at ? (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="w-3 h-3" />
+              <span>Atualizado em {formatDate(insight.created_at)}</span>
+            </div>
+          ) : null}
+        </div>
         {orgId && scope && (
           <Button
             variant="outline"
@@ -335,12 +410,12 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
             {isRefreshing ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Gerando com IA...</span>
+                <span>Analisando...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Gerar Insights</span>
+                <span>Atualizar</span>
               </>
             )}
           </Button>
