@@ -346,9 +346,12 @@ function makeTrend(value: number | undefined, periodLabel: string) {
   };
 }
 
+// Org ID específico para a página de Ligações
+const CALLS_ORG_ID = '6e5a5fdd-7f45-4ca5-af3d-4e291ef507a8';
+
 export default function VapiPage() {
   const { filters } = useGlobalFilters();
-  const orgId = filters.orgId;
+  const orgId = CALLS_ORG_ID; // Usa org específica para ligações
   const period = filters.period === 'custom' ? '30d' : filters.period;
 
   const { data: kpis, isLoading: kpisLoading } = useCallsKpis(orgId, period);
