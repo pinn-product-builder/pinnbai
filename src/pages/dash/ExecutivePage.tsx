@@ -215,6 +215,7 @@ export default function ExecutivePage() {
           subtitle="Reuniões agendadas a partir de hoje"
           isLoading={meetingsLoading}
           isEmpty={!meetings?.length}
+          className="h-[420px]"
         >
           <MeetingsTable meetings={meetings || []} />
         </ChartCard>
@@ -223,15 +224,18 @@ export default function ExecutivePage() {
           title="Insights IA"
           subtitle="Análises baseadas nos dados reais"
           isLoading={insightsLoading || kpisLoading}
+          className="h-[420px] overflow-hidden"
         >
-          <InsightsPanel 
-            insight={insights || null} 
-            orgId={orgId} 
-            scope="executive"
-            kpis={kpis}
-            funnel={funnel?.map(f => ({ stage_name: f.stage_name, leads: f.leads, stage_order: f.stage_order }))}
-            totalLeads={leadsCount || 0}
-          />
+          <div className="h-full overflow-y-auto pr-1">
+            <InsightsPanel 
+              insight={insights || null} 
+              orgId={orgId} 
+              scope="executive"
+              kpis={kpis}
+              funnel={funnel?.map(f => ({ stage_name: f.stage_name, leads: f.leads, stage_order: f.stage_order }))}
+              totalLeads={leadsCount || 0}
+            />
+          </div>
         </ChartCard>
       </div>
 
