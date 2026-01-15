@@ -1,10 +1,9 @@
-// DEPLOY v6.0 - 2026-01-15T11:50:00Z - COMPLETE REBUILD
-// CRITICAL: Using title+description format, NOT text format
-// This version includes enhanced logging for debugging
+// DEPLOY v7.0 - FORCE NEW DEPLOY - 2026-01-15T11:55:00Z
+// ALWAYS uses title+description format, NEVER text format
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const FUNCTION_VERSION = "6.0";
+const DEPLOY_VERSION = "7.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +39,7 @@ interface InsightResult {
   insights: InsightItem[];
   alerts: AlertItem[];
   recommendations: InsightItem[];
+  version: string;
 }
 
 async function generateInsightsWithAI(
@@ -50,7 +50,7 @@ async function generateInsightsWithAI(
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   
   if (!LOVABLE_API_KEY) {
-    console.error("LOVABLE_API_KEY not configured, using fallback");
+    console.error(`[v${DEPLOY_VERSION}] LOVABLE_API_KEY not configured, using fallback`);
     return generateFallbackInsights(kpis, dailyData, funnelData);
   }
 
@@ -115,6 +115,8 @@ ${funnelContext}
 Responda APENAS com JSON válido. Lembre-se: cada item deve ter "title" e "description", NÃO "text".`;
 
   try {
+    console.log(`[v${DEPLOY_VERSION}] Calling AI Gateway...`);
+    
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -134,14 +136,7 @@ Responda APENAS com JSON válido. Lembre-se: cada item deve ter "title" e "descr
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        console.error("Rate limit exceeded");
-      } else if (response.status === 402) {
-        console.error("Payment required - credits exhausted");
-      }
-      
+      console.error(`[v${DEPLOY_VERSION}] AI Gateway error:`, response.status, errorText);
       return generateFallbackInsights(kpis, dailyData, funnelData);
     }
 
@@ -149,9 +144,11 @@ Responda APENAS com JSON válido. Lembre-se: cada item deve ter "title" e "descr
     const content = data.choices?.[0]?.message?.content;
     
     if (!content) {
-      console.error("No content in AI response");
+      console.error(`[v${DEPLOY_VERSION}] No content in AI response`);
       return generateFallbackInsights(kpis, dailyData, funnelData);
     }
+
+    console.log(`[v${DEPLOY_VERSION}] AI response received, parsing...`);
 
     // Parse JSON response - handle markdown code blocks
     let jsonContent = content.trim();
@@ -167,13 +164,12 @@ Responda APENAS com JSON válido. Lembre-se: cada item deve ter "title" e "descr
     
     const parsed = JSON.parse(jsonContent.trim());
     
-    // Transform old format to new format if needed
+    // Transform any old format to new format
     const transformItem = (item: any): InsightItem => {
       if (item.title && item.description) {
         return { title: item.title, description: item.description };
       }
       if (item.text) {
-        // Extract first sentence as title
         const text = item.text;
         const firstPeriod = text.indexOf('.');
         if (firstPeriod > 0 && firstPeriod < 60) {
@@ -195,13 +191,16 @@ Responda APENAS com JSON válido. Lembre-se: cada item deve ter "title" e "descr
       return { ...base, severity: item.severity || "warning" };
     };
     
+    console.log(`[v${DEPLOY_VERSION}] Returning formatted insights with title/description`);
+    
     return {
       insights: (parsed.insights || []).map(transformItem),
       alerts: (parsed.alerts || []).map(transformAlert),
       recommendations: (parsed.recommendations || []).map(transformItem),
+      version: DEPLOY_VERSION,
     };
   } catch (error) {
-    console.error("Error calling AI:", error);
+    console.error(`[v${DEPLOY_VERSION}] Error calling AI:`, error);
     return generateFallbackInsights(kpis, dailyData, funnelData);
   }
 }
@@ -212,6 +211,8 @@ function generateFallbackInsights(
   dailyData: DailyData[],
   funnelData: FunnelData[]
 ): InsightResult {
+  console.log(`[v${DEPLOY_VERSION}] Using fallback insights generation`);
+  
   const insights: InsightItem[] = [];
   const alerts: AlertItem[] = [];
   const recommendations: InsightItem[] = [];
@@ -255,7 +256,7 @@ function generateFallbackInsights(
     });
   }
 
-  return { insights, alerts, recommendations };
+  return { insights, alerts, recommendations, version: DEPLOY_VERSION };
 }
 
 serve(async (req) => {
@@ -277,7 +278,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[v${FUNCTION_VERSION}] Generating AI insights for org_id: ${org_id}, scope: ${scope}`);
+    console.log(`[v${DEPLOY_VERSION}] Generating insights for org_id: ${org_id}, scope: ${scope}`);
 
     // Fetch KPIs
     const { data: kpis, error: kpisError } = await supabase
@@ -286,7 +287,7 @@ serve(async (req) => {
       .eq("org_id", org_id)
       .maybeSingle();
 
-    if (kpisError) console.error("Error fetching KPIs:", kpisError);
+    if (kpisError) console.error(`[v${DEPLOY_VERSION}] Error fetching KPIs:`, kpisError);
 
     // Fetch daily data
     const { data: dailyData, error: dailyError } = await supabase
@@ -295,7 +296,7 @@ serve(async (req) => {
       .eq("org_id", org_id)
       .order("day", { ascending: true });
 
-    if (dailyError) console.error("Error fetching daily data:", dailyError);
+    if (dailyError) console.error(`[v${DEPLOY_VERSION}] Error fetching daily data:`, dailyError);
 
     // Fetch funnel data
     const { data: funnelData, error: funnelError } = await supabase
@@ -303,7 +304,7 @@ serve(async (req) => {
       .select("*")
       .eq("org_id", org_id);
 
-    if (funnelError) console.error("Error fetching funnel data:", funnelError);
+    if (funnelError) console.error(`[v${DEPLOY_VERSION}] Error fetching funnel data:`, funnelError);
 
     // Generate AI insights
     const result = await generateInsightsWithAI(
@@ -312,7 +313,7 @@ serve(async (req) => {
       funnelData || []
     );
 
-    console.log(`[v${FUNCTION_VERSION}] Generated AI insights with title/description format:`, JSON.stringify(result));
+    console.log(`[v${DEPLOY_VERSION}] Generated insights:`, JSON.stringify(result));
 
     // Calculate period dates
     const now = new Date();
@@ -331,7 +332,7 @@ serve(async (req) => {
     });
 
     if (insertError) {
-      console.error("Error storing insights:", insertError);
+      console.error(`[v${DEPLOY_VERSION}] Error storing insights:`, insertError);
       return new Response(
         JSON.stringify({ error: "Failed to store insights", details: insertError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -341,16 +342,17 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        version: DEPLOY_VERSION,
         insights: result,
         period: { start: periodStart, end: periodEnd },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Error in generate-insights:", error);
+    console.error(`[v${DEPLOY_VERSION}] Error in generate-insights:`, error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: errorMessage, version: DEPLOY_VERSION }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
