@@ -39,15 +39,20 @@ export function ChartCard({
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-text-1">{title}</h3>
             {definition && (
-              <Tooltip>
+              <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <button className="text-muted-foreground hover:text-primary transition-colors">
+                  <button 
+                    type="button"
+                    className="inline-flex items-center justify-center text-muted-foreground hover:text-primary transition-colors p-1 rounded-full hover:bg-muted/50"
+                    aria-label="Informações sobre o gráfico"
+                  >
                     <Info className="w-4 h-4" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent 
-                  side="right" 
-                  className="max-w-xs p-4 space-y-2"
+                  side="bottom" 
+                  align="start"
+                  className="max-w-xs p-4 space-y-2 z-[9999]"
                   sideOffset={8}
                 >
                   <p className="font-semibold text-sm text-foreground">{definition.title}</p>
