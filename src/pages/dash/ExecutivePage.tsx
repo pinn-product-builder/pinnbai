@@ -226,7 +226,7 @@ export default function ExecutivePage() {
           isLoading={insightsLoading || kpisLoading}
           className="h-[420px] overflow-hidden"
         >
-          <div className="h-full overflow-y-auto pr-1">
+          <div className="h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/30 scrollbar-track-muted/20 hover:scrollbar-thumb-primary/50 pr-2">
             <InsightsPanel 
               insight={insights || null} 
               orgId={orgId} 
