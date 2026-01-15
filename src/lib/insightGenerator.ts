@@ -348,3 +348,335 @@ export function generateLocalInsights(
     anomalies: [],
   };
 }
+
+// ========== INSIGHTS DE CONVERSAS (AGENTE) ==========
+interface ConversationKpis {
+  msg_in_30d?: number;
+  leads_total_30d?: number;
+  meetings_scheduled_30d?: number;
+  meetings_total_30d?: number;
+  conv_lead_to_msg_30d?: number;
+  conv_lead_to_meeting_30d?: number;
+  conv_msg_to_meeting_30d?: number;
+  cpm_meeting_30d?: number;
+}
+
+export function generateConversationInsights(kpis: ConversationKpis | null): GeneratedInsights {
+  const insights: InsightItem[] = [];
+  const alerts: AlertItem[] = [];
+  const recommendations: RecommendationItem[] = [];
+
+  if (!kpis) {
+    return { summary: "Aguardando dados de conversas...", insights: [], alerts: [], recommendations: [], anomalies: [] };
+  }
+
+  const msgIn = kpis.msg_in_30d || 0;
+  const leads = kpis.leads_total_30d || 0;
+  const meetings = kpis.meetings_scheduled_30d || 0;
+  const convMsgToMeeting = kpis.conv_msg_to_meeting_30d || 0;
+
+  // Análise de volume de mensagens
+  if (msgIn > 0 && leads > 0) {
+    const msgPerLead = msgIn / leads;
+    if (msgPerLead >= 5) {
+      insights.push({
+        title: 'Alto Engajamento',
+        description: `Média de ${msgPerLead.toFixed(1)} mensagens por lead indica boa interação com o agente.`,
+        current_value: `${msgPerLead.toFixed(1)} msg/lead`,
+        impact: 'Leads bem nutridos tendem a converter melhor',
+      });
+    } else if (msgPerLead < 2) {
+      alerts.push({
+        type: 'warning',
+        title: 'Baixo Engajamento',
+        description: `Apenas ${msgPerLead.toFixed(1)} mensagens por lead. Os leads podem não estar recebendo atenção suficiente.`,
+        metric_value: `${msgPerLead.toFixed(1)} msg/lead`,
+        action: 'Revisar scripts de follow-up e cadência de contato',
+      });
+    }
+  }
+
+  // Análise de conversão mensagem → reunião
+  if (convMsgToMeeting > 0) {
+    const convPercent = (convMsgToMeeting * 100).toFixed(1);
+    if (convMsgToMeeting >= 0.05) {
+      insights.push({
+        title: 'Conversão Eficiente',
+        description: `${convPercent}% das conversas resultam em reunião - o agente está qualificando bem.`,
+        current_value: `${convPercent}%`,
+      });
+    } else {
+      recommendations.push({
+        priority: 'high',
+        title: 'Melhorar Script do Agente',
+        description: `Taxa de ${convPercent}% de conversão está baixa. Revise o script de qualificação.`,
+        steps: ['Analisar conversas que não convertem', 'Identificar objeções comuns', 'Ajustar abordagem do agente'],
+      });
+    }
+  }
+
+  // Volume de reuniões
+  if (meetings > 0) {
+    insights.push({
+      title: 'Reuniões Geradas',
+      description: `${meetings} reuniões agendadas através de conversas nos últimos 30 dias.`,
+      current_value: `${meetings} reuniões`,
+    });
+  }
+
+  const summary = `Agente: ${msgIn} mensagens processadas, ${meetings} reuniões geradas.`;
+  return { summary, insights, alerts, recommendations, anomalies: [] };
+}
+
+// ========== INSIGHTS DE TRÁFEGO ==========
+interface TrafficKpis {
+  spend_total?: number;
+  leads?: number;
+  entradas?: number;
+  taxa_entrada?: number;
+  cpl?: number;
+  meetings_booked?: number;
+  meetings_done?: number;
+  cp_meeting_booked?: number;
+  changes?: {
+    spend?: number;
+    leads?: number;
+    cpl?: number;
+    meetings_booked?: number;
+  };
+}
+
+export function generateTrafficInsights(kpis: TrafficKpis | null): GeneratedInsights {
+  const insights: InsightItem[] = [];
+  const alerts: AlertItem[] = [];
+  const recommendations: RecommendationItem[] = [];
+
+  if (!kpis) {
+    return { summary: "Aguardando dados de tráfego...", insights: [], alerts: [], recommendations: [], anomalies: [] };
+  }
+
+  const spend = kpis.spend_total || 0;
+  const leads = kpis.leads || 0;
+  const cpl = kpis.cpl || 0;
+  const taxaEntrada = kpis.taxa_entrada || 0;
+  const meetings = kpis.meetings_booked || 0;
+
+  // Análise de CPL
+  if (cpl > 0) {
+    if (cpl <= 50) {
+      insights.push({
+        title: 'CPL Otimizado',
+        description: `CPL de R$ ${cpl.toFixed(2)} está excelente para o mercado de clínicas.`,
+        current_value: `R$ ${cpl.toFixed(2)}`,
+        comparison: 'Benchmark: R$ 30-80',
+      });
+    } else if (cpl <= 100) {
+      insights.push({
+        title: 'CPL Aceitável',
+        description: `CPL de R$ ${cpl.toFixed(2)} está dentro da faixa esperada.`,
+        current_value: `R$ ${cpl.toFixed(2)}`,
+      });
+    } else {
+      alerts.push({
+        type: 'warning',
+        title: 'CPL Elevado',
+        description: `CPL de R$ ${cpl.toFixed(2)} está acima do ideal. Revise segmentação e criativos.`,
+        metric_value: `R$ ${cpl.toFixed(2)}`,
+        benchmark: 'R$ 30-80',
+        action: 'Pausar anúncios com CPL > R$ 150 e realocar budget',
+      });
+    }
+  }
+
+  // Taxa de entrada
+  if (taxaEntrada > 0) {
+    const taxaPercent = (taxaEntrada * 100).toFixed(1);
+    if (taxaEntrada >= 0.7) {
+      insights.push({
+        title: 'Alta Taxa de Entrada',
+        description: `${taxaPercent}% dos leads entram no funil - excelente qualidade de tráfego.`,
+        current_value: `${taxaPercent}%`,
+      });
+    } else if (taxaEntrada < 0.4) {
+      alerts.push({
+        type: 'warning',
+        title: 'Baixa Taxa de Entrada',
+        description: `Apenas ${taxaPercent}% dos leads entram no funil. Revise a qualificação inicial.`,
+        action: 'Melhorar pré-qualificação no formulário de captação',
+      });
+    }
+  }
+
+  // ROI do investimento
+  if (spend > 0 && meetings > 0) {
+    const costPerMeeting = spend / meetings;
+    insights.push({
+      title: 'Custo por Reunião',
+      description: `R$ ${costPerMeeting.toFixed(2)} por reunião agendada - monitore a taxa de comparecimento.`,
+      current_value: `R$ ${costPerMeeting.toFixed(2)}`,
+    });
+  }
+
+  // Variação de investimento
+  const spendChange = kpis.changes?.spend;
+  if (spendChange !== undefined && spendChange > 50) {
+    recommendations.push({
+      priority: 'medium',
+      title: 'Investimento Aumentou',
+      description: `Aumento de ${spendChange.toFixed(0)}% no investimento. Verifique se os resultados acompanham.`,
+      expected_impact: 'Otimizar alocação de budget',
+    });
+  }
+
+  const summary = `Tráfego: R$ ${spend.toFixed(0)} investidos → ${leads} leads (CPL R$ ${cpl.toFixed(2)}).`;
+  return { summary, insights, alerts, recommendations, anomalies: [] };
+}
+
+// ========== INSIGHTS DE LIGAÇÕES ==========
+interface CallsKpis {
+  calls_done?: number;
+  calls_answered?: number;
+  taxa_atendimento?: number;
+  total_minutes?: number;
+  avg_minutes?: number;
+  total_spent_usd?: number;
+  changes?: {
+    calls_done?: number;
+    calls_answered?: number;
+    taxa_atendimento?: number;
+  };
+}
+
+export function generateCallsInsights(kpis: CallsKpis | null): GeneratedInsights {
+  const insights: InsightItem[] = [];
+  const alerts: AlertItem[] = [];
+  const recommendations: RecommendationItem[] = [];
+
+  if (!kpis) {
+    return { summary: "Aguardando dados de ligações...", insights: [], alerts: [], recommendations: [], anomalies: [] };
+  }
+
+  const callsDone = kpis.calls_done || 0;
+  const callsAnswered = kpis.calls_answered || 0;
+  const taxaAtendimento = kpis.taxa_atendimento || 0;
+  const avgMinutes = kpis.avg_minutes || 0;
+  const totalSpent = (kpis.total_spent_usd || 0) * 5.8; // USD to BRL
+
+  // Taxa de atendimento
+  if (taxaAtendimento > 0) {
+    const taxaPercent = (taxaAtendimento * 100).toFixed(1);
+    if (taxaAtendimento >= 0.6) {
+      insights.push({
+        title: 'Boa Taxa de Atendimento',
+        description: `${taxaPercent}% das ligações são atendidas - acima da média de mercado.`,
+        current_value: `${taxaPercent}%`,
+        comparison: 'Benchmark: 40-60%',
+      });
+    } else if (taxaAtendimento < 0.3) {
+      alerts.push({
+        type: 'warning',
+        title: 'Baixo Atendimento',
+        description: `Apenas ${taxaPercent}% das ligações são atendidas. Revise horários e qualidade dos números.`,
+        metric_value: `${taxaPercent}%`,
+        action: 'Testar diferentes horários e verificar qualidade do número',
+      });
+    }
+  }
+
+  // Tempo médio de ligação
+  if (avgMinutes > 0) {
+    if (avgMinutes >= 2 && avgMinutes <= 5) {
+      insights.push({
+        title: 'Duração Ideal',
+        description: `Tempo médio de ${avgMinutes.toFixed(1)} min está no ideal para qualificação.`,
+        current_value: `${avgMinutes.toFixed(1)} min`,
+      });
+    } else if (avgMinutes < 1) {
+      alerts.push({
+        type: 'warning',
+        title: 'Ligações Muito Curtas',
+        description: `Média de ${avgMinutes.toFixed(1)} min pode indicar desligamentos prematuros.`,
+        action: 'Revisar script de abertura do agente',
+      });
+    } else if (avgMinutes > 8) {
+      recommendations.push({
+        priority: 'low',
+        title: 'Ligações Longas',
+        description: `Média de ${avgMinutes.toFixed(1)} min. Considere otimizar o script para ser mais objetivo.`,
+        expected_impact: 'Reduzir custos de telefonia',
+      });
+    }
+  }
+
+  // Volume e custo
+  if (callsDone > 0) {
+    insights.push({
+      title: 'Volume de Ligações',
+      description: `${callsDone} ligações realizadas, ${callsAnswered} atendidas no período.`,
+      current_value: `${callsDone} ligações`,
+    });
+  }
+
+  if (totalSpent > 0) {
+    const costPerCall = totalSpent / callsDone;
+    insights.push({
+      title: 'Investimento em Telefonia',
+      description: `R$ ${totalSpent.toFixed(2)} investidos (R$ ${costPerCall.toFixed(2)}/ligação).`,
+      current_value: `R$ ${totalSpent.toFixed(2)}`,
+    });
+  }
+
+  const summary = `Ligações: ${callsDone} realizadas, ${(taxaAtendimento * 100).toFixed(0)}% atendidas.`;
+  return { summary, insights, alerts, recommendations, anomalies: [] };
+}
+
+// ========== INSIGHTS EXECUTIVOS (RESUMO DE TODOS) ==========
+export function generateExecutiveSummaryInsights(
+  executiveKpis: DashboardKpis | null,
+  trafficKpis: TrafficKpis | null,
+  conversationKpis: ConversationKpis | null,
+  callsKpis: CallsKpis | null,
+  funnel: FunnelStage[] | null
+): GeneratedInsights {
+  const insights: InsightItem[] = [];
+  const alerts: AlertItem[] = [];
+  const recommendations: RecommendationItem[] = [];
+
+  // Pegar 1 insight de cada área
+  const execInsights = generateLocalInsights(executiveKpis, funnel, 0);
+  const trafficInsights = generateTrafficInsights(trafficKpis);
+  const convInsights = generateConversationInsights(conversationKpis);
+  const callInsights = generateCallsInsights(callsKpis);
+
+  // Adicionar alertas prioritários de cada área
+  if (execInsights.alerts.length > 0) alerts.push(execInsights.alerts[0]);
+  if (trafficInsights.alerts.length > 0) alerts.push(trafficInsights.alerts[0]);
+  
+  // Adicionar 1 insight de cada área
+  if (execInsights.insights.length > 0) {
+    const i = execInsights.insights[0];
+    insights.push({ ...i, title: `📊 ${i.title}` });
+  }
+  if (trafficInsights.insights.length > 0) {
+    const i = trafficInsights.insights[0];
+    insights.push({ ...i, title: `📈 ${i.title}` });
+  }
+  if (convInsights.insights.length > 0) {
+    const i = convInsights.insights[0];
+    insights.push({ ...i, title: `💬 ${i.title}` });
+  }
+  if (callInsights.insights.length > 0) {
+    const i = callInsights.insights[0];
+    insights.push({ ...i, title: `📞 ${i.title}` });
+  }
+
+  // Adicionar recomendações prioritárias
+  const allRecs = [
+    ...execInsights.recommendations.filter(r => r.priority === 'high'),
+    ...trafficInsights.recommendations.filter(r => r.priority === 'high'),
+  ];
+  if (allRecs.length > 0) recommendations.push(allRecs[0]);
+
+  const summary = `Resumo: ${alerts.length} alertas, ${insights.length} insights de todas as áreas.`;
+  return { summary, insights, alerts, recommendations, anomalies: [] };
+}

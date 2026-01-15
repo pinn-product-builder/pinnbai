@@ -23,6 +23,7 @@ import {
   useInsights,
 } from '@/hooks/useDashboardData';
 
+
 export default function TrafegoPage() {
   const { filters } = useGlobalFilters();
   const orgId = filters.orgId;
@@ -42,6 +43,19 @@ export default function TrafegoPage() {
   const { data: daily, isLoading: dailyLoading } = useTrafegoDaily(orgId);
   const { data: topAds, isLoading: topAdsLoading } = useTopAds(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'trafego');
+
+  // Preparar KPIs para insights
+  const trafficKpis = kpis ? {
+    spend_total: (kpis as any)?.spend_total,
+    leads: (kpis as any)?.leads,
+    entradas: (kpis as any)?.entradas,
+    taxa_entrada: (kpis as any)?.taxa_entrada,
+    cpl: (kpis as any)?.cpl,
+    meetings_booked: (kpis as any)?.meetings_booked,
+    meetings_done: (kpis as any)?.meetings_done,
+    cp_meeting_booked: (kpis as any)?.cp_meeting_booked,
+    changes: (kpis as any)?.changes,
+  } : null;
 
   if (!orgId) {
     return (
@@ -228,11 +242,19 @@ export default function TrafegoPage() {
         </ChartCard>
 
         <ChartCard
-          title="Insights IA"
-          subtitle="Análises automáticas de tráfego pago"
-          isLoading={insightsLoading}
+          title="Insights de Tráfego"
+          subtitle="Análise de performance de mídia paga"
+          isLoading={insightsLoading || kpisLoading}
+          className="h-[420px] overflow-hidden"
         >
-          <InsightsPanel insight={insights || null} orgId={orgId} scope="trafego" />
+          <div className="h-[320px] overflow-y-auto scrollbar-thin pr-2">
+            <InsightsPanel 
+              insight={insights || null} 
+              orgId={orgId} 
+              scope="trafego"
+              kpis={trafficKpis as any}
+            />
+          </div>
         </ChartCard>
       </div>
 

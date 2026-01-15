@@ -18,8 +18,9 @@ import {
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiGrid } from '@/components/dashboard/KpiCard';
 import { FunnelChart } from '@/components/dashboard/FunnelChart';
+import { InsightsPanel } from '@/components/dashboard/InsightsPanel';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
-import { useFunnelCurrent } from '@/hooks/useDashboardData';
+import { useFunnelCurrent, useExecutiveKpis, useLeadsCount } from '@/hooks/useDashboardData';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -223,6 +224,8 @@ export default function VendasPage() {
   
   // Usar o funil existente como base para o funil de vendas
   const { data: funnel, isLoading: funnelLoading } = useFunnelCurrent(orgId);
+  const { data: kpis, isLoading: kpisLoading } = useExecutiveKpis(orgId);
+  const { data: leadsCount } = useLeadsCount();
 
   if (!orgId) {
     return (
@@ -296,10 +299,21 @@ export default function VendasPage() {
         </ChartCard>
 
         <ChartCard
-          title="Últimos Resultados"
-          subtitle="Negociações recentes"
+          title="Insights de Vendas"
+          subtitle="Análise do funil e conversões"
+          isLoading={kpisLoading}
+          className="h-[320px] overflow-hidden"
         >
-          <EmptyResultsState />
+          <div className="h-[240px] overflow-y-auto scrollbar-thin pr-2">
+            <InsightsPanel 
+              insight={null} 
+              orgId={orgId} 
+              scope="vendas"
+              kpis={kpis}
+              funnel={funnel?.map(f => ({ stage_name: f.stage_name, leads: f.leads, stage_order: f.stage_order }))}
+              totalLeads={leadsCount || 0}
+            />
+          </div>
         </ChartCard>
       </div>
 

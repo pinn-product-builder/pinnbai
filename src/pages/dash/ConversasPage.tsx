@@ -16,6 +16,7 @@ import {
   useInsights,
 } from '@/hooks/useDashboardData';
 
+
 export default function ConversasPage() {
   const { filters } = useGlobalFilters();
   const orgId = filters.orgId;
@@ -25,6 +26,18 @@ export default function ConversasPage() {
   const { data: byHour, isLoading: byHourLoading } = useConversationsByHour(orgId);
   const { data: heatmap, isLoading: heatmapLoading } = useConversationsHeatmap(orgId);
   const { data: insights, isLoading: insightsLoading } = useInsights(orgId, 'conversas');
+
+  // Gerar insights locais baseados nos KPIs de conversas
+  const conversationKpis = kpis ? {
+    msg_in_30d: kpis.msg_in_30d,
+    leads_total_30d: kpis.leads_total_30d,
+    meetings_scheduled_30d: kpis.meetings_scheduled_30d,
+    meetings_total_30d: kpis.meetings_total_30d,
+    conv_lead_to_msg_30d: kpis.conv_lead_to_msg_30d,
+    conv_lead_to_meeting_30d: kpis.conv_lead_to_meeting_30d,
+    conv_msg_to_meeting_30d: kpis.conv_msg_to_meeting_30d,
+    cpm_meeting_30d: kpis.cpm_meeting_30d,
+  } : null;
 
   if (!orgId) {
     return (
@@ -211,11 +224,19 @@ export default function ConversasPage() {
         </ChartCard>
 
         <ChartCard
-          title="Insights IA"
-          subtitle="Análises automáticas de conversas"
-          isLoading={insightsLoading}
+          title="Insights do Agente"
+          subtitle="Análise de performance de conversas"
+          isLoading={insightsLoading || kpisLoading}
+          className="h-[420px] overflow-hidden"
         >
-          <InsightsPanel insight={insights || null} orgId={orgId} scope="conversas" />
+          <div className="h-[320px] overflow-y-auto scrollbar-thin pr-2">
+            <InsightsPanel 
+              insight={insights || null} 
+              orgId={orgId} 
+              scope="conversas"
+              kpis={conversationKpis as any}
+            />
+          </div>
         </ChartCard>
       </div>
     </div>
