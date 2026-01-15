@@ -158,10 +158,63 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
   }
 
   // Novos campos detalhados da edge function
-  const alerts = parsedPayload.alerts as DetailedAlert[] | undefined;
-  const insights = parsedPayload.insights as DetailedInsight[] | undefined;
-  const recommendations = parsedPayload.recommendations as DetailedRecommendation[] | undefined;
-  const anomalies = parsedPayload.anomalies as DetailedAnomaly[] | undefined;
+  // Normalizar formato antigo ({text}) para novo formato ({title, description})
+  const normalizeInsights = (items: any[] | undefined): DetailedInsight[] => {
+    if (!items) return [];
+    return items.map((item, idx) => {
+      if (item.title && item.description) return item;
+      // Formato antigo com apenas 'text'
+      return {
+        title: `Insight ${idx + 1}`,
+        description: item.text || item.description || '',
+        ...item
+      };
+    });
+  };
+
+  const normalizeRecommendations = (items: any[] | undefined): DetailedRecommendation[] => {
+    if (!items) return [];
+    return items.map((item, idx) => {
+      if (item.title && item.description) return item;
+      // Formato antigo com apenas 'text'
+      return {
+        priority: item.priority || 'medium',
+        title: `Recomendação ${idx + 1}`,
+        description: item.text || item.description || '',
+        ...item
+      };
+    });
+  };
+
+  const normalizeAlerts = (items: any[] | undefined): DetailedAlert[] => {
+    if (!items) return [];
+    return items.map((item, idx) => {
+      if (item.title && item.description) return item;
+      return {
+        type: item.type || 'warning',
+        title: `Alerta ${idx + 1}`,
+        description: item.text || item.description || '',
+        ...item
+      };
+    });
+  };
+
+  const normalizeAnomalies = (items: any[] | undefined): DetailedAnomaly[] => {
+    if (!items) return [];
+    return items.map((item, idx) => {
+      if (item.title && item.description) return item;
+      return {
+        title: `Anomalia ${idx + 1}`,
+        description: item.text || item.description || '',
+        ...item
+      };
+    });
+  };
+
+  const alerts = normalizeAlerts(parsedPayload.alerts as any[]);
+  const insights = normalizeInsights(parsedPayload.insights as any[]);
+  const recommendations = normalizeRecommendations(parsedPayload.recommendations as any[]);
+  const anomalies = normalizeAnomalies(parsedPayload.anomalies as any[]);
   const summary = parsedPayload.summary as string | undefined;
 
   const formatDate = (dateStr: string) => {
@@ -179,7 +232,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     }
   };
 
-  const hasContent = summary || (alerts?.length) || (recommendations?.length) || (anomalies?.length) || (insights?.length);
+  const hasContent = summary || alerts.length > 0 || recommendations.length > 0 || anomalies.length > 0 || insights.length > 0;
 
   const getAlertStyles = (type: string) => {
     switch (type) {
