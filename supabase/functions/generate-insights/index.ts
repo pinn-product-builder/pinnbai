@@ -1,3 +1,5 @@
+// DEPLOY v5.0 - 2026-01-15T11:42:00Z - FORCE REBUILD
+// Using title+description format, NOT text format
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
