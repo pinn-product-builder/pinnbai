@@ -357,7 +357,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
                             </div>
                             <div className="flex-1 text-left">
                               <h5 className="font-semibold text-sm text-foreground">{alert.title}</h5>
-                              {!isExpanded && (
+                              {!isExpanded && alert.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                   {alert.description.slice(0, 80)}...
                                 </p>
@@ -433,7 +433,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
                             </div>
                             <div className="flex-1 text-left">
                               <h5 className="font-semibold text-sm text-foreground">{item.title}</h5>
-                              {!isExpanded && (
+                              {!isExpanded && item.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                   {item.description.slice(0, 80)}...
                                 </p>
@@ -525,7 +525,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
                             </div>
                             <div className="flex-1 text-left">
                               <h5 className="font-semibold text-sm text-foreground">{rec.title}</h5>
-                              {!isExpanded && (
+                              {!isExpanded && rec.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                   {rec.description.slice(0, 80)}...
                                 </p>
@@ -610,7 +610,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
                             </div>
                             <div className="flex-1 text-left">
                               <h5 className="font-semibold text-sm text-foreground">{anomaly.title}</h5>
-                              {!isExpanded && (
+                              {!isExpanded && anomaly.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                   {anomaly.description.slice(0, 80)}...
                                 </p>
