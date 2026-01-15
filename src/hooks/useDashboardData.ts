@@ -886,11 +886,11 @@ export function useInsightsHistory(orgId: string, scope?: string, limit: number 
   });
 }
 
-// Função para gerar insights via edge function
+// Função para gerar insights via edge function (agora usa OpenAI com análise detalhada)
 export async function generateInsights(orgId: string, scope: string, windowDays: number = 30) {
   try {
     const { data, error } = await supabase.functions.invoke(SUPABASE_EDGE_FUNCTIONS.GENERATE_INSIGHTS, {
-      body: { org_id: orgId, scope, window_days: windowDays },
+      body: { org_id: orgId, scope },
     });
     
     if (error) throw error;

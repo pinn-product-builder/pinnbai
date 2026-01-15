@@ -14,7 +14,9 @@ import {
   Target,
   Zap,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  ListChecks,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -35,140 +37,54 @@ interface InsightsPanelProps {
   scope?: string;
 }
 
-// Mapeia insights genéricos para explicações mais detalhadas
-function enrichInsightText(text: string, scope?: string): { 
-  title: string; 
-  explanation: string; 
+// Tipos para os insights detalhados da nova edge function
+interface DetailedAlert {
+  type: 'warning' | 'danger' | 'success';
+  title: string;
+  description: string;
+  metric_value?: string;
+  benchmark?: string;
   action?: string;
-  type: 'positive' | 'warning' | 'neutral' | 'action';
-} {
-  const lowerText = text.toLowerCase();
-  
-  // Taxa de conversão
-  if (lowerText.includes('taxa de conversão') || lowerText.includes('conversion rate')) {
-    const match = text.match(/(\d+[.,]\d+)%/);
-    const rate = match ? parseFloat(match[1].replace(',', '.')) : null;
-    
-    if (rate && rate > 40) {
-      return {
-        title: '🎯 Excelente Taxa de Conversão',
-        explanation: `Sua taxa de ${rate.toFixed(1)}% está acima da média do mercado (20-30%). Isso indica que seu funil está bem otimizado e os leads estão qualificados. Continue monitorando para manter esse padrão.`,
-        action: 'Documente as práticas atuais para replicar em outras campanhas.',
-        type: 'positive'
-      };
-    } else if (rate && rate > 20) {
-      return {
-        title: '📊 Taxa de Conversão Saudável',
-        explanation: `Sua taxa de ${rate.toFixed(1)}% está dentro da média esperada. Há espaço para otimização, especialmente no meio do funil onde leads podem estar travando.`,
-        action: 'Analise os gargalos entre etapas do funil.',
-        type: 'neutral'
-      };
-    } else if (rate) {
-      return {
-        title: '⚠️ Taxa de Conversão Abaixo do Esperado',
-        explanation: `Taxa de ${rate.toFixed(1)}% requer atenção. Verifique a qualidade dos leads na origem e o tempo de resposta do time comercial.`,
-        action: 'Revise a segmentação dos anúncios e o script de atendimento.',
-        type: 'warning'
-      };
-    }
-  }
-  
-  // Leads ativos
-  if (lowerText.includes('leads ativos') || lowerText.includes('active leads')) {
-    const match = text.match(/(\d+)\s*leads?\s*ativos?/i);
-    const count = match ? parseInt(match[1]) : null;
-    
-    return {
-      title: '👥 Distribuição de Leads no Funil',
-      explanation: count 
-        ? `Você tem ${count} leads ativos distribuídos no funil. Uma distribuição saudável indica fluxo constante. Se muitos leads estão concentrados em uma única etapa, pode indicar gargalo.`
-        : text,
-      action: 'Verifique se há leads parados há mais de 7 dias em alguma etapa.',
-      type: 'neutral'
-    };
-  }
-  
-  // CPL
-  if (lowerText.includes('cpl') || lowerText.includes('custo por lead')) {
-    return {
-      title: '💰 Análise de Custo por Lead',
-      explanation: text + ' O CPL ideal varia por segmento, mas deve ser sustentável em relação ao ticket médio das vendas.',
-      action: 'Compare o CPL com o valor médio de venda para calcular o ROI.',
-      type: 'neutral'
-    };
-  }
-  
-  // Monitoramento
-  if (lowerText.includes('monitorando') || lowerText.includes('continue monitorando')) {
-    return {
-      title: '📈 Acompanhamento Contínuo',
-      explanation: 'A análise de tendências requer dados históricos. Continue monitorando diariamente para identificar padrões sazonais, dias da semana com melhor performance e horários de pico.',
-      action: 'Configure alertas para variações acima de 20% na média.',
-      type: 'action'
-    };
-  }
-  
-  // Reuniões
-  if (lowerText.includes('reunião') || lowerText.includes('reuniões') || lowerText.includes('meeting')) {
-    return {
-      title: '📅 Performance de Reuniões',
-      explanation: text + ' A taxa de comparecimento (show rate) saudável é acima de 70%. Reuniões agendadas sem confirmação tendem a ter maior no-show.',
-      action: 'Implemente lembretes automáticos 24h e 1h antes das reuniões.',
-      type: 'neutral'
-    };
-  }
-  
-  // Default
-  return {
-    title: '💡 Insight',
-    explanation: text,
-    type: 'neutral'
-  };
 }
 
-function enrichRecommendation(text: string): {
+interface DetailedInsight {
   title: string;
-  explanation: string;
+  description: string;
+  current_value?: string;
+  comparison?: string;
+  impact?: string;
+  recommendation?: string;
+}
+
+interface DetailedRecommendation {
   priority: 'high' | 'medium' | 'low';
-} {
-  const lowerText = text.toLowerCase();
-  
-  if (lowerText.includes('urgente') || lowerText.includes('imediato') || lowerText.includes('crítico')) {
-    return {
-      title: '🚨 Ação Urgente',
-      explanation: text,
-      priority: 'high'
-    };
-  }
-  
-  if (lowerText.includes('otimiz') || lowerText.includes('melhora') || lowerText.includes('aument')) {
-    return {
-      title: '📈 Oportunidade de Melhoria',
-      explanation: text,
-      priority: 'medium'
-    };
-  }
-  
-  return {
-    title: '💡 Sugestão',
-    explanation: text,
-    priority: 'low'
-  };
+  title: string;
+  description: string;
+  expected_impact?: string;
+  effort?: string;
+  steps?: string[];
+}
+
+interface DetailedAnomaly {
+  title: string;
+  description: string;
+  possible_causes?: string[];
+  investigation_steps?: string[];
 }
 
 export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set([0])); // First one expanded by default
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['insight-0', 'rec-0']));
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const toggleExpanded = (index: number) => {
-    setExpandedInsights(prev => {
+  const toggleExpanded = (key: string) => {
+    setExpandedItems(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
+      if (newSet.has(key)) {
+        newSet.delete(key);
       } else {
-        newSet.add(index);
+        newSet.add(key);
       }
       return newSet;
     });
@@ -197,8 +113,9 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
         });
       } else {
         toast({
-          title: 'Dados Recarregados',
-          description: result.error || 'Os insights existentes foram recarregados',
+          title: 'Erro',
+          description: result.error || 'Erro ao gerar insights',
+          variant: 'destructive',
         });
       }
       
@@ -206,11 +123,10 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
       await queryClient.invalidateQueries({ queryKey: ['insights-history', orgId] });
       await queryClient.refetchQueries({ queryKey: ['insights', orgId, scope] });
     } catch (err: any) {
-      await queryClient.invalidateQueries({ queryKey: ['insights', orgId, scope] });
-      await queryClient.refetchQueries({ queryKey: ['insights', orgId, scope] });
       toast({
-        title: 'Dados Recarregados',
-        description: 'Os insights existentes foram recarregados',
+        title: 'Erro',
+        description: 'Erro ao gerar insights',
+        variant: 'destructive',
       });
     } finally {
       setIsRefreshing(false);
@@ -221,7 +137,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-20 rounded-lg bg-muted/20 animate-pulse" />
+          <div key={i} className="h-24 rounded-lg bg-muted/20 animate-pulse" />
         ))}
       </div>
     );
@@ -241,71 +157,12 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     }
   }
 
-  const alerts = parsedPayload.alerts as Array<{ type?: string; text?: string; message?: string }> | undefined;
-  const recommendations = parsedPayload.recommendations as Array<{ text: string } | string> | undefined;
-  const anomalies = parsedPayload.anomalies as Array<{ text: string } | string> | undefined;
+  // Novos campos detalhados da edge function
+  const alerts = parsedPayload.alerts as DetailedAlert[] | undefined;
+  const insights = parsedPayload.insights as DetailedInsight[] | undefined;
+  const recommendations = parsedPayload.recommendations as DetailedRecommendation[] | undefined;
+  const anomalies = parsedPayload.anomalies as DetailedAnomaly[] | undefined;
   const summary = parsedPayload.summary as string | undefined;
-  const text = parsedPayload.text as string | undefined;
-  const insightsData = parsedPayload.insights as Array<{ text: string } | string> | undefined;
-
-  const getItemText = (item: { text: string } | string): string => {
-    return typeof item === 'string' ? item : item.text;
-  };
-
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case 'critical':
-        return <AlertTriangle className="w-4 h-4 text-destructive" />;
-      case 'warning':
-        return <AlertCircle className="w-4 h-4 text-warning" />;
-      default:
-        return <Info className="w-4 h-4 text-primary" />;
-    }
-  };
-
-  const getAlertStyle = (type: string) => {
-    switch (type) {
-      case 'critical':
-        return 'border-destructive/30 bg-destructive/5';
-      case 'warning':
-        return 'border-warning/30 bg-warning/5';
-      default:
-        return 'border-primary/30 bg-primary/5';
-    }
-  };
-
-  const getInsightTypeStyles = (type: 'positive' | 'warning' | 'neutral' | 'action') => {
-    switch (type) {
-      case 'positive':
-        return {
-          border: 'border-success/40',
-          bg: 'bg-success/10',
-          icon: <TrendingUp className="w-5 h-5 text-success" />,
-          iconBg: 'bg-success/20'
-        };
-      case 'warning':
-        return {
-          border: 'border-warning/40',
-          bg: 'bg-warning/10',
-          icon: <AlertTriangle className="w-5 h-5 text-warning" />,
-          iconBg: 'bg-warning/20'
-        };
-      case 'action':
-        return {
-          border: 'border-primary/40',
-          bg: 'bg-primary/10',
-          icon: <Target className="w-5 h-5 text-primary" />,
-          iconBg: 'bg-primary/20'
-        };
-      default:
-        return {
-          border: 'border-border/60',
-          bg: 'bg-muted/30',
-          icon: <Lightbulb className="w-5 h-5 text-primary" />,
-          iconBg: 'bg-primary/20'
-        };
-    }
-  };
 
   const formatDate = (dateStr: string) => {
     try {
@@ -322,7 +179,66 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
     }
   };
 
-  const hasContent = text || summary || (alerts?.length) || (recommendations?.length) || (anomalies?.length) || (insightsData?.length);
+  const hasContent = summary || (alerts?.length) || (recommendations?.length) || (anomalies?.length) || (insights?.length);
+
+  const getAlertStyles = (type: string) => {
+    switch (type) {
+      case 'danger':
+        return {
+          border: 'border-destructive/40',
+          bg: 'bg-destructive/10',
+          icon: <AlertTriangle className="w-5 h-5 text-destructive" />,
+          iconBg: 'bg-destructive/20'
+        };
+      case 'warning':
+        return {
+          border: 'border-warning/40',
+          bg: 'bg-warning/10',
+          icon: <AlertCircle className="w-5 h-5 text-warning" />,
+          iconBg: 'bg-warning/20'
+        };
+      case 'success':
+        return {
+          border: 'border-success/40',
+          bg: 'bg-success/10',
+          icon: <CheckCircle2 className="w-5 h-5 text-success" />,
+          iconBg: 'bg-success/20'
+        };
+      default:
+        return {
+          border: 'border-primary/40',
+          bg: 'bg-primary/10',
+          icon: <Info className="w-5 h-5 text-primary" />,
+          iconBg: 'bg-primary/20'
+        };
+    }
+  };
+
+  const getPriorityStyles = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return {
+          border: 'border-destructive/40',
+          bg: 'bg-destructive/10',
+          badge: 'bg-destructive/20 text-destructive',
+          label: 'Alta'
+        };
+      case 'medium':
+        return {
+          border: 'border-warning/40',
+          bg: 'bg-warning/10',
+          badge: 'bg-warning/20 text-warning',
+          label: 'Média'
+        };
+      default:
+        return {
+          border: 'border-success/40',
+          bg: 'bg-success/10',
+          badge: 'bg-success/20 text-success',
+          label: 'Baixa'
+        };
+    }
+  };
 
   return (
     <div className="space-y-5 relative">
@@ -353,12 +269,12 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
             {isRefreshing ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Gerando...</span>
+                <span>Gerando com IA...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Atualizar Insights</span>
+                <span>Gerar Insights</span>
               </>
             )}
           </Button>
@@ -372,7 +288,7 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
           </div>
           <p className="text-sm font-medium mb-1">Nenhum insight disponível</p>
           <p className="text-xs text-muted-foreground/70 mb-4 text-center max-w-[250px]">
-            Gere insights com IA para receber análises detalhadas sobre sua performance
+            Gere insights com IA para receber análises detalhadas com métricas, benchmarks e recomendações
           </p>
           {orgId && scope && (
             <Button
@@ -402,110 +318,86 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
           )}
         </div>
       ) : (
-        <div className="space-y-5">
-          {/* Texto ou summary como destaque principal */}
-          {(text || summary) && (
+        <div className="space-y-6">
+          {/* Summary - Destaque principal */}
+          {summary && (
             <div className="p-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-primary/20">
                   <Zap className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-sm text-foreground mb-2">Resumo da Análise</h4>
-                  <p className="text-sm text-foreground/80 leading-relaxed">{text || summary}</p>
+                  <h4 className="font-semibold text-sm text-foreground mb-2">Resumo Executivo</h4>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{summary}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Alerts - mantém estilo original com pequenas melhorias */}
+          {/* Alerts - Com métricas e benchmarks */}
           {alerts && alerts.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Alertas ({alerts.length})
               </h4>
-              <div className="space-y-2">
-                {alerts.map((alert, i) => (
-                  <div
-                    key={i}
-                    className={cn(
-                      "flex items-start gap-3 p-4 rounded-xl border",
-                      getAlertStyle(alert.type || 'info')
-                    )}
-                  >
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getAlertIcon(alert.type || 'info')}
-                    </div>
-                    <p className="text-sm leading-relaxed">{alert.text || alert.message}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Insights array - com explicações enriquecidas */}
-          {insightsData && insightsData.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <Lightbulb className="w-3.5 h-3.5" />
-                Insights ({insightsData.length})
-              </h4>
               <div className="space-y-3">
-                {insightsData.map((item, i) => {
-                  const enriched = enrichInsightText(getItemText(item), scope);
-                  const styles = getInsightTypeStyles(enriched.type);
-                  const isExpanded = expandedInsights.has(i);
+                {alerts.map((alert, i) => {
+                  const styles = getAlertStyles(alert.type);
+                  const key = `alert-${i}`;
+                  const isExpanded = expandedItems.has(key);
                   
                   return (
-                    <Collapsible
-                      key={i}
-                      open={isExpanded}
-                      onOpenChange={() => toggleExpanded(i)}
-                    >
-                      <div
-                        className={cn(
-                          "rounded-xl border transition-all duration-200",
-                          styles.border,
-                          styles.bg
-                        )}
-                      >
+                    <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleExpanded(key)}>
+                      <div className={cn("rounded-xl border transition-all duration-200", styles.border, styles.bg)}>
                         <CollapsibleTrigger className="w-full">
                           <div className="flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition-colors rounded-xl">
                             <div className={cn("p-2 rounded-lg flex-shrink-0", styles.iconBg)}>
                               {styles.icon}
                             </div>
                             <div className="flex-1 text-left">
-                              <h5 className="font-semibold text-sm text-foreground">
-                                {enriched.title}
-                              </h5>
+                              <h5 className="font-semibold text-sm text-foreground">{alert.title}</h5>
                               {!isExpanded && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                  {enriched.explanation.slice(0, 80)}...
+                                  {alert.description.slice(0, 80)}...
                                 </p>
                               )}
                             </div>
                             <div className="flex-shrink-0 mt-1">
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                              )}
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                             </div>
                           </div>
                         </CollapsibleTrigger>
                         
                         <CollapsibleContent>
-                          <div className="px-4 pb-4 pt-0 ml-14">
-                            <p className="text-sm text-foreground/80 leading-relaxed mb-3">
-                              {enriched.explanation}
-                            </p>
-                            {enriched.action && (
+                          <div className="px-4 pb-4 pt-0 ml-14 space-y-3">
+                            <p className="text-sm text-foreground/80 leading-relaxed">{alert.description}</p>
+                            
+                            {(alert.metric_value || alert.benchmark) && (
+                              <div className="flex flex-wrap gap-3 text-xs">
+                                {alert.metric_value && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <Target className="w-3 h-3 text-primary" />
+                                    <span className="text-muted-foreground">Valor:</span>
+                                    <span className="font-medium text-foreground">{alert.metric_value}</span>
+                                  </div>
+                                )}
+                                {alert.benchmark && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <TrendingUp className="w-3 h-3 text-success" />
+                                    <span className="text-muted-foreground">Benchmark:</span>
+                                    <span className="font-medium text-foreground">{alert.benchmark}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {alert.action && (
                               <div className="flex items-start gap-2 p-3 rounded-lg bg-background/50 border border-border/40">
                                 <ArrowRight className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                                 <div>
-                                  <span className="text-xs font-medium text-primary">Próximo passo:</span>
-                                  <p className="text-xs text-foreground/70 mt-0.5">{enriched.action}</p>
+                                  <span className="text-xs font-medium text-primary">Ação recomendada:</span>
+                                  <p className="text-xs text-foreground/70 mt-0.5">{alert.action}</p>
                                 </div>
                               </div>
                             )}
@@ -519,82 +411,262 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
             </div>
           )}
 
-          {/* Recommendations - com prioridade visual */}
-          {recommendations && recommendations.length > 0 && (
+          {/* Insights - Com valores e comparações */}
+          {insights && insights.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Recomendações ({recommendations.length})
+                <Lightbulb className="w-3.5 h-3.5" />
+                Insights ({insights.length})
               </h4>
-              <div className="space-y-2">
-                {recommendations.map((rec, i) => {
-                  const enriched = enrichRecommendation(getItemText(rec));
-                  const priorityStyles = {
-                    high: 'border-destructive/40 bg-destructive/10',
-                    medium: 'border-warning/40 bg-warning/10',
-                    low: 'border-success/40 bg-success/10',
-                  };
+              <div className="space-y-3">
+                {insights.map((item, i) => {
+                  const key = `insight-${i}`;
+                  const isExpanded = expandedItems.has(key);
                   
                   return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "p-4 rounded-xl border",
-                        priorityStyles[enriched.priority]
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={cn(
-                          "p-1.5 rounded-lg flex-shrink-0",
-                          enriched.priority === 'high' ? 'bg-destructive/20' :
-                          enriched.priority === 'medium' ? 'bg-warning/20' : 'bg-success/20'
-                        )}>
-                          <Zap className={cn(
-                            "w-4 h-4",
-                            enriched.priority === 'high' ? 'text-destructive' :
-                            enriched.priority === 'medium' ? 'text-warning' : 'text-success'
-                          )} />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="font-medium text-sm text-foreground mb-1">
-                            {enriched.title}
-                          </h5>
-                          <p className="text-sm text-foreground/80 leading-relaxed">
-                            {enriched.explanation}
-                          </p>
-                        </div>
+                    <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleExpanded(key)}>
+                      <div className="rounded-xl border border-primary/30 bg-primary/5 transition-all duration-200">
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition-colors rounded-xl">
+                            <div className="p-2 rounded-lg bg-primary/20 flex-shrink-0">
+                              <Lightbulb className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <h5 className="font-semibold text-sm text-foreground">{item.title}</h5>
+                              {!isExpanded && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                  {item.description.slice(0, 80)}...
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 mt-1">
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4 pt-0 ml-14 space-y-3">
+                            <p className="text-sm text-foreground/80 leading-relaxed">{item.description}</p>
+                            
+                            {(item.current_value || item.comparison) && (
+                              <div className="flex flex-wrap gap-3 text-xs">
+                                {item.current_value && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <Target className="w-3 h-3 text-primary" />
+                                    <span className="text-muted-foreground">Atual:</span>
+                                    <span className="font-medium text-foreground">{item.current_value}</span>
+                                  </div>
+                                )}
+                                {item.comparison && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <TrendingUp className="w-3 h-3 text-success" />
+                                    <span className="text-muted-foreground">Comparação:</span>
+                                    <span className="font-medium text-foreground">{item.comparison}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {item.impact && (
+                              <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
+                                <Zap className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-xs font-medium text-warning">Impacto no negócio:</span>
+                                  <p className="text-xs text-foreground/70 mt-0.5">{item.impact}</p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {item.recommendation && (
+                              <div className="flex items-start gap-2 p-3 rounded-lg bg-background/50 border border-border/40">
+                                <ArrowRight className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-xs font-medium text-primary">Recomendação:</span>
+                                  <p className="text-xs text-foreground/70 mt-0.5">{item.recommendation}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
                       </div>
-                    </div>
+                    </Collapsible>
                   );
                 })}
               </div>
             </div>
           )}
 
-          {/* Anomalies */}
+          {/* Recommendations - Com passos e prioridade */}
+          {recommendations && recommendations.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Recomendações ({recommendations.length})
+              </h4>
+              <div className="space-y-3">
+                {recommendations.map((rec, i) => {
+                  const styles = getPriorityStyles(rec.priority);
+                  const key = `rec-${i}`;
+                  const isExpanded = expandedItems.has(key);
+                  
+                  return (
+                    <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleExpanded(key)}>
+                      <div className={cn("rounded-xl border transition-all duration-200", styles.border, styles.bg)}>
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition-colors rounded-xl">
+                            <div className="flex flex-col items-center gap-1">
+                              <div className={cn("p-2 rounded-lg", styles.badge.split(' ')[0])}>
+                                <Target className="w-5 h-5" style={{ color: rec.priority === 'high' ? 'var(--destructive)' : rec.priority === 'medium' ? 'var(--warning)' : 'var(--success)' }} />
+                              </div>
+                              <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded", styles.badge)}>
+                                {styles.label}
+                              </span>
+                            </div>
+                            <div className="flex-1 text-left">
+                              <h5 className="font-semibold text-sm text-foreground">{rec.title}</h5>
+                              {!isExpanded && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                  {rec.description.slice(0, 80)}...
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 mt-1">
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4 pt-0 ml-16 space-y-3">
+                            <p className="text-sm text-foreground/80 leading-relaxed">{rec.description}</p>
+                            
+                            {(rec.expected_impact || rec.effort) && (
+                              <div className="flex flex-wrap gap-3 text-xs">
+                                {rec.expected_impact && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <TrendingUp className="w-3 h-3 text-success" />
+                                    <span className="text-muted-foreground">Impacto:</span>
+                                    <span className="font-medium text-foreground">{rec.expected_impact}</span>
+                                  </div>
+                                )}
+                                {rec.effort && (
+                                  <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/50 border border-border/40">
+                                    <Zap className="w-3 h-3 text-warning" />
+                                    <span className="text-muted-foreground">Esforço:</span>
+                                    <span className="font-medium text-foreground">{rec.effort}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {rec.steps && rec.steps.length > 0 && (
+                              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <ListChecks className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-medium text-primary">Passos para implementar:</span>
+                                </div>
+                                <ol className="space-y-1.5 ml-1">
+                                  {rec.steps.map((step, stepIdx) => (
+                                    <li key={stepIdx} className="text-xs text-foreground/70 flex items-start gap-2">
+                                      <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-medium flex items-center justify-center">
+                                        {stepIdx + 1}
+                                      </span>
+                                      {step}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Anomalies - Com causas e investigação */}
           {anomalies && anomalies.length > 0 && (
             <div className="space-y-3">
               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                 <TrendingDown className="w-3.5 h-3.5" />
                 Anomalias Detectadas ({anomalies.length})
               </h4>
-              <div className="space-y-2">
-                {anomalies.map((anomaly, i) => (
-                  <div
-                    key={i}
-                    className="flex items-start gap-3 p-4 rounded-xl border border-warning/40 bg-warning/10"
-                  >
-                    <div className="p-1.5 rounded-lg bg-warning/20 flex-shrink-0">
-                      <TrendingDown className="w-4 h-4 text-warning" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-foreground/80 leading-relaxed">{getItemText(anomaly)}</p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        💡 Anomalias podem indicar problemas técnicos, mudanças de mercado ou oportunidades não exploradas.
-                      </p>
-                    </div>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {anomalies.map((anomaly, i) => {
+                  const key = `anomaly-${i}`;
+                  const isExpanded = expandedItems.has(key);
+                  
+                  return (
+                    <Collapsible key={i} open={isExpanded} onOpenChange={() => toggleExpanded(key)}>
+                      <div className="rounded-xl border border-warning/40 bg-warning/10 transition-all duration-200">
+                        <CollapsibleTrigger className="w-full">
+                          <div className="flex items-start gap-3 p-4 cursor-pointer hover:bg-white/5 transition-colors rounded-xl">
+                            <div className="p-2 rounded-lg bg-warning/20 flex-shrink-0">
+                              <TrendingDown className="w-5 h-5 text-warning" />
+                            </div>
+                            <div className="flex-1 text-left">
+                              <h5 className="font-semibold text-sm text-foreground">{anomaly.title}</h5>
+                              {!isExpanded && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                  {anomaly.description.slice(0, 80)}...
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0 mt-1">
+                              {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <div className="px-4 pb-4 pt-0 ml-14 space-y-3">
+                            <p className="text-sm text-foreground/80 leading-relaxed">{anomaly.description}</p>
+                            
+                            {anomaly.possible_causes && anomaly.possible_causes.length > 0 && (
+                              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <AlertCircle className="w-4 h-4 text-warning" />
+                                  <span className="text-xs font-medium text-warning">Possíveis causas:</span>
+                                </div>
+                                <ul className="space-y-1 ml-1">
+                                  {anomaly.possible_causes.map((cause, idx) => (
+                                    <li key={idx} className="text-xs text-foreground/70 flex items-start gap-2">
+                                      <span className="text-warning">•</span>
+                                      {cause}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            {anomaly.investigation_steps && anomaly.investigation_steps.length > 0 && (
+                              <div className="p-3 rounded-lg bg-background/50 border border-border/40">
+                                <div className="flex items-center gap-1.5 mb-2">
+                                  <Search className="w-4 h-4 text-primary" />
+                                  <span className="text-xs font-medium text-primary">Passos de investigação:</span>
+                                </div>
+                                <ol className="space-y-1.5 ml-1">
+                                  {anomaly.investigation_steps.map((step, stepIdx) => (
+                                    <li key={stepIdx} className="text-xs text-foreground/70 flex items-start gap-2">
+                                      <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/20 text-primary text-[10px] font-medium flex items-center justify-center">
+                                        {stepIdx + 1}
+                                      </span>
+                                      {step}
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                })}
               </div>
             </div>
           )}
