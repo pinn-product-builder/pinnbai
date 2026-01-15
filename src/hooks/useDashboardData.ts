@@ -405,11 +405,12 @@ export function useTrafegoKpis(orgId: string, period: '7d' | '14d' | '30d' | '60
       // Calcular métricas derivadas usando funções utilitárias
       const cpl = calculateCPL(currentAgg.spend, currentLeads);
       const cpMeeting = calculateCostPerMeeting(currentAgg.spend, currentAgg.meetings_scheduled);
-      const taxaEntrada = calculateTaxaEntrada(currentEntradas, currentLeads);
+      // Taxa de entrada como proporção (0-1) para compatibilidade com formatPercent
+      const taxaEntrada = calculateConversionRate(currentEntradas, currentLeads);
       
       const prevCpl = calculateCPL(previousAgg.spend, previousLeads);
       const prevCpMeeting = calculateCostPerMeeting(previousAgg.spend, previousAgg.meetings_scheduled);
-      const prevTaxaEntrada = calculateTaxaEntrada(previousEntradas, previousLeads);
+      const prevTaxaEntrada = calculateConversionRate(previousEntradas, previousLeads);
       
       // Calcular variações usando função utilitária
       const changes = {
