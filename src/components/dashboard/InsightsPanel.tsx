@@ -161,12 +161,16 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
   // Normalizar formato antigo ({text}) para novo formato ({title, description})
   const normalizeInsights = (items: any[] | undefined): DetailedInsight[] => {
     if (!items) return [];
-    return items.map((item, idx) => {
+    return items.map((item) => {
       if (item.title && item.description) return item;
-      // Formato antigo com apenas 'text'
+      // Formato antigo com apenas 'text' - extrair título do texto
+      const text = item.text || item.description || '';
+      // Tentar extrair título do primeiro pedaço até ponto, vírgula ou exclamação
+      const match = text.match(/^([^.!?,]{10,60})[.!?,]?/);
+      const extractedTitle = match ? match[1].trim() : text.substring(0, 50);
       return {
-        title: `Insight ${idx + 1}`,
-        description: item.text || item.description || '',
+        title: extractedTitle + (extractedTitle.length >= 50 ? '...' : ''),
+        description: text,
         ...item
       };
     });
@@ -174,13 +178,16 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
 
   const normalizeRecommendations = (items: any[] | undefined): DetailedRecommendation[] => {
     if (!items) return [];
-    return items.map((item, idx) => {
+    return items.map((item) => {
       if (item.title && item.description) return item;
-      // Formato antigo com apenas 'text'
+      // Formato antigo com apenas 'text' - extrair título do texto
+      const text = item.text || item.description || '';
+      const match = text.match(/^([^.!?,]{10,60})[.!?,]?/);
+      const extractedTitle = match ? match[1].trim() : text.substring(0, 50);
       return {
         priority: item.priority || 'medium',
-        title: `Recomendação ${idx + 1}`,
-        description: item.text || item.description || '',
+        title: extractedTitle + (extractedTitle.length >= 50 ? '...' : ''),
+        description: text,
         ...item
       };
     });
@@ -188,12 +195,15 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
 
   const normalizeAlerts = (items: any[] | undefined): DetailedAlert[] => {
     if (!items) return [];
-    return items.map((item, idx) => {
+    return items.map((item) => {
       if (item.title && item.description) return item;
+      const text = item.text || item.description || '';
+      const match = text.match(/^([^.!?,]{10,60})[.!?,]?/);
+      const extractedTitle = match ? match[1].trim() : text.substring(0, 50);
       return {
-        type: item.type || 'warning',
-        title: `Alerta ${idx + 1}`,
-        description: item.text || item.description || '',
+        type: item.type || item.severity || 'warning',
+        title: extractedTitle + (extractedTitle.length >= 50 ? '...' : ''),
+        description: text,
         ...item
       };
     });
@@ -201,11 +211,14 @@ export function InsightsPanel({ insight, isLoading, orgId, scope }: InsightsPane
 
   const normalizeAnomalies = (items: any[] | undefined): DetailedAnomaly[] => {
     if (!items) return [];
-    return items.map((item, idx) => {
+    return items.map((item) => {
       if (item.title && item.description) return item;
+      const text = item.text || item.description || '';
+      const match = text.match(/^([^.!?,]{10,60})[.!?,]?/);
+      const extractedTitle = match ? match[1].trim() : text.substring(0, 50);
       return {
-        title: `Anomalia ${idx + 1}`,
-        description: item.text || item.description || '',
+        title: extractedTitle + (extractedTitle.length >= 50 ? '...' : ''),
+        description: text,
         ...item
       };
     });
