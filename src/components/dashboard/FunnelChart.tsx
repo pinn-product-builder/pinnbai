@@ -25,64 +25,65 @@ const stageNameMap: Record<string, string> = {
   'remarketing': 'Remarketing',
 };
 
-// Cores HSL para usar nos estilos inline (baseadas no design system)
+// Cores HSL para usar nos estilos inline - Paleta mais suave e premium
+// Usando tons neutros com variações de intensidade do acento
 const stageColorStyles: Record<string, { bg: string; glow: string }> = {
   'novo': { 
-    bg: 'linear-gradient(135deg, hsl(27 100% 50%), hsl(40 100% 65%))',
-    glow: 'hsl(27 100% 50% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(27 85% 55%), hsl(27 75% 50%))',
+    glow: 'hsl(27 85% 55% / 0.2)'
   },
   'entrada': { 
-    bg: 'linear-gradient(135deg, hsl(40 100% 65%), hsl(45 96% 55%))',
-    glow: 'hsl(40 100% 65% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(32 75% 52%), hsl(32 65% 48%))',
+    glow: 'hsl(32 75% 52% / 0.2)'
   },
   'reuniao_agendada': { 
-    bg: 'linear-gradient(135deg, hsl(155 65% 40%), hsl(155 65% 35%))',
-    glow: 'hsl(155 65% 40% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(38 70% 50%), hsl(38 60% 46%))',
+    glow: 'hsl(38 70% 50% / 0.2)'
   },
   'desmarque': { 
-    bg: 'linear-gradient(135deg, hsl(4 72% 50%), hsl(4 72% 45%))',
-    glow: 'hsl(4 72% 50% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(220 15% 55%), hsl(220 12% 50%))',
+    glow: 'hsl(220 15% 55% / 0.15)'
   },
   'qualificado': { 
-    bg: 'linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 40%))',
-    glow: 'hsl(142 71% 45% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(160 45% 45%), hsl(160 40% 40%))',
+    glow: 'hsl(160 45% 45% / 0.2)'
   },
   'proposta': { 
-    bg: 'linear-gradient(135deg, hsl(270 60% 50%), hsl(270 60% 45%))',
-    glow: 'hsl(270 60% 50% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(200 50% 50%), hsl(200 45% 45%))',
+    glow: 'hsl(200 50% 50% / 0.2)'
   },
   'negociacao': { 
-    bg: 'linear-gradient(135deg, hsl(40 75% 48%), hsl(40 75% 43%))',
-    glow: 'hsl(40 75% 48% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(45 60% 50%), hsl(45 55% 46%))',
+    glow: 'hsl(45 60% 50% / 0.2)'
   },
   'fechado': { 
-    bg: 'linear-gradient(135deg, hsl(84 70% 45%), hsl(84 70% 40%))',
-    glow: 'hsl(84 70% 45% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(155 50% 42%), hsl(155 45% 38%))',
+    glow: 'hsl(155 50% 42% / 0.2)'
   },
   'perdido': { 
-    bg: 'linear-gradient(135deg, hsl(0 0% 45%), hsl(0 0% 40%))',
-    glow: 'hsl(0 0% 45% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(220 10% 50%), hsl(220 8% 45%))',
+    glow: 'hsl(220 10% 50% / 0.15)'
   },
   'follow_up': { 
-    bg: 'linear-gradient(135deg, hsl(27 100% 50%), hsl(27 100% 45%))',
-    glow: 'hsl(27 100% 50% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(27 70% 52%), hsl(27 60% 48%))',
+    glow: 'hsl(27 70% 52% / 0.2)'
   },
   'remarketing': { 
-    bg: 'linear-gradient(135deg, hsl(330 70% 50%), hsl(330 70% 45%))',
-    glow: 'hsl(330 70% 50% / 0.35)'
+    bg: 'linear-gradient(135deg, hsl(280 40% 50%), hsl(280 35% 45%))',
+    glow: 'hsl(280 40% 50% / 0.2)'
   },
 };
 
-// Cores de fallback por índice (usando tons quentes do Pinn)
+// Cores de fallback por índice - Paleta neutra com variações de intensidade
 const indexColorStyles = [
-  { bg: 'linear-gradient(135deg, hsl(27 100% 50%), hsl(40 100% 65%))', glow: 'hsl(27 100% 50% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(40 100% 65%), hsl(45 96% 55%))', glow: 'hsl(40 100% 65% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(45 96% 55%), hsl(45 96% 50%))', glow: 'hsl(45 96% 55% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(155 65% 40%), hsl(155 65% 35%))', glow: 'hsl(155 65% 40% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 40%))', glow: 'hsl(142 71% 45% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(200 80% 50%), hsl(200 80% 45%))', glow: 'hsl(200 80% 50% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(270 60% 50%), hsl(270 60% 45%))', glow: 'hsl(270 60% 50% / 0.35)' },
-  { bg: 'linear-gradient(135deg, hsl(330 70% 50%), hsl(330 70% 45%))', glow: 'hsl(330 70% 50% / 0.35)' },
+  { bg: 'linear-gradient(135deg, hsl(27 75% 52%), hsl(27 65% 48%))', glow: 'hsl(27 75% 52% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(32 65% 50%), hsl(32 55% 46%))', glow: 'hsl(32 65% 50% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(38 60% 48%), hsl(38 50% 44%))', glow: 'hsl(38 60% 48% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(160 45% 45%), hsl(160 40% 40%))', glow: 'hsl(160 45% 45% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(200 45% 48%), hsl(200 40% 44%))', glow: 'hsl(200 45% 48% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(220 15% 52%), hsl(220 12% 48%))', glow: 'hsl(220 15% 52% / 0.15)' },
+  { bg: 'linear-gradient(135deg, hsl(270 35% 48%), hsl(270 30% 44%))', glow: 'hsl(270 35% 48% / 0.2)' },
+  { bg: 'linear-gradient(135deg, hsl(340 40% 50%), hsl(340 35% 46%))', glow: 'hsl(340 40% 50% / 0.2)' },
 ];
 
 export function FunnelChart({ data, isLoading, onStageClick }: FunnelChartProps) {

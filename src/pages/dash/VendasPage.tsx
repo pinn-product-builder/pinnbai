@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -8,106 +8,211 @@ import {
   AlertTriangle,
   BarChart3,
   Users,
-  Percent
+  Percent,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Inbox,
+  Lightbulb
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
-import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { KpiGrid } from '@/components/dashboard/KpiCard';
 import { FunnelChart } from '@/components/dashboard/FunnelChart';
 import { useGlobalFilters } from '@/hooks/useGlobalFilters';
 import { useFunnelCurrent } from '@/hooks/useDashboardData';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-// Componente de diagnóstico quando não há dados de CRM
+// Definições de KPI para tooltips
+const salesKpiDefinitions: Record<string, { 
+  definition: string; 
+  formula: string; 
+  period: string; 
+  source: string; 
+}> = {
+  faturamento: {
+    definition: 'Soma de todos os valores de negócios marcados como ganhos',
+    formula: 'Soma(valor) onde status = "ganho"',
+    period: 'Período selecionado (30 dias)',
+    source: 'Em validação (dados ausentes no CRM)',
+  },
+  negocios_ganhos: {
+    definition: 'Quantidade de negócios finalizados com status ganho',
+    formula: 'Contagem onde status = "ganho"',
+    period: 'Período selecionado (30 dias)',
+    source: 'Em validação (dados ausentes no CRM)',
+  },
+  taxa_ganho: {
+    definition: 'Percentual de negócios ganhos sobre o total finalizado',
+    formula: '(Ganhos ÷ Total finalizados) × 100',
+    period: 'Período selecionado (30 dias)',
+    source: 'Em validação (dados ausentes no CRM)',
+  },
+  ticket_medio: {
+    definition: 'Valor médio de cada negócio ganho',
+    formula: 'Faturamento ÷ Negócios ganhos',
+    period: 'Período selecionado (30 dias)',
+    source: 'Em validação (dados ausentes no CRM)',
+  },
+  tempo_medio: {
+    definition: 'Média de dias entre criação do lead e fechamento',
+    formula: 'Média(data_fechamento - data_criação)',
+    period: 'Período selecionado (30 dias)',
+    source: 'Em validação (dados ausentes no CRM)',
+  },
+};
+
+// Componente de diagnóstico quando não há dados de CRM (collapsible e premium)
 function CrmDiagnosticCard() {
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
-    <div className="glass-card p-6 border-warning/30">
-      <div className="flex items-start gap-4">
-        <div className="p-3 rounded-xl bg-warning/15">
-          <AlertTriangle className="w-6 h-6 text-warning" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-text-1 mb-2">Qualidade do CRM</h3>
-          <div className="space-y-3 text-sm text-text-2">
-            <p>Para habilitar métricas de Vendas, é necessário:</p>
-            <ul className="list-disc list-inside space-y-1 text-text-3">
-              <li>Preencher o campo <strong>valor</strong> nos leads/negócios</li>
-              <li>Atualizar o <strong>status</strong> (ganho/perdido) ao finalizar negociações</li>
-              <li>Registrar a <strong>data de fechamento</strong> das vendas</li>
-            </ul>
-            <div className="mt-4 p-3 rounded-lg bg-bg-2 border border-border">
-              <p className="text-xs text-text-3">
-                <strong>Nota:</strong> Atualmente não há view de vendas configurada no banco de dados. 
-                Os dados serão exibidos quando a integração com o CRM incluir informações de valor e status.
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/5">
+        <CollapsibleTrigger className="w-full">
+          <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-amber-100/30 dark:hover:bg-amber-500/10 rounded-t-xl transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-500/15">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="font-semibold text-text-1 text-sm">Qualidade do CRM</h3>
+            </div>
+            {isOpen ? (
+              <ChevronUp className="w-4 h-4 text-text-3" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-text-3" />
+            )}
+          </div>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <div className="px-4 pb-4">
+            <div className="space-y-3 text-sm text-text-2">
+              <p className="font-medium">Para habilitar métricas de Vendas:</p>
+              <ul className="space-y-2 text-text-3">
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                  <span>Preencher o campo <span className="font-medium text-text-2">valor</span> nos leads/negócios</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                  <span>Atualizar o <span className="font-medium text-text-2">status</span> (ganho/perdido) ao finalizar</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 flex-shrink-0" />
+                  <span>Registrar a <span className="font-medium text-text-2">data de fechamento</span></span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="mt-4 pt-3 border-t border-amber-200/50 dark:border-amber-500/15">
+              <p className="text-xs text-text-3 leading-relaxed">
+                <span className="font-medium">Nota:</span> Os dados serão exibidos automaticamente quando a integração 
+                com o CRM incluir informações de valor e status.
               </p>
             </div>
           </div>
-        </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 }
 
-// Componente de KPI placeholder
+// Componente de KPI placeholder com tooltip explicativo
 function PlaceholderKpiCard({ 
   title, 
-  icon, 
-  tooltip 
+  icon,
+  kpiKey,
 }: { 
   title: string; 
-  icon: React.ReactNode; 
-  tooltip?: string;
+  icon: React.ReactNode;
+  kpiKey: keyof typeof salesKpiDefinitions;
 }) {
+  const definition = salesKpiDefinitions[kpiKey];
+  
   return (
-    <div className="glass-card p-5 relative">
-      <div className="flex items-start justify-between mb-3">
+    <div className="rounded-xl border border-border bg-card p-5 relative">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="w-5 h-5 text-text-3">{icon}</span>
           <span className="text-sm font-medium text-text-2">{title}</span>
         </div>
+        {definition && (
+          <Tooltip delayDuration={100}>
+            <TooltipTrigger asChild>
+              <button 
+                type="button"
+                className="text-muted-foreground hover:text-primary transition-colors p-1 rounded-full hover:bg-muted/50"
+                aria-label="Informações sobre o indicador"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="bottom" 
+              align="end"
+              className="max-w-xs p-3 space-y-2 z-[9999]"
+              sideOffset={4}
+            >
+              <p className="font-semibold text-xs text-foreground">{title}</p>
+              <div className="space-y-1.5 text-xs">
+                <div>
+                  <span className="text-muted-foreground font-medium">Definição: </span>
+                  <span className="text-foreground">{definition.definition}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-medium">Cálculo: </span>
+                  <span className="text-foreground">{definition.formula}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-medium">Período: </span>
+                  <span className="text-foreground">{definition.period}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground font-medium">Fonte: </span>
+                  <span className="text-foreground">{definition.source}</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
-      <div className="flex items-end justify-between gap-2">
-        <span className="text-2xl font-bold tracking-tight text-text-3">—</span>
+      
+      <div className="flex flex-col items-center justify-center py-2">
+        <span className="text-4xl font-bold tracking-tight text-text-3/60">—</span>
+        <Badge variant="outline" className="mt-3 text-[10px] px-2 py-0.5 bg-muted/30 border-border text-text-3">
+          Em validação
+        </Badge>
       </div>
-      {tooltip && (
-        <p className="text-xs text-text-3 mt-2 opacity-70">{tooltip}</p>
-      )}
     </div>
   );
 }
 
-// Tabela placeholder de últimos resultados
-function PlaceholderResultsTable() {
+// Componente de empty state elegante para tabela
+function EmptyResultsState() {
   return (
-    <div className="space-y-4">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border/30">
-              <th className="text-left text-xs font-medium text-text-3 py-3 px-2">Data</th>
-              <th className="text-left text-xs font-medium text-text-3 py-3 px-2">Lead</th>
-              <th className="text-left text-xs font-medium text-text-3 py-3 px-2">Status</th>
-              <th className="text-right text-xs font-medium text-text-3 py-3 px-2">Valor</th>
-              <th className="text-left text-xs font-medium text-text-3 py-3 px-2">Etapa</th>
-              <th className="text-left text-xs font-medium text-text-3 py-3 px-2">Responsável</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <tr key={i} className="border-b border-border/10">
-                <td className="py-3 px-2 text-sm text-text-3">—</td>
-                <td className="py-3 px-2 text-sm text-text-3">—</td>
-                <td className="py-3 px-2 text-sm text-text-3">—</td>
-                <td className="py-3 px-2 text-sm text-text-3 text-right">—</td>
-                <td className="py-3 px-2 text-sm text-text-3">—</td>
-                <td className="py-3 px-2 text-sm text-text-3">—</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center mb-4">
+        <Inbox className="w-7 h-7 text-text-3/60" />
       </div>
-      <p className="text-xs text-text-3 text-center py-4">
-        Dados de vendas não disponíveis. Preencha os campos de valor e status no CRM.
+      <h4 className="text-sm font-medium text-text-2 mb-1">Sem dados de vendas</h4>
+      <p className="text-xs text-text-3 max-w-[240px] leading-relaxed">
+        Preencha valor e status no CRM. Os dados aparecerão automaticamente após sincronização.
       </p>
+    </div>
+  );
+}
+
+// Header da seção com indicação de moeda
+function SalesIndicatorsHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-lg font-semibold text-text-1">Indicadores de Vendas</h2>
+      <Badge variant="outline" className="text-[10px] px-2 py-0.5 font-normal text-text-3 border-border">
+        Moeda: R$
+      </Badge>
     </div>
   );
 }
@@ -130,7 +235,7 @@ export default function VendasPage() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       <PageHeader
         title="Vendas"
         description="Acompanhamento de receita e performance comercial"
@@ -140,41 +245,43 @@ export default function VendasPage() {
       <CrmDiagnosticCard />
 
       {/* KPIs Principais - Placeholders */}
-      <Section title="Indicadores de Vendas">
+      <section className="space-y-4">
+        <SalesIndicatorsHeader />
         <KpiGrid columns={5}>
           <PlaceholderKpiCard
             title="Faturamento Total"
             icon={<DollarSign className="w-5 h-5" />}
-            tooltip="Em validação - aguardando dados de valor no CRM"
+            kpiKey="faturamento"
           />
           <PlaceholderKpiCard
             title="Negócios Ganhos"
             icon={<Award className="w-5 h-5" />}
-            tooltip="Em validação - aguardando status ganho/perdido"
+            kpiKey="negocios_ganhos"
           />
           <PlaceholderKpiCard
             title="Taxa de Ganho"
             icon={<Percent className="w-5 h-5" />}
-            tooltip="Em validação - (Ganhos ÷ Total) × 100"
+            kpiKey="taxa_ganho"
           />
           <PlaceholderKpiCard
             title="Ticket Médio"
             icon={<TrendingUp className="w-5 h-5" />}
-            tooltip="Em validação - Faturamento ÷ Negócios"
+            kpiKey="ticket_medio"
           />
           <PlaceholderKpiCard
             title="Tempo Médio (dias)"
             icon={<Clock className="w-5 h-5" />}
-            tooltip="Em validação - Média de dias até fechamento"
+            kpiKey="tempo_medio"
           />
         </KpiGrid>
-      </Section>
+      </section>
 
       {/* Funil e Tabela */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Funil de Vendas"
           subtitle="Distribuição atual por etapa do pipeline"
+          chartKey="funil_vendas"
           isLoading={funnelLoading}
           isEmpty={!funnel?.length}
         >
@@ -182,7 +289,7 @@ export default function VendasPage() {
             <FunnelChart data={funnel} />
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-text-3">
-              <BarChart3 className="w-12 h-12 mb-3 opacity-50" />
+              <BarChart3 className="w-12 h-12 mb-3 opacity-40" />
               <p className="text-sm">Dados do funil não disponíveis</p>
             </div>
           )}
@@ -192,18 +299,22 @@ export default function VendasPage() {
           title="Últimos Resultados"
           subtitle="Negociações recentes"
         >
-          <PlaceholderResultsTable />
+          <EmptyResultsState />
         </ChartCard>
       </div>
 
-      {/* Nota informativa */}
-      <div className="glass-card p-4 border-info/30 bg-info/5">
-        <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-info" />
-          <p className="text-sm text-text-2">
-            <strong>Dica:</strong> Para ativar os relatórios de vendas, configure os campos de valor monetário 
-            e status (ganho/perdido) no seu CRM. Os dados serão sincronizados automaticamente.
-          </p>
+      {/* Nota informativa - sutil e premium */}
+      <div className="rounded-xl border border-primary/15 bg-primary/[0.03] dark:bg-primary/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Lightbulb className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-text-2 leading-relaxed">
+              <span className="font-medium text-text-1">Dica:</span> Para ativar os relatórios de vendas, 
+              configure os campos de valor monetário e status (ganho/perdido) no seu CRM.
+            </p>
+          </div>
         </div>
       </div>
     </div>
