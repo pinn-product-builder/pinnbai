@@ -122,8 +122,8 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
       const currentRange = getDateRange(period, days);
       const previousRange = getPreviousPeriodRange(period, days);
       
-      // Buscar dados da view para ambos os períodos
-      const [funnelResult, kpisResult] = await Promise.all([
+      // Buscar dados da view para ambos os períodos + marcações manuais de reuniões
+      const [funnelResult, kpisResult, attendanceResult] = await Promise.all([
         supabase
           .from(SUPABASE_VIEWS.AFONSINA_CUSTOS_FUNIL_DIA)
           .select('dia,custo_total,leads_total,entrada_total,reuniao_agendada_total,reuniao_realizada_total')
@@ -133,12 +133,19 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
           .from(SUPABASE_VIEWS.DASHBOARD_KPIS_30D)
           .select('msg_in_30d,meetings_cancelled_30d')
           .eq('org_id', orgId)
-          .maybeSingle()
+          .maybeSingle(),
+        // Buscar contagem de reuniões marcadas manualmente como realizadas
+        supabase
+          .from('meeting_attendance')
+          .select('meeting_id', { count: 'exact' })
+          .eq('org_id', orgId)
+          .eq('attended', true)
       ]);
       
       if (funnelResult.error) throw funnelResult.error;
       const data = funnelResult.data;
       const kpisData = kpisResult.data;
+      const manualMeetingsDone = attendanceResult.count || 0;
       
       // Separar dados
       const currentData = (data || []).filter(row => row.dia >= currentRange.startStr);
@@ -149,6 +156,9 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
       // Agregar usando função utilitária
       const current = aggregateFunnelData(currentData);
       const previous = aggregateFunnelData(previousData);
+      
+      // Usar a contagem manual de reuniões realizadas se disponível, caso contrário usar a da view
+      const meetingsDoneCount = manualMeetingsDone > 0 ? manualMeetingsDone : current.meetings_done;
       
       // Calcular métricas derivadas usando funções utilitárias
       const cpl = calculateCPL(current.spend, current.leads);
@@ -164,7 +174,7 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
         leads: calculatePercentageChange(current.leads, previous.leads),
         spend: calculatePercentageChange(current.spend, previous.spend),
         meetings_scheduled: calculatePercentageChange(current.meetings_scheduled, previous.meetings_scheduled),
-        meetings_done: calculatePercentageChange(current.meetings_done, previous.meetings_done),
+        meetings_done: calculatePercentageChange(meetingsDoneCount, previous.meetings_done),
         cpl: calculatePercentageChange(cpl, prevCpl),
         cpm_meeting: calculatePercentageChange(cpm_meeting, prevCpmMeeting),
         conv_lead_to_meeting: calculatePercentageChange(conv_lead_to_meeting, prevConvLeadToMeeting),
@@ -177,7 +187,7 @@ export function useExecutiveKpis(orgId: string, period: '7d' | '14d' | '30d' | '
         leads_total_30d: current.leads,
         msg_in_30d: kpisData?.msg_in_30d || 0,
         meetings_scheduled_30d: current.meetings_scheduled,
-        meetings_done: current.meetings_done,
+        meetings_done: meetingsDoneCount,
         meetings_cancelled_30d: kpisData?.meetings_cancelled_30d || 0,
         spend_30d: current.spend,
         cpl_30d: cpl,

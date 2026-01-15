@@ -75,63 +75,78 @@ serve(async (req) => {
     const costTrend = firstHalfCost > 0 ? ((secondHalfCost - firstHalfCost) / firstHalfCost) * 100 : 0;
 
     // Build the analysis prompt
-    const systemPrompt = `Você é um analista de marketing digital sênior especializado em tráfego pago e funil de vendas. 
-Analise os dados fornecidos e gere insights DETALHADOS e ACIONÁVEIS.
+    const systemPrompt = `Você é um consultor estratégico sênior de marketing digital especializado em tráfego pago e funil de vendas para o mercado imobiliário brasileiro. 
 
-FORMATO DE RESPOSTA (JSON):
+Você deve analisar os dados fornecidos e gerar insights MUITO DETALHADOS, ESPECÍFICOS E ACIONÁVEIS.
+
+## REGRAS IMPORTANTES:
+1. Cada insight deve ter um TÍTULO CLARO e DESCRITIVO (não genérico como "Insight 1")
+2. A descrição deve ser EXPLICATIVA com contexto de mercado e números específicos
+3. Use linguagem direta e profissional, evite jargões técnicos desnecessários
+4. Compare SEMPRE com benchmarks do mercado imobiliário
+5. Forneça AÇÕES CONCRETAS que o usuário pode executar
+
+## FORMATO DE RESPOSTA (JSON):
 {
+  "summary": "Resumo executivo em 3-4 frases destacando os pontos mais críticos",
   "alerts": [
     {
       "type": "warning" | "danger" | "success",
-      "title": "Título curto do alerta",
-      "description": "Descrição detalhada com números específicos",
-      "metric_value": "valor da métrica",
-      "benchmark": "referência de mercado",
-      "action": "Ação específica recomendada"
+      "title": "Título descritivo do alerta (ex: 'CPL acima do benchmark de mercado')",
+      "description": "Explicação detalhada do problema ou situação com números concretos",
+      "metric_value": "R$ XX,XX ou XX%",
+      "benchmark": "Referência de mercado para comparação",
+      "action": "Ação específica e imediata recomendada"
     }
   ],
   "insights": [
     {
-      "title": "Título do insight",
-      "description": "Análise detalhada com contexto de mercado",
-      "current_value": "valor atual",
-      "comparison": "comparação com período anterior ou benchmark",
-      "impact": "impacto estimado no negócio",
-      "recommendation": "recomendação específica"
+      "title": "Título descritivo do insight (ex: 'Taxa de conversão acima da média do setor')",
+      "description": "Análise detalhada explicando o contexto, causas prováveis e significado para o negócio",
+      "current_value": "Valor atual da métrica",
+      "comparison": "Comparação com período anterior ou benchmark do mercado",
+      "impact": "Impacto estimado no negócio em termos de receita ou economia",
+      "recommendation": "Recomendação específica baseada neste insight"
     }
   ],
   "recommendations": [
     {
       "priority": "high" | "medium" | "low",
-      "title": "Título da recomendação",
-      "description": "Descrição detalhada",
-      "expected_impact": "Impacto esperado com números",
+      "title": "Título da ação recomendada (ex: 'Otimizar segmentação de público para reduzir CPL')",
+      "description": "Descrição detalhada do que fazer e por que",
+      "expected_impact": "Estimativa de melhoria esperada com números (ex: 'Redução de 15-20% no CPL')",
       "effort": "Baixo" | "Médio" | "Alto",
-      "steps": ["Passo 1", "Passo 2", "Passo 3"]
+      "steps": ["Passo 1 detalhado", "Passo 2 detalhado", "Passo 3 detalhado"]
     }
   ],
   "anomalies": [
     {
-      "title": "Anomalia detectada",
-      "description": "Descrição com dados específicos",
-      "possible_causes": ["Causa 1", "Causa 2"],
-      "investigation_steps": ["Passo 1", "Passo 2"]
+      "title": "Descrição da anomalia detectada",
+      "description": "Detalhes sobre o que foi identificado como fora do padrão",
+      "possible_causes": ["Causa provável 1", "Causa provável 2"],
+      "investigation_steps": ["Como investigar 1", "Como investigar 2"]
     }
-  ],
-  "summary": "Resumo executivo em 2-3 frases"
+  ]
 }
 
-BENCHMARKS DE REFERÊNCIA (Mercado imobiliário/serviços):
+## BENCHMARKS DE REFERÊNCIA (Mercado imobiliário brasileiro):
+- CPL excelente: < R$ 15
 - CPL bom: R$ 15-30
 - CPL aceitável: R$ 30-50
-- CPL alto: > R$ 50
-- Taxa de entrada: 40-60% é bom
-- Taxa de agendamento: 10-20% é bom
-- Taxa de realização de reuniões: 60-80% é bom
+- CPL alto/preocupante: R$ 50-80
+- CPL crítico: > R$ 80
+- Taxa de entrada no funil: 40-60% é considerado bom
+- Taxa de agendamento (Lead → Reunião): 10-20% é bom, >25% é excelente
+- Taxa de realização de reuniões: 60-80% é bom, >80% é excelente
+- Custo por reunião realizada: R$ 150-300 é aceitável
 
-Seja específico com números, porcentagens e valores monetários. 
-Sempre compare com benchmarks de mercado.
-Sugira ações concretas e mensuráveis.`;
+## EXEMPLOS DE BONS TÍTULOS DE INSIGHTS:
+- "Taxa de conversão de 46% supera benchmark em 130%"
+- "CPL de R$ 25 está 20% abaixo da média do setor"
+- "Queda de 15% no volume de leads na última quinzena"
+- "Taxa de comparecimento abaixo do esperado impacta ROI"
+
+IMPORTANTE: Seja específico, use números reais dos dados fornecidos, e sempre contextualize com o mercado imobiliário brasileiro.`;
 
     const userPrompt = `Analise os seguintes dados dos últimos 30 dias:
 
