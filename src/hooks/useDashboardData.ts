@@ -730,6 +730,8 @@ export function useCallsLast50(orgId: string) {
       const { data, error } = await supabase
         .from(SUPABASE_TABLES.VAPI_CALLS)
         .select('*')
+        .eq('org_id', orgId)
+        .order('started_at', { ascending: false })
         .limit(QUERY_LIMITS.CALLS_LAST);
       
       if (error) throw error;
