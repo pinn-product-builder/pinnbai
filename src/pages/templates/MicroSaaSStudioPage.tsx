@@ -10,7 +10,6 @@ import {
   TrendingDown, 
   TrendingUp,
   Target,
-  Zap,
   Star,
   MessageSquare,
   Clock,
@@ -63,14 +62,14 @@ export default function MicroSaaSStudioPage() {
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
             variant="primary"
-            trend={{ value: 12.4, direction: 'up', label: 'vs mês anterior' }}
+            trend={{ value: 12.4, isPositive: true, label: 'vs mês anterior' }}
           />
           <KpiCard
             title="Usuários Ativos"
             value={3247}
             kpiKey="mau"
             icon={<Users className="w-5 h-5" />}
-            trend={{ value: 8.2, direction: 'up', label: 'vs mês anterior' }}
+            trend={{ value: 8.2, isPositive: true, label: 'vs mês anterior' }}
           />
           <KpiCard
             title="Churn"
@@ -79,7 +78,7 @@ export default function MicroSaaSStudioPage() {
             icon={<TrendingDown className="w-5 h-5" />}
             format="percent"
             variant="destructive"
-            trend={{ value: 0.5, direction: 'down', label: 'melhoria' }}
+            trend={{ value: 0.5, isPositive: true, label: 'melhoria' }}
           />
           <KpiCard
             title="NRR"
@@ -88,7 +87,7 @@ export default function MicroSaaSStudioPage() {
             icon={<TrendingUp className="w-5 h-5" />}
             format="percent"
             variant="success"
-            trend={{ value: 3.1, direction: 'up', label: 'crescimento' }}
+            trend={{ value: 3.1, isPositive: true, label: 'crescimento' }}
           />
           <KpiCard
             title="CAC"
@@ -96,7 +95,7 @@ export default function MicroSaaSStudioPage() {
             kpiKey="cac"
             icon={<Wallet className="w-5 h-5" />}
             format="currency"
-            trend={{ value: 5.2, direction: 'down', label: 'otimização' }}
+            trend={{ value: 5.2, isPositive: true, label: 'otimização' }}
           />
           <KpiCard
             title="LTV:CAC"
@@ -189,7 +188,7 @@ export default function MicroSaaSStudioPage() {
             icon={<Star className="w-5 h-5" />}
             format="percent"
             variant="success"
-            trend={{ value: 2.1, direction: 'up', label: 'satisfação' }}
+            trend={{ value: 2.1, isPositive: true, label: 'satisfação' }}
           />
           <KpiCard
             title="NPS"
@@ -204,7 +203,7 @@ export default function MicroSaaSStudioPage() {
             value={47}
             kpiKey="tickets_abertos"
             icon={<MessageSquare className="w-5 h-5" />}
-            trend={{ value: 12, direction: 'down', label: 'redução' }}
+            trend={{ value: 12, isPositive: true, label: 'redução' }}
           />
           <KpiCard
             title="Tempo Resposta"
@@ -229,7 +228,7 @@ export default function MicroSaaSStudioPage() {
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
             variant="primary"
-            trend={{ value: 18.5, direction: 'up', label: 'upsell' }}
+            trend={{ value: 18.5, isPositive: true, label: 'upsell' }}
           />
         </KpiGrid>
       </Section>
