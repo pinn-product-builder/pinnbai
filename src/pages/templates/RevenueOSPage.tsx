@@ -10,12 +10,12 @@ import {
   CalendarX, 
   DollarSign, 
   TrendingUp,
-  Target,
   Percent,
   CheckCircle
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { DemoLineChart, DemoFunnelChart } from '@/components/charts/DemoCharts';
 
 export default function RevenueOSPage() {
   return (
@@ -102,23 +102,15 @@ export default function RevenueOSPage() {
         <ChartCard
           title="Evolução Diária"
           subtitle="Leads, mensagens, reuniões e investimento"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Target className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte uma fonte de dados para visualizar</p>
-          </div>
+          <DemoLineChart height={280} lines={3} />
         </ChartCard>
 
         <ChartCard
           title="Pipeline de Conversão"
           subtitle="Funil atual por etapa"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Target className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte uma fonte de dados para visualizar</p>
-          </div>
+          <DemoFunnelChart stages={5} />
         </ChartCard>
       </div>
 
@@ -127,24 +119,29 @@ export default function RevenueOSPage() {
         <ChartCard
           title="Próximas Reuniões"
           subtitle="Reuniões agendadas"
-          isEmpty={true}
-          className="h-[420px]"
+          className="h-[320px]"
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
             <CalendarCheck className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Sem reuniões agendadas</p>
+            <p className="text-sm">Conecte um dataset para ver reuniões</p>
           </div>
         </ChartCard>
 
         <ChartCard
           title="Insights IA"
           subtitle="Análises baseadas nos dados"
-          isEmpty={true}
-          className="h-[420px]"
+          className="h-[320px]"
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Target className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Insights serão gerados com dados</p>
+          <div className="p-4 space-y-3">
+            <div className="p-3 rounded-lg bg-pinn-orange-500/10 border border-pinn-orange-500/20">
+              <p className="text-sm text-text-2">📈 <strong>Taxa de conversão</strong> está 15% acima da média do setor</p>
+            </div>
+            <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+              <p className="text-sm text-text-2">✅ <strong>Custo por reunião</strong> reduziu 8% este mês</p>
+            </div>
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <p className="text-sm text-text-2">⚠️ <strong>Meta de leads</strong> precisa de 12% mais para atingir</p>
+            </div>
           </div>
         </ChartCard>
       </div>

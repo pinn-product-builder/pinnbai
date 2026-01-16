@@ -6,11 +6,11 @@
 import { 
   DollarSign, 
   TrendingUp, 
-  ShoppingCart,
-  Target
+  ShoppingCart
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { DemoLineChart } from '@/components/charts/DemoCharts';
 
 export default function AgentSalesPage() {
   return (
@@ -52,12 +52,8 @@ export default function AgentSalesPage() {
       <ChartCard
         title="Evolução de Vendas"
         subtitle="Acompanhamento diário de vendas"
-        isEmpty={true}
       >
-        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-          <Target className="w-12 h-12 mb-3 opacity-40" />
-          <p className="text-sm">Conecte uma fonte de dados para visualizar</p>
-        </div>
+        <DemoLineChart height={280} lines={1} />
       </ChartCard>
     </div>
   );
