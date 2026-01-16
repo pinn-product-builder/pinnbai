@@ -26,6 +26,15 @@ export const SAAS_ROUTES = {
     PIPELINES: '/admin/pipelines',
   },
   
+  // Templates (dashboards por nível de complexidade)
+  TEMPLATES: {
+    AGENT_SALES: '/templates/agent-sales',
+    REVENUE_OS: '/templates/revenue-os',
+    GROWTH_ENGINE: '/templates/growth-engine',
+    PROCESS_AUTOMATION: '/templates/process-automation',
+    MICROSAAS_STUDIO: '/templates/microsaas-studio',
+  },
+  
   // App (clientes genéricos)
   APP: {
     DASHBOARDS: '/app/dashboards',
