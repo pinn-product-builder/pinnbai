@@ -28,14 +28,14 @@ export default function GrowthEnginePage() {
         <KpiGrid columns={6}>
           <KpiCard
             title="Novos Usuários"
-            value={0}
+            value={2847}
             kpiKey="novos_usuarios"
             icon={<Users className="w-5 h-5" />}
             variant="primary"
           />
           <KpiCard
             title="Taxa de Ativação"
-            value={0}
+            value={34.5}
             kpiKey="taxa_ativacao"
             icon={<Zap className="w-5 h-5" />}
             format="percent"
@@ -43,28 +43,28 @@ export default function GrowthEnginePage() {
           />
           <KpiCard
             title="Retenção D7"
-            value={0}
+            value={28.3}
             kpiKey="retencao_d7"
             icon={<RefreshCw className="w-5 h-5" />}
             format="percent"
           />
           <KpiCard
             title="NPS"
-            value={0}
+            value={67}
             kpiKey="nps"
             icon={<Star className="w-5 h-5" />}
             variant="warning"
           />
           <KpiCard
             title="CAC"
-            value={0}
+            value={127.45}
             kpiKey="cac"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
           />
           <KpiCard
             title="Viral Coef."
-            value={0}
+            value={1.24}
             kpiKey="viral_coefficient"
             icon={<TrendingUp className="w-5 h-5" />}
           />

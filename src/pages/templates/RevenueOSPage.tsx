@@ -30,34 +30,34 @@ export default function RevenueOSPage() {
         <KpiGrid columns={5}>
           <KpiCard
             title="Total de Leads"
-            value={0}
+            value={3842}
             kpiKey="leads_total"
             icon={<Users className="w-5 h-5" />}
             variant="primary"
           />
           <KpiCard
             title="Mensagens"
-            value={0}
+            value={12847}
             kpiKey="msg_in_30d"
             icon={<MessageSquare className="w-5 h-5" />}
           />
           <KpiCard
             title="Reuniões Agendadas"
-            value={0}
+            value={287}
             kpiKey="meetings_scheduled_30d"
             icon={<CalendarCheck className="w-5 h-5" />}
             variant="success"
           />
           <KpiCard
             title="Reuniões Realizadas"
-            value={0}
+            value={198}
             kpiKey="meetings_done"
             icon={<CheckCircle className="w-5 h-5" />}
             variant="success"
           />
           <KpiCard
             title="Reuniões Canceladas"
-            value={0}
+            value={42}
             kpiKey="meetings_cancelled_30d"
             icon={<CalendarX className="w-5 h-5" />}
             variant="destructive"
@@ -67,7 +67,7 @@ export default function RevenueOSPage() {
         <KpiGrid columns={4}>
           <KpiCard
             title="Investimento"
-            value={0}
+            value={45320}
             kpiKey="spend_30d"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
@@ -75,20 +75,20 @@ export default function RevenueOSPage() {
           />
           <KpiCard
             title="CPL"
-            value={0}
+            value={11.79}
             kpiKey="cpl_30d"
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
           />
           <KpiCard
             title="Custo por Reunião"
-            value={0}
+            value={157.98}
             kpiKey="cpm_meeting_30d"
             format="currency"
           />
           <KpiCard
             title="Conv. Lead → Reunião"
-            value={0}
+            value={7.47}
             kpiKey="conv_lead_to_meeting_30d"
             icon={<Percent className="w-5 h-5" />}
             format="percent"
