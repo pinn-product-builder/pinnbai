@@ -28,6 +28,7 @@ import AdminUsuariosPage from "@/pages/admin/AdminUsuariosPage";
 import AdminPipelinesPage from "@/pages/admin/AdminPipelinesPage";
 import AdminTemplatesPage from "@/pages/admin/AdminTemplatesPage";
 import AdminDashboardsPage from "@/pages/admin/AdminDashboardsPage";
+import AdminImportsPage from "@/pages/admin/AdminImportsPage";
 
 // SaaS Pages - App
 import DashboardsPage from "@/pages/app/DashboardsPage";
@@ -95,6 +96,7 @@ const App = () => (
                 <Route path="templates" element={<AdminTemplatesPage />} />
                 <Route path="pipelines" element={<AdminPipelinesPage />} />
                 <Route path="dashboards" element={<AdminDashboardsPage />} />
+                <Route path="imports" element={<AdminImportsPage />} />
               </Route>
               
               {/* Template Dashboard Routes */}
