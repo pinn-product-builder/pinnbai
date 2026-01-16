@@ -20,6 +20,7 @@ export const SAAS_ROUTES = {
     VISAO_GERAL: '/admin/visao-geral',
     WORKSPACES: '/admin/workspaces',
     WORKSPACE_DETAIL: '/admin/workspaces/:orgId',
+    DASHBOARDS: '/admin/dashboards',
     USUARIOS: '/admin/usuarios',
     TEMPLATES: '/admin/templates',
     PIPELINES: '/admin/pipelines',
