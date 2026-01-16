@@ -50,7 +50,10 @@ export const authService = {
     const normalizedEmail = email.toLowerCase().trim();
     const userData = MVP_USERS[normalizedEmail];
 
+    console.log('[Auth] Login attempt:', { email: normalizedEmail, found: !!userData });
+
     if (!userData) {
+      console.log('[Auth] User not found. Available users:', Object.keys(MVP_USERS));
       return { 
         success: false, 
         error: 'Acesso restrito. Verifique suas credenciais.' 
@@ -58,11 +61,14 @@ export const authService = {
     }
 
     if (userData.password !== password) {
+      console.log('[Auth] Password mismatch');
       return { 
         success: false, 
         error: 'Acesso restrito. Verifique suas credenciais.' 
       };
     }
+    
+    console.log('[Auth] Login successful for:', userData.user.email);
 
     const session: SaasSession = {
       user: userData.user,
