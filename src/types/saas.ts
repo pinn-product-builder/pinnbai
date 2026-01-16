@@ -80,6 +80,16 @@ export interface DataSourceConfig {
 }
 
 // ===== DATA SETS =====
+export type SemanticRole = 'dimension' | 'metric' | 'date' | 'id' | 'ignore';
+export type DataType = 'string' | 'int' | 'float' | 'date' | 'datetime' | 'boolean';
+
+export interface FormatConfig {
+  type: 'currency' | 'percentage' | 'number' | 'date';
+  currency?: string;
+  decimals?: number;
+  dateFormat?: string;
+}
+
 export interface DataSet {
   id: string;
   orgId: string;
@@ -110,7 +120,7 @@ export interface DataSetColumn {
 
 export interface ColumnFormat {
   type: 'currency' | 'percentage' | 'number' | 'date';
-  currency?: 'BRL' | 'USD';
+  currency?: string;
   decimals?: number;
   dateFormat?: string;
 }

@@ -407,7 +407,7 @@ export function DataSetWizard({ open, onOpenChange, dataSources, onComplete }: D
                               <Select 
                                 value={col.format?.currency || 'BRL'} 
                                 onValueChange={(v) => updateColumn(i, { 
-                                  format: { ...col.format!, currency: v }
+                                  format: { ...col.format!, currency: v as string }
                                 })}
                               >
                                 <SelectTrigger className="bg-bg-2 border-border text-sm">

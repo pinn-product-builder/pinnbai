@@ -94,22 +94,21 @@ export default function DataSetsPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text-1">Data Sets</h1>
-            <p className="text-text-3 mt-1">Gerencie seus datasets modelados</p>
-          </div>
-          <Button 
-            onClick={() => setWizardOpen(true)}
-            className="bg-pinn-orange-500 hover:bg-pinn-orange-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Data Set
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-1">Data Sets</h1>
+          <p className="text-text-3 mt-1">Gerencie seus datasets modelados</p>
         </div>
+        <Button 
+          onClick={() => setWizardOpen(true)}
+          className="bg-pinn-orange-500 hover:bg-pinn-orange-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Novo Data Set
+        </Button>
+      </div>
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -269,6 +268,5 @@ export default function DataSetsPage() {
           onComplete={handleWizardComplete}
         />
       </div>
-    </AppLayout>
   );
 }
