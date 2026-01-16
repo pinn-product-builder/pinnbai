@@ -9,16 +9,16 @@ import {
   Clock, 
   CheckCircle,
   AlertTriangle, 
-  DollarSign,
-  Target,
-  BarChart3,
-  Gauge,
-  Workflow,
-  Users,
-  TrendingUp
+  DollarSign
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { 
+  DemoLineChart, 
+  DemoBarChart, 
+  DemoHeatmap, 
+  DemoFunnelChart 
+} from '@/components/charts/DemoCharts';
 
 export default function ProcessAutomationPage() {
   return (
@@ -83,24 +83,16 @@ export default function ProcessAutomationPage() {
         <ChartCard
           title="Volume de Processamento"
           subtitle="Processos executados por dia"
-          isEmpty={true}
           className="lg:col-span-2"
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <TrendingUp className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte dados para visualizar volume</p>
-          </div>
+          <DemoLineChart height={250} lines={2} />
         </ChartCard>
 
         <ChartCard
           title="Gargalos por Etapa"
           subtitle="Tempo de espera por fase"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <BarChart3 className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Sem dados</p>
-          </div>
+          <DemoBarChart height={250} bars={4} horizontal />
         </ChartCard>
       </div>
 
@@ -108,24 +100,16 @@ export default function ProcessAutomationPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ChartCard
           title="Mapa de Calor - Horários"
-          subtitle="Distribuição de processos por hora"
-          isEmpty={true}
+          subtitle="Distribuição de processos por hora/dia"
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <Gauge className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Heatmap não disponível</p>
-          </div>
+          <DemoHeatmap rows={7} cols={12} />
         </ChartCard>
 
         <ChartCard
           title="Performance por Equipe"
           subtitle="Produtividade por time"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <Users className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Sem dados de equipe</p>
-          </div>
+          <DemoBarChart height={200} bars={6} />
         </ChartCard>
       </div>
 
@@ -134,23 +118,15 @@ export default function ProcessAutomationPage() {
         <ChartCard
           title="Tendência de Erros"
           subtitle="Evolução de falhas ao longo do tempo"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <AlertTriangle className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Sem erros registrados</p>
-          </div>
+          <DemoLineChart height={200} lines={1} />
         </ChartCard>
 
         <ChartCard
           title="Pipeline de Processos"
           subtitle="Status atual do fluxo"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <Workflow className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Pipeline vazio</p>
-          </div>
+          <DemoFunnelChart stages={4} />
         </ChartCard>
       </div>
     </div>

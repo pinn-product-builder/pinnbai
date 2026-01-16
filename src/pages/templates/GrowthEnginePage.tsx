@@ -9,14 +9,11 @@ import {
   RefreshCw, 
   Star,
   DollarSign, 
-  TrendingUp,
-  Target,
-  BarChart3,
-  PieChart,
-  Activity
+  TrendingUp
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { DemoLineChart, DemoBarChart, DemoPieChart, DemoAreaChart } from '@/components/charts/DemoCharts';
 
 export default function GrowthEnginePage() {
   return (
@@ -79,23 +76,15 @@ export default function GrowthEnginePage() {
         <ChartCard
           title="Cohort de Retenção"
           subtitle="Retenção por semana de aquisição"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Activity className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte dados para visualizar cohorts</p>
-          </div>
+          <DemoAreaChart height={250} stacked />
         </ChartCard>
 
         <ChartCard
           title="Funil AARRR"
           subtitle="Aquisição → Ativação → Retenção → Referência → Receita"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Target className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte dados para visualizar funil</p>
-          </div>
+          <DemoLineChart height={250} lines={3} />
         </ChartCard>
       </div>
 
@@ -104,34 +93,22 @@ export default function GrowthEnginePage() {
         <ChartCard
           title="Aquisição por Canal"
           subtitle="Novos usuários por fonte"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <BarChart3 className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Sem dados</p>
-          </div>
+          <DemoBarChart height={200} bars={5} />
         </ChartCard>
 
         <ChartCard
           title="Custo por Canal"
           subtitle="Investimento por fonte"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <BarChart3 className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Sem dados</p>
-          </div>
+          <DemoBarChart height={200} bars={5} horizontal />
         </ChartCard>
 
         <ChartCard
           title="Referências"
           subtitle="Distribuição por fonte"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-            <PieChart className="w-10 h-10 mb-2 opacity-40" />
-            <p className="text-xs">Sem dados</p>
-          </div>
+          <DemoPieChart height={200} />
         </ChartCard>
       </div>
     </div>

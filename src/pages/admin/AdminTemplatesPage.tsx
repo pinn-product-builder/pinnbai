@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Search, Plus, BarChart3, TrendingUp,
-  Users, Settings, Eye, Star, Zap, Layers, Gauge
+  Settings, Eye, Star, Zap, Layers, Gauge
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { templatesService } from '@/services/templates';
 import { cn } from '@/lib/utils';
 import { SAAS_ROUTES } from '@/lib/saasRoutes';
+import { ApplyTemplateModal } from '@/components/templates/ApplyTemplateModal';
 
 // Mapeamento de template ID para rota
 const templateRoutes: Record<string, string> = {
@@ -37,6 +38,8 @@ export default function AdminTemplatesPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<{ id: string; name: string } | null>(null);
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ['admin-templates', search, categoryFilter],
@@ -97,7 +100,22 @@ export default function AdminTemplatesPage() {
     }
   };
 
+  const handleApply = (templateId: string, templateName: string) => {
+    setSelectedTemplate({ id: templateId, name: templateName });
+    setApplyModalOpen(true);
+  };
+
   return (
+    <>
+      {/* Modal de Aplicar Template */}
+      {selectedTemplate && (
+        <ApplyTemplateModal
+          open={applyModalOpen}
+          onOpenChange={setApplyModalOpen}
+          templateId={selectedTemplate.id}
+          templateName={selectedTemplate.name}
+        />
+      )}
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -193,7 +211,11 @@ export default function AdminTemplatesPage() {
                       <Eye className="w-4 h-4 mr-2" />
                       Preview
                     </Button>
-                    <Button size="sm" className="flex-1 bg-pinn-gradient text-bg-0">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-pinn-gradient text-bg-0"
+                      onClick={() => handleApply(template.id, template.name)}
+                    >
                       Aplicar
                     </Button>
                   </div>
@@ -211,5 +233,6 @@ export default function AdminTemplatesPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

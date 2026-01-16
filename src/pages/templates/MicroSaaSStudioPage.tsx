@@ -9,20 +9,23 @@ import {
   TrendingDown, 
   TrendingUp,
   Target,
-  BarChart3,
-  PieChart,
-  Activity,
   Zap,
   Star,
   MessageSquare,
   Clock,
   CheckCircle,
-  Wallet,
-  LineChart,
-  Gauge
+  Wallet
 } from 'lucide-react';
 import { PageHeader, Section, ChartCard } from '@/components/dashboard/ChartCard';
 import { KpiCard, KpiGrid } from '@/components/dashboard/KpiCard';
+import { 
+  DemoLineChart, 
+  DemoAreaChart, 
+  DemoBarChart, 
+  DemoPieChart, 
+  DemoFunnelChart,
+  DemoHeatmap 
+} from '@/components/charts/DemoCharts';
 
 export default function MicroSaaSStudioPage() {
   return (
@@ -87,24 +90,16 @@ export default function MicroSaaSStudioPage() {
         <ChartCard
           title="Evolução MRR & Cohorts"
           subtitle="Receita recorrente mensal"
-          isEmpty={true}
           className="lg:col-span-2"
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <LineChart className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Conecte dados para visualizar MRR</p>
-          </div>
+          <DemoAreaChart height={280} stacked />
         </ChartCard>
 
         <ChartCard
           title="Funil de Conversão"
           subtitle="Trial → Paid → Retained"
-          isEmpty={true}
         >
-          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-            <Target className="w-12 h-12 mb-3 opacity-40" />
-            <p className="text-sm">Funil vazio</p>
-          </div>
+          <DemoFunnelChart stages={4} />
         </ChartCard>
       </div>
 
@@ -114,34 +109,22 @@ export default function MicroSaaSStudioPage() {
           <ChartCard
             title="Aquisição Semanal"
             subtitle="Novos signups por semana"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <Activity className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoLineChart height={200} lines={1} />
           </ChartCard>
 
           <ChartCard
             title="Canais de Aquisição"
             subtitle="Origem dos usuários"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <BarChart3 className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoBarChart height={200} bars={5} />
           </ChartCard>
 
           <ChartCard
             title="Mapa de Retenção"
             subtitle="Cohort retention heatmap"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <Gauge className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoHeatmap rows={5} cols={8} />
           </ChartCard>
         </div>
       </Section>
@@ -152,34 +135,22 @@ export default function MicroSaaSStudioPage() {
           <ChartCard
             title="Features Mais Usadas"
             subtitle="Uso por funcionalidade"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <Zap className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoBarChart height={200} bars={6} horizontal />
           </ChartCard>
 
           <ChartCard
             title="Engajamento Diário"
             subtitle="DAU ao longo do tempo"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <Activity className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoLineChart height={200} lines={2} />
           </ChartCard>
 
           <ChartCard
             title="Health Score"
             subtitle="Por segmento de cliente"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <PieChart className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoPieChart height={200} donut />
           </ChartCard>
         </div>
       </Section>
@@ -239,23 +210,15 @@ export default function MicroSaaSStudioPage() {
           <ChartCard
             title="Runway & Burn Rate"
             subtitle="Projeção de caixa"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <Wallet className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados financeiros</p>
-            </div>
+            <DemoAreaChart height={220} />
           </ChartCard>
 
           <ChartCard
             title="Unit Economics por Cohort"
             subtitle="LTV, CAC, Payback por coorte"
-            isEmpty={true}
           >
-            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
-              <BarChart3 className="w-10 h-10 mb-2 opacity-40" />
-              <p className="text-xs">Sem dados</p>
-            </div>
+            <DemoBarChart height={220} bars={6} />
           </ChartCard>
         </div>
       </Section>
