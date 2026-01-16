@@ -35,6 +35,15 @@ import DashboardEditPage from "@/pages/app/DashboardEditPage";
 import DataSourcesPage from "@/pages/app/DataSourcesPage";
 import DataSetsPage from "@/pages/app/DataSetsPage";
 
+// Template Pages
+import {
+  AgentSalesPage,
+  RevenueOSPage,
+  GrowthEnginePage,
+  ProcessAutomationPage,
+  MicroSaaSStudioPage,
+} from "@/pages/templates";
+
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 
@@ -87,6 +96,21 @@ const App = () => (
                 <Route path="pipelines" element={<AdminPipelinesPage />} />
                 <Route path="dashboards" element={<AdminDashboardsPage />} />
               </Route>
+              
+              {/* Template Dashboard Routes */}
+              <Route path="/templates/*" element={
+                <SaasProtectedRoute>
+                  <DashboardLayout>
+                    <Routes>
+                      <Route path="agent-sales" element={<AgentSalesPage />} />
+                      <Route path="revenue-os" element={<RevenueOSPage />} />
+                      <Route path="growth-engine" element={<GrowthEnginePage />} />
+                      <Route path="process-automation" element={<ProcessAutomationPage />} />
+                      <Route path="microsaas-studio" element={<MicroSaaSStudioPage />} />
+                    </Routes>
+                  </DashboardLayout>
+                </SaasProtectedRoute>
+              } />
               
               {/* App Routes (para clientes genéricos) */}
               <Route path="/app" element={

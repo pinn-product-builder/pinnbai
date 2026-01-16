@@ -3,11 +3,12 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FileText, Search, Plus, BarChart3, TrendingUp,
-  Users, Settings, Eye
+  Users, Settings, Eye, Star, Zap, Layers, Gauge
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +22,19 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { templatesService } from '@/services/templates';
 import { cn } from '@/lib/utils';
+import { SAAS_ROUTES } from '@/lib/saasRoutes';
+
+// Mapeamento de template ID para rota
+const templateRoutes: Record<string, string> = {
+  'tpl-agent-sales': SAAS_ROUTES.TEMPLATES.AGENT_SALES,
+  'tpl-revenue-os': SAAS_ROUTES.TEMPLATES.REVENUE_OS,
+  'tpl-growth-engine': SAAS_ROUTES.TEMPLATES.GROWTH_ENGINE,
+  'tpl-process-automation': SAAS_ROUTES.TEMPLATES.PROCESS_AUTOMATION,
+  'tpl-microsaas-studio': SAAS_ROUTES.TEMPLATES.MICROSAAS_STUDIO,
+};
 
 export default function AdminTemplatesPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
@@ -42,7 +54,7 @@ export default function AdminTemplatesPage() {
   const categoryIcons: Record<string, React.ElementType> = {
     executivo: BarChart3,
     vendas: TrendingUp,
-    trafego: TrendingUp,
+    trafego: Zap,
     operacoes: Settings,
     custom: FileText,
   };
@@ -55,13 +67,43 @@ export default function AdminTemplatesPage() {
     custom: 'bg-text-3/20 text-text-2',
   };
 
+  // Renderiza estrelas de complexidade
+  const renderComplexity = (templateId: string) => {
+    const { level, label } = templatesService.getComplexityLevel(templateId);
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="flex gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={cn(
+                "w-3 h-3",
+                i < level 
+                  ? "text-pinn-orange-500 fill-pinn-orange-500" 
+                  : "text-text-3/30"
+              )}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-text-3 ml-1">{label}</span>
+      </div>
+    );
+  };
+
+  const handlePreview = (templateId: string) => {
+    const route = templateRoutes[templateId];
+    if (route) {
+      navigate(route);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-1">Templates</h1>
-          <p className="text-text-3 mt-1">Biblioteca de modelos de dashboard</p>
+          <p className="text-text-3 mt-1">Biblioteca de modelos de dashboard Pinn</p>
         </div>
         <Button className="bg-pinn-gradient text-bg-0">
           <Plus className="w-4 h-4 mr-2" />
@@ -101,24 +143,37 @@ export default function AdminTemplatesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {templates?.map((template) => {
           const Icon = categoryIcons[template.category] || FileText;
+          const { level } = templatesService.getComplexityLevel(template.id);
           
           return (
             <Card key={template.id} className="bg-bg-1 border-border hover:border-pinn-orange-500/30 transition-colors group">
               <CardContent className="p-0">
                 {/* Preview Image */}
-                <div className="h-40 bg-bg-2 rounded-t-xl flex items-center justify-center border-b border-border">
-                  <Icon className="w-16 h-16 text-text-3/30" />
+                <div className="h-40 bg-bg-2 rounded-t-xl flex items-center justify-center border-b border-border relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-pinn-orange-500/5 to-transparent" />
+                  <div className="flex flex-col items-center gap-2">
+                    <Layers className="w-12 h-12 text-pinn-orange-500/30" />
+                    <span className="text-xs text-text-3">Nível {level}</span>
+                  </div>
+                  {/* Complexity badge */}
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="outline" className="bg-bg-0/80 backdrop-blur-sm border-border">
+                      <Gauge className="w-3 h-3 mr-1" />
+                      {level}/5
+                    </Badge>
+                  </div>
                 </div>
                 
                 {/* Content */}
                 <div className="p-5 space-y-4">
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="space-y-2">
                       <h3 className="font-semibold text-text-1">{template.name}</h3>
-                      <Badge className={cn("mt-2 capitalize", categoryColors[template.category])}>
-                        {template.category}
-                      </Badge>
+                      {renderComplexity(template.id)}
                     </div>
+                    <Badge className={cn("capitalize", categoryColors[template.category])}>
+                      {template.category}
+                    </Badge>
                   </div>
                   
                   <p className="text-sm text-text-3 line-clamp-2">{template.description}</p>
@@ -129,7 +184,12 @@ export default function AdminTemplatesPage() {
                   </div>
                   
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handlePreview(template.id)}
+                    >
                       <Eye className="w-4 h-4 mr-2" />
                       Preview
                     </Button>
