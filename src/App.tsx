@@ -8,6 +8,7 @@ import { SaasAuthProvider } from "@/contexts/SaasAuthContext";
 import { SaasProtectedRoute, AfonsinaRoute } from "@/components/SaasProtectedRoute";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { AdminLayout } from "@/components/layouts/AdminLayout";
+import { AppLayout } from "@/components/app/AppLayout";
 
 // Afonsina Dashboard Pages (legado - 100% intocado)
 import ExecutivePage from "@/pages/dash/ExecutivePage";
@@ -18,7 +19,7 @@ import VendasPage from "@/pages/dash/VendasPage";
 import AdminPage from "@/pages/dash/AdminPage";
 import ConfigPage from "@/pages/dash/ConfigPage";
 
-// SaaS Pages
+// SaaS Pages - Admin
 import SaasLoginPage from "@/pages/SaasLoginPage";
 import AdminVisaoGeralPage from "@/pages/admin/AdminVisaoGeralPage";
 import AdminWorkspacesPage from "@/pages/admin/AdminWorkspacesPage";
@@ -26,6 +27,14 @@ import AdminWorkspaceDetailPage from "@/pages/admin/AdminWorkspaceDetailPage";
 import AdminUsuariosPage from "@/pages/admin/AdminUsuariosPage";
 import AdminPipelinesPage from "@/pages/admin/AdminPipelinesPage";
 import AdminTemplatesPage from "@/pages/admin/AdminTemplatesPage";
+import AdminDashboardsPage from "@/pages/admin/AdminDashboardsPage";
+
+// SaaS Pages - App
+import DashboardsPage from "@/pages/app/DashboardsPage";
+import DashboardEditPage from "@/pages/app/DashboardEditPage";
+import DataSourcesPage from "@/pages/app/DataSourcesPage";
+import DataSetsPage from "@/pages/app/DataSetsPage";
+
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 
@@ -76,9 +85,30 @@ const App = () => (
                 <Route path="usuarios" element={<AdminUsuariosPage />} />
                 <Route path="templates" element={<AdminTemplatesPage />} />
                 <Route path="pipelines" element={<AdminPipelinesPage />} />
+                <Route path="dashboards" element={<AdminDashboardsPage />} />
               </Route>
               
-              {/* App Routes (para clientes genéricos - futuro) */}
+              {/* App Routes (para clientes genéricos) */}
+              <Route path="/app/dashboards" element={
+                <SaasProtectedRoute>
+                  <DashboardsPage />
+                </SaasProtectedRoute>
+              } />
+              <Route path="/app/dashboards/:id" element={
+                <SaasProtectedRoute>
+                  <DashboardEditPage />
+                </SaasProtectedRoute>
+              } />
+              <Route path="/app/data-sources" element={
+                <SaasProtectedRoute>
+                  <DataSourcesPage />
+                </SaasProtectedRoute>
+              } />
+              <Route path="/app/data-sets" element={
+                <SaasProtectedRoute>
+                  <DataSetsPage />
+                </SaasProtectedRoute>
+              } />
               <Route path="/app/*" element={
                 <SaasProtectedRoute>
                   <PlaceholderPage />
