@@ -148,7 +148,7 @@ export interface Dashboard {
   createdBy?: string;
 }
 
-export type WidgetType = 'kpi' | 'line' | 'bar' | 'funnel' | 'table' | 'list';
+export type WidgetType = 'kpi' | 'line' | 'bar' | 'funnel' | 'table' | 'list' | 'pie' | 'area' | 'heatmap';
 
 export interface DashboardWidget {
   id: string;
