@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { 
   LayoutDashboard, 
@@ -14,7 +14,8 @@ import {
   X,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSaasAuth } from '@/contexts/SaasAuthContext';
 import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
+import { SAAS_ROUTES } from '@/lib/saasRoutes';
 
 // Pinn Logo SVG Component
 const PinnLogoIcon = ({ className }: { className?: string }) => (
@@ -115,6 +117,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAdmin, user, signOut } = useSaasAuth();
 
   // Filtrar itens de navegação baseado na role
@@ -305,7 +308,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           {/* Header */}
           <header className="sticky top-0 z-30 h-16 border-b border-border bg-bg-0/80 backdrop-blur-xl">
-            <GlobalFilterBar />
+            <div className="flex items-center h-full">
+              {/* Botão Voltar ao Admin - só aparece para admins */}
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(SAAS_ROUTES.ADMIN.DASHBOARDS)}
+                  className="ml-4 gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Voltar ao Admin
+                </Button>
+              )}
+              <div className="flex-1">
+                <GlobalFilterBar />
+              </div>
+            </div>
           </header>
 
           {/* Page Content */}
