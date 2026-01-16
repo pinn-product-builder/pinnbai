@@ -14,8 +14,7 @@ import {
   X,
   LogOut,
   Sun,
-  Moon,
-  ArrowLeft
+  Moon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
@@ -308,18 +307,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           {/* Header */}
           <header className="sticky top-0 z-30 h-16 border-b border-border bg-bg-0/80 backdrop-blur-xl">
-            <div className="flex items-center h-full">
-              {/* Botão Voltar ao Admin - só aparece para admins */}
+            <div className="flex items-center h-full px-4 gap-4">
+              {/* Breadcrumb - só aparece para admins */}
               {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(SAAS_ROUTES.ADMIN.DASHBOARDS)}
-                  className="ml-4 gap-2 text-muted-foreground hover:text-foreground"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar ao Admin
-                </Button>
+                <nav className="flex items-center gap-2 text-sm">
+                  <button
+                    onClick={() => navigate(SAAS_ROUTES.ADMIN.VISAO_GERAL)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Admin
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <button
+                    onClick={() => navigate(SAAS_ROUTES.ADMIN.DASHBOARDS)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Dashboards
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium text-foreground">Afonsina</span>
+                </nav>
               )}
               <div className="flex-1">
                 <GlobalFilterBar />
