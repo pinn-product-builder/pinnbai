@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Building2, Users, FileText, GitBranch,
-  ChevronLeft, ChevronRight, LogOut, Sun, Moon, Layers
+  ChevronLeft, ChevronRight, LogOut, Sun, Moon, Layers, Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSaasAuth } from '@/contexts/SaasAuthContext';
@@ -29,6 +29,7 @@ const navItems = [
   { path: SAAS_ROUTES.ADMIN.USUARIOS, label: 'Usuários', icon: Users },
   { path: SAAS_ROUTES.ADMIN.TEMPLATES, label: 'Templates', icon: FileText },
   { path: SAAS_ROUTES.ADMIN.PIPELINES, label: 'Pipelines', icon: GitBranch },
+  { path: SAAS_ROUTES.ADMIN.IMPORTS, label: 'Importações', icon: Upload },
 ];
 
 export function AdminLayout() {

@@ -24,6 +24,7 @@ export const SAAS_ROUTES = {
     USUARIOS: '/admin/usuarios',
     TEMPLATES: '/admin/templates',
     PIPELINES: '/admin/pipelines',
+    IMPORTS: '/admin/imports',
   },
   
   // Templates (dashboards por nível de complexidade)
