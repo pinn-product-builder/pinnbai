@@ -37,8 +37,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { importsService, DataImport, ImportStatus, FileType } from '@/services/imports';
+import { ImportWizard } from '@/components/imports';
 
 // KPI Card Component
 function KpiCard({ 
@@ -148,9 +149,16 @@ function FileTypeBadge({ type }: { type: FileType }) {
 
 export default function AdminImportsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('all');
+  const [wizardOpen, setWizardOpen] = useState(false);
+
+  const handleImportComplete = (importId: string) => {
+    queryClient.invalidateQueries({ queryKey: ['admin-imports'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-imports-stats'] });
+  };
 
   // Query imports
   const { data: imports, isLoading: isLoadingImports } = useQuery({
@@ -191,11 +199,21 @@ export default function AdminImportsPage() {
           <h1 className="text-2xl font-bold text-text-1">Importações</h1>
           <p className="text-text-3 mt-1">Gerencie uploads e processamento de dados</p>
         </div>
-        <Button className="bg-pinn-gradient text-bg-0 hover:opacity-90">
+        <Button 
+          onClick={() => setWizardOpen(true)}
+          className="bg-pinn-gradient text-bg-0 hover:opacity-90"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nova Importação
         </Button>
       </div>
+
+      {/* Import Wizard Modal */}
+      <ImportWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onComplete={handleImportComplete}
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
