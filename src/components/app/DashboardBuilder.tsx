@@ -3,9 +3,20 @@
  */
 
 import React, { useState, useCallback } from 'react';
+// @ts-ignore - react-grid-layout types are inconsistent
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+
+interface LayoutItem {
+  i: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  minW?: number;
+  minH?: number;
+}
 import { 
   Plus, Save, Eye, Settings, Trash2, Move,
   BarChart3, LineChart, PieChart, Table2, ListOrdered, Hash
@@ -160,7 +171,7 @@ export function DashboardBuilder({
   const [selectedWidget, setSelectedWidget] = useState<DashboardWidget | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
 
-  const layout: Layout[] = widgets.map((w) => ({
+  const layout: LayoutItem[] = widgets.map((w) => ({
     i: w.id,
     x: w.layout.x,
     y: w.layout.y,
@@ -170,7 +181,7 @@ export function DashboardBuilder({
     minH: 2,
   }));
 
-  const handleLayoutChange = useCallback((newLayout: Layout[]) => {
+  const handleLayoutChange = useCallback((newLayout: LayoutItem[]) => {
     setWidgets((prev) =>
       prev.map((widget) => {
         const layoutItem = newLayout.find((l) => l.i === widget.id);
@@ -271,18 +282,18 @@ export function DashboardBuilder({
               <p className="text-text-3 mb-4">Arraste widgets da barra lateral para começar</p>
             </div>
           ) : (
-            <GridLayout
-              className="layout"
-              layout={layout}
-              cols={12}
-              rowHeight={60}
-              width={1200}
-              onLayoutChange={handleLayoutChange}
-              draggableHandle=".drag-handle"
-              compactType="vertical"
-              preventCollision={false}
-            >
-              {widgets.map((widget) => (
+            <div>
+              {React.createElement(GridLayout, {
+                className: "layout",
+                layout: layout,
+                cols: 12,
+                rowHeight: 60,
+                width: 1200,
+                onLayoutChange: handleLayoutChange,
+                draggableHandle: ".drag-handle",
+                compactType: "vertical",
+                preventCollision: false,
+              } as any, widgets.map((widget) => (
                 <div 
                   key={widget.id} 
                   className="group"
@@ -302,8 +313,8 @@ export function DashboardBuilder({
                     <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
-              ))}
-            </GridLayout>
+              )))}
+            </div>
           )}
         </div>
       </div>

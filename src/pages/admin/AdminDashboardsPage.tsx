@@ -46,7 +46,7 @@ export default function AdminDashboardsPage() {
       try {
         const [dashboardsData, workspacesData] = await Promise.all([
           dashboardsService.listAll(),
-          workspacesService.list(),
+          workspaceService.list(),
         ]);
         
         // Enriquecer dashboards com nome do workspace
@@ -94,7 +94,8 @@ export default function AdminDashboardsPage() {
   };
 
   const handleImpersonate = async (orgId: string) => {
-    await impersonate(orgId);
+    const org = workspaces.find(w => w.id === orgId);
+    await impersonate(orgId, org?.name || 'Workspace');
     navigate('/app/dashboards');
   };
 
