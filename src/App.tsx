@@ -89,31 +89,18 @@ const App = () => (
               </Route>
               
               {/* App Routes (para clientes genéricos) */}
-              <Route path="/app/dashboards" element={
+              <Route path="/app" element={
                 <SaasProtectedRoute>
-                  <DashboardsPage />
+                  <AppLayout />
                 </SaasProtectedRoute>
-              } />
-              <Route path="/app/dashboards/:id" element={
-                <SaasProtectedRoute>
-                  <DashboardEditPage />
-                </SaasProtectedRoute>
-              } />
-              <Route path="/app/data-sources" element={
-                <SaasProtectedRoute>
-                  <DataSourcesPage />
-                </SaasProtectedRoute>
-              } />
-              <Route path="/app/data-sets" element={
-                <SaasProtectedRoute>
-                  <DataSetsPage />
-                </SaasProtectedRoute>
-              } />
-              <Route path="/app/*" element={
-                <SaasProtectedRoute>
-                  <PlaceholderPage />
-                </SaasProtectedRoute>
-              } />
+              }>
+                <Route index element={<Navigate to="/app/dashboards" replace />} />
+                <Route path="dashboards" element={<DashboardsPage />} />
+                <Route path="dashboards/:id" element={<DashboardEditPage />} />
+                <Route path="data-sources" element={<DataSourcesPage />} />
+                <Route path="data-sets" element={<DataSetsPage />} />
+                <Route path="*" element={<PlaceholderPage />} />
+              </Route>
               
               <Route path="*" element={<NotFound />} />
             </Routes>
