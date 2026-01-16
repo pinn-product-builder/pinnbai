@@ -33,14 +33,14 @@ export default function ProcessAutomationPage() {
         <KpiGrid columns={6}>
           <KpiCard
             title="Processos Ativos"
-            value={0}
+            value={1847}
             kpiKey="processos_ativos"
             icon={<Activity className="w-5 h-5" />}
             variant="primary"
           />
           <KpiCard
             title="Taxa de Automação"
-            value={0}
+            value={78.5}
             kpiKey="taxa_automacao"
             icon={<Zap className="w-5 h-5" />}
             format="percent"
@@ -48,13 +48,13 @@ export default function ProcessAutomationPage() {
           />
           <KpiCard
             title="Tempo Médio"
-            value={0}
+            value={4.2}
             kpiKey="tempo_medio"
             icon={<Clock className="w-5 h-5" />}
           />
           <KpiCard
             title="SLA Cumprido"
-            value={0}
+            value={94.7}
             kpiKey="sla_cumprido"
             icon={<CheckCircle className="w-5 h-5" />}
             format="percent"
@@ -62,14 +62,14 @@ export default function ProcessAutomationPage() {
           />
           <KpiCard
             title="Erros"
-            value={0}
+            value={23}
             kpiKey="erros"
             icon={<AlertTriangle className="w-5 h-5" />}
             variant="destructive"
           />
           <KpiCard
             title="Economia Gerada"
-            value={0}
+            value={142500}
             kpiKey="economia"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"

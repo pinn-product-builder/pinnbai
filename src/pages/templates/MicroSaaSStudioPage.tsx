@@ -40,7 +40,7 @@ export default function MicroSaaSStudioPage() {
         <KpiGrid columns={6}>
           <KpiCard
             title="MRR"
-            value={0}
+            value={47850}
             kpiKey="mrr"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
@@ -48,13 +48,13 @@ export default function MicroSaaSStudioPage() {
           />
           <KpiCard
             title="Usuários Ativos"
-            value={0}
+            value={3247}
             kpiKey="mau"
             icon={<Users className="w-5 h-5" />}
           />
           <KpiCard
             title="Churn"
-            value={0}
+            value={2.3}
             kpiKey="churn"
             icon={<TrendingDown className="w-5 h-5" />}
             format="percent"
@@ -62,7 +62,7 @@ export default function MicroSaaSStudioPage() {
           />
           <KpiCard
             title="NRR"
-            value={0}
+            value={115}
             kpiKey="nrr"
             icon={<TrendingUp className="w-5 h-5" />}
             format="percent"
@@ -70,14 +70,14 @@ export default function MicroSaaSStudioPage() {
           />
           <KpiCard
             title="CAC"
-            value={0}
+            value={89.50}
             kpiKey="cac"
             icon={<Wallet className="w-5 h-5" />}
             format="currency"
           />
           <KpiCard
             title="LTV:CAC"
-            value={0}
+            value={4.2}
             kpiKey="ltv_cac_ratio"
             icon={<Target className="w-5 h-5" />}
             variant="warning"
@@ -160,7 +160,7 @@ export default function MicroSaaSStudioPage() {
         <KpiGrid columns={6}>
           <KpiCard
             title="CSAT"
-            value={0}
+            value={92.4}
             kpiKey="csat"
             icon={<Star className="w-5 h-5" />}
             format="percent"
@@ -168,26 +168,26 @@ export default function MicroSaaSStudioPage() {
           />
           <KpiCard
             title="NPS"
-            value={0}
+            value={72}
             kpiKey="nps"
             icon={<Star className="w-5 h-5" />}
             variant="warning"
           />
           <KpiCard
             title="Tickets Abertos"
-            value={0}
+            value={47}
             kpiKey="tickets_abertos"
             icon={<MessageSquare className="w-5 h-5" />}
           />
           <KpiCard
             title="Tempo Resposta"
-            value={0}
+            value={2.4}
             kpiKey="tempo_resposta"
             icon={<Clock className="w-5 h-5" />}
           />
           <KpiCard
             title="Resolução 1º Contato"
-            value={0}
+            value={68.5}
             kpiKey="fcr"
             icon={<CheckCircle className="w-5 h-5" />}
             format="percent"
@@ -195,7 +195,7 @@ export default function MicroSaaSStudioPage() {
           />
           <KpiCard
             title="Expansão MRR"
-            value={0}
+            value={8450}
             kpiKey="expansion_mrr"
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"

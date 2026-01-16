@@ -25,14 +25,14 @@ export default function AgentSalesPage() {
         <KpiGrid columns={3}>
           <KpiCard
             title="Total de Vendas"
-            value={0}
+            value={1247}
             kpiKey="total_vendas"
             icon={<ShoppingCart className="w-5 h-5" />}
             variant="primary"
           />
           <KpiCard
             title="Receita Total"
-            value={0}
+            value={89450}
             kpiKey="receita_total"
             icon={<DollarSign className="w-5 h-5" />}
             format="currency"
@@ -40,7 +40,7 @@ export default function AgentSalesPage() {
           />
           <KpiCard
             title="Ticket Médio"
-            value={0}
+            value={71.73}
             kpiKey="ticket_medio"
             icon={<TrendingUp className="w-5 h-5" />}
             format="currency"
