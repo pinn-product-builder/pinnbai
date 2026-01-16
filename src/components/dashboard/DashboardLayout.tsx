@@ -21,7 +21,7 @@ import { GlobalFilterBar } from './GlobalFilterBar';
 import { ViewModeDashboard } from './ViewModeDashboard';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useSaasAuth } from '@/contexts/SaasAuthContext';
 import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
 
 // Pinn Logo SVG Component
@@ -115,7 +115,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState(false);
   const location = useLocation();
-  const { isAdmin, user, signOut } = useAuthContext();
+  const { isAdmin, user, signOut } = useSaasAuth();
 
   // Filtrar itens de navegação baseado na role
   const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
