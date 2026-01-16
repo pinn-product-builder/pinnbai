@@ -4,9 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SaasAuthProvider } from "@/contexts/SaasAuthContext";
+import { SaasProtectedRoute, AfonsinaRoute } from "@/components/SaasProtectedRoute";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { AdminLayout } from "@/components/layouts/AdminLayout";
+import { PlaceholderPage } from "@/pages/PlaceholderPage";
+
+// Afonsina Dashboard Pages (legado - intocado)
 import ExecutivePage from "@/pages/dash/ExecutivePage";
 import ConversasPage from "@/pages/dash/ConversasPage";
 import TrafegoPage from "@/pages/dash/TrafegoPage";
@@ -14,30 +18,31 @@ import LigacoesPage from "@/pages/dash/LigacoesPage";
 import VendasPage from "@/pages/dash/VendasPage";
 import AdminPage from "@/pages/dash/AdminPage";
 import ConfigPage from "@/pages/dash/ConfigPage";
-import LoginPage from "@/pages/LoginPage";
+
+// SaaS Pages
+import SaasLoginPage from "@/pages/SaasLoginPage";
 import NotFound from "./pages/NotFound";
-import { ROUTES } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <SaasAuthProvider>
         <TooltipProvider delayDuration={200}>
           <Toaster />
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public routes */}
-              <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+              {/* Public: Login */}
+              <Route path="/login" element={<SaasLoginPage />} />
               
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to={ROUTES.DASHBOARD.EXECUTIVO} replace />} />
+              {/* Root redirect */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
               
-              {/* Protected dashboard routes */}
+              {/* Afonsina Dashboard (legado - 100% intocado) */}
               <Route path="/dash/*" element={
-                <ProtectedRoute>
+                <AfonsinaRoute>
                   <DashboardLayout>
                     <Routes>
                       <Route path="executivo" element={<ExecutivePage />} />
@@ -45,28 +50,40 @@ const App = () => (
                       <Route path="trafego" element={<TrafegoPage />} />
                       <Route path="ligacoes" element={<LigacoesPage />} />
                       <Route path="vendas" element={<VendasPage />} />
-                      
-                      {/* Admin-only routes */}
-                      <Route path="admin" element={
-                        <ProtectedRoute requireAdmin>
-                          <AdminPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="config" element={
-                        <ProtectedRoute requireAdmin>
-                          <ConfigPage />
-                        </ProtectedRoute>
-                      } />
+                      <Route path="admin" element={<AdminPage />} />
+                      <Route path="config" element={<ConfigPage />} />
                     </Routes>
                   </DashboardLayout>
-                </ProtectedRoute>
+                </AfonsinaRoute>
+              } />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <SaasProtectedRoute requireAdmin>
+                  <AdminLayout />
+                </SaasProtectedRoute>
+              }>
+                <Route index element={<Navigate to="/admin/visao-geral" replace />} />
+                <Route path="visao-geral" element={<PlaceholderPage />} />
+                <Route path="workspaces" element={<PlaceholderPage />} />
+                <Route path="workspaces/:orgId" element={<PlaceholderPage />} />
+                <Route path="usuarios" element={<PlaceholderPage />} />
+                <Route path="templates" element={<PlaceholderPage />} />
+                <Route path="pipelines" element={<PlaceholderPage />} />
+              </Route>
+              
+              {/* App Routes (para clientes genéricos - futuro) */}
+              <Route path="/app/*" element={
+                <SaasProtectedRoute>
+                  <PlaceholderPage />
+                </SaasProtectedRoute>
               } />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
+      </SaasAuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
 );
