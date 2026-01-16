@@ -8,9 +8,8 @@ import { SaasAuthProvider } from "@/contexts/SaasAuthContext";
 import { SaasProtectedRoute, AfonsinaRoute } from "@/components/SaasProtectedRoute";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { AdminLayout } from "@/components/layouts/AdminLayout";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
 
-// Afonsina Dashboard Pages (legado - intocado)
+// Afonsina Dashboard Pages (legado - 100% intocado)
 import ExecutivePage from "@/pages/dash/ExecutivePage";
 import ConversasPage from "@/pages/dash/ConversasPage";
 import TrafegoPage from "@/pages/dash/TrafegoPage";
@@ -21,6 +20,13 @@ import ConfigPage from "@/pages/dash/ConfigPage";
 
 // SaaS Pages
 import SaasLoginPage from "@/pages/SaasLoginPage";
+import AdminVisaoGeralPage from "@/pages/admin/AdminVisaoGeralPage";
+import AdminWorkspacesPage from "@/pages/admin/AdminWorkspacesPage";
+import AdminWorkspaceDetailPage from "@/pages/admin/AdminWorkspaceDetailPage";
+import AdminUsuariosPage from "@/pages/admin/AdminUsuariosPage";
+import AdminPipelinesPage from "@/pages/admin/AdminPipelinesPage";
+import AdminTemplatesPage from "@/pages/admin/AdminTemplatesPage";
+import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,12 +70,12 @@ const App = () => (
                 </SaasProtectedRoute>
               }>
                 <Route index element={<Navigate to="/admin/visao-geral" replace />} />
-                <Route path="visao-geral" element={<PlaceholderPage />} />
-                <Route path="workspaces" element={<PlaceholderPage />} />
-                <Route path="workspaces/:orgId" element={<PlaceholderPage />} />
-                <Route path="usuarios" element={<PlaceholderPage />} />
-                <Route path="templates" element={<PlaceholderPage />} />
-                <Route path="pipelines" element={<PlaceholderPage />} />
+                <Route path="visao-geral" element={<AdminVisaoGeralPage />} />
+                <Route path="workspaces" element={<AdminWorkspacesPage />} />
+                <Route path="workspaces/:orgId" element={<AdminWorkspaceDetailPage />} />
+                <Route path="usuarios" element={<AdminUsuariosPage />} />
+                <Route path="templates" element={<AdminTemplatesPage />} />
+                <Route path="pipelines" element={<AdminPipelinesPage />} />
               </Route>
               
               {/* App Routes (para clientes genéricos - futuro) */}
