@@ -1,5 +1,5 @@
 /**
- * Step 2: Upload de Arquivo
+ * Step 2: Upload de Arquivo com suporte a XLSX via SheetJS
  */
 
 import React, { useState, useCallback } from 'react';
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { Organization } from '@/types/saas';
 import { supabase } from '@/lib/supabaseClient';
 import { DetectedSchema, DetectedColumn } from '../ImportWizard';
+import * as XLSX from 'xlsx';
 
 interface StepUploadProps {
   workspace: Organization;
@@ -47,6 +48,37 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
       return ext!;
     }
     return null;
+  };
+
+  // Parse XLSX/XLS file using SheetJS and return CSV content
+  const parseExcelFile = async (file: File): Promise<{ csvContent: string; headers: string[]; rows: string[][] }> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+    
+    // Get first sheet
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    
+    // Convert to JSON to get structured data
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { 
+      header: 1,
+      raw: false,
+      dateNF: 'yyyy-mm-dd'
+    }) as any[][];
+    
+    if (jsonData.length === 0) {
+      throw new Error('Arquivo Excel vazio');
+    }
+    
+    const headers = (jsonData[0] || []).map((h: any) => String(h || '').trim());
+    const rows = jsonData.slice(1).map(row => 
+      headers.map((_, idx) => String(row[idx] ?? ''))
+    );
+    
+    // Convert to CSV for upload
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    
+    return { csvContent, headers, rows };
   };
 
   const detectSchema = async (file: File, storagePath: string): Promise<DetectedSchema> => {
@@ -179,6 +211,55 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
     return { columns, rowCount: rows.length, previewData };
   };
 
+  // Detect schema from already-parsed data (for Excel files)
+  const detectSchemaFromParsedData = async (headers: string[], rows: string[][]): Promise<DetectedSchema> => {
+    // Analyze columns
+    const columns: DetectedColumn[] = headers.map((header, idx) => {
+      const values = rows.map(row => row[idx] ?? '');
+      const nonNull = values.filter(v => v !== '');
+      const unique = new Set(nonNull);
+      
+      // Simple type detection
+      let dataType: DetectedColumn['dataType'] = 'text';
+      const isNumeric = nonNull.every(v => !isNaN(parseFloat(String(v).replace(/[R$,]/g, '').replace(',', '.'))));
+      const isDate = nonNull.every(v => /^\d{4}-\d{2}-\d{2}/.test(String(v)) || /^\d{2}\/\d{2}\/\d{4}/.test(String(v)));
+      
+      if (isDate) dataType = 'date';
+      else if (isNumeric && nonNull.length > 0) {
+        dataType = nonNull.some(v => String(v).includes('R$') || String(v).includes('$')) ? 'currency' : 
+                   nonNull.some(v => String(v).includes('.') || String(v).includes(',')) ? 'number' : 'integer';
+      } else if (unique.size <= 10 && nonNull.length > 20) {
+        dataType = 'category';
+      }
+      
+      const isMeasure = ['integer', 'number', 'currency'].includes(dataType);
+      const isPrimaryDate = dataType === 'date' && idx === 0;
+      
+      return {
+        name: header.toLowerCase().replace(/\s+/g, '_'),
+        displayName: header.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        dataType,
+        isMeasure,
+        isDimension: !isMeasure,
+        isPrimaryDate,
+        nullRatio: Math.round((1 - nonNull.length / values.length) * 100) / 100,
+        cardinality: unique.size,
+        sampleValues: Array.from(unique).slice(0, 5),
+      };
+    });
+    
+    // Preview data
+    const previewData = rows.slice(0, 10).map(row => {
+      const obj: Record<string, any> = {};
+      headers.forEach((h, i) => {
+        obj[h.toLowerCase().replace(/\s+/g, '_')] = row[i] ?? null;
+      });
+      return obj;
+    });
+    
+    return { columns, rowCount: rows.length, previewData };
+  };
+
   const uploadFile = async (file: File) => {
     const fileType = getFileType(file);
     if (!fileType) {
@@ -204,14 +285,38 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
       // Generate unique path
       const timestamp = Date.now();
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storagePath = `${workspace.id}/imports/${timestamp}/${safeName}`;
+      let storagePath = `${workspace.id}/imports/${timestamp}/${safeName}`;
+      let fileToUpload: Blob = file;
+      let actualFileType = fileType;
+      let excelData: { headers: string[]; rows: string[][] } | null = null;
+
+      // If Excel file, convert to CSV before uploading
+      if (fileType === 'xlsx' || fileType === 'xls') {
+        try {
+          setUploadProgress(20);
+          const parsed = await parseExcelFile(file);
+          excelData = { headers: parsed.headers, rows: parsed.rows };
+          
+          // Create CSV blob for upload
+          fileToUpload = new Blob([parsed.csvContent], { type: 'text/csv' });
+          storagePath = storagePath.replace(/\.(xlsx|xls)$/i, '.csv');
+          actualFileType = 'csv';
+          setUploadProgress(40);
+        } catch (excelError: any) {
+          clearInterval(progressInterval);
+          onError(`Erro ao processar Excel: ${excelError.message}`);
+          setUploadState('error');
+          return;
+        }
+      }
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('data-imports')
-        .upload(storagePath, file, {
+        .upload(storagePath, fileToUpload, {
           cacheControl: '3600',
           upsert: false,
+          contentType: actualFileType === 'csv' ? 'text/csv' : undefined,
         });
 
       clearInterval(progressInterval);
@@ -229,8 +334,14 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
       setUploadProgress(100);
       setUploadState('processing');
 
-      // Detect schema
-      const schema = await detectSchema(file, storagePath);
+      // Detect schema - use pre-parsed Excel data if available
+      let schema: DetectedSchema;
+      if (excelData) {
+        // Use already-parsed Excel data for faster schema detection
+        schema = await detectSchemaFromParsedData(excelData.headers, excelData.rows);
+      } else {
+        schema = await detectSchema(file, storagePath);
+      }
 
       setUploadState('success');
       onUploadComplete(file, storagePath, schema);
