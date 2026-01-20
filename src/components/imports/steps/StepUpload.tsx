@@ -49,90 +49,134 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
     return null;
   };
 
-  const detectSchema = async (file: File): Promise<DetectedSchema> => {
-    // Mock schema detection - in production this would be an edge function
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  const detectSchema = async (file: File, storagePath: string): Promise<DetectedSchema> => {
+    const fileType = getFileType(file);
     
-    const mockColumns: DetectedColumn[] = [
-      {
-        name: 'data',
-        displayName: 'Data',
-        dataType: 'date',
-        isMeasure: false,
-        isDimension: true,
-        isPrimaryDate: true,
-        nullRatio: 0,
-        cardinality: 365,
-        sampleValues: ['2025-01-01', '2025-01-02', '2025-01-03'],
-      },
-      {
-        name: 'valor',
-        displayName: 'Valor',
-        dataType: 'currency',
-        isMeasure: true,
-        isDimension: false,
-        isPrimaryDate: false,
-        nullRatio: 0.02,
-        cardinality: 450,
-        sampleValues: ['1500.00', '2300.50', '890.00'],
-      },
-      {
-        name: 'quantidade',
-        displayName: 'Quantidade',
-        dataType: 'integer',
-        isMeasure: true,
-        isDimension: false,
-        isPrimaryDate: false,
-        nullRatio: 0,
-        cardinality: 100,
-        sampleValues: ['10', '25', '5'],
-      },
-      {
-        name: 'categoria',
-        displayName: 'Categoria',
-        dataType: 'category',
-        isMeasure: false,
-        isDimension: true,
-        isPrimaryDate: false,
-        nullRatio: 0,
-        cardinality: 8,
-        sampleValues: ['Eletrônicos', 'Vestuário', 'Alimentos'],
-      },
-      {
-        name: 'vendedor',
-        displayName: 'Vendedor',
-        dataType: 'text',
-        isMeasure: false,
-        isDimension: true,
-        isPrimaryDate: false,
-        nullRatio: 0.05,
-        cardinality: 25,
-        sampleValues: ['João Silva', 'Maria Santos', 'Pedro Lima'],
-      },
-      {
-        name: 'status',
-        displayName: 'Status',
-        dataType: 'category',
-        isMeasure: false,
-        isDimension: true,
-        isPrimaryDate: false,
-        nullRatio: 0,
-        cardinality: 3,
-        sampleValues: ['Aprovado', 'Pendente', 'Cancelado'],
-      },
-    ];
+    try {
+      // Call edge function to process file
+      const { data, error } = await supabase.functions.invoke('process-file', {
+        body: { storagePath, fileType }
+      });
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Erro ao processar arquivo');
+      }
+      
+      if (data?.error) {
+        // If XLSX, try to provide helpful message
+        if (data.suggestion === 'csv') {
+          throw new Error('Arquivos Excel precisam ser salvos como CSV. Abra no Excel e salve como "CSV UTF-8"');
+        }
+        throw new Error(data.error);
+      }
+      
+      if (data?.schema) {
+        return data.schema as DetectedSchema;
+      }
+      
+      throw new Error('Schema não detectado');
+    } catch (err: any) {
+      console.warn('Edge function failed, using client-side detection:', err.message);
+      // Fallback to client-side detection for CSV
+      if (fileType === 'csv') {
+        return await detectSchemaClientSide(file);
+      }
+      throw err;
+    }
+  };
 
-    return {
-      columns: mockColumns,
-      rowCount: 15420,
-      previewData: [
-        { data: '2025-01-15', valor: 1500.00, quantidade: 10, categoria: 'Eletrônicos', vendedor: 'João Silva', status: 'Aprovado' },
-        { data: '2025-01-15', valor: 2300.50, quantidade: 25, categoria: 'Vestuário', vendedor: 'Maria Santos', status: 'Aprovado' },
-        { data: '2025-01-14', valor: 890.00, quantidade: 5, categoria: 'Alimentos', vendedor: 'Pedro Lima', status: 'Pendente' },
-        { data: '2025-01-14', valor: 3200.00, quantidade: 15, categoria: 'Eletrônicos', vendedor: 'João Silva', status: 'Aprovado' },
-        { data: '2025-01-13', valor: 1200.00, quantidade: 8, categoria: 'Vestuário', vendedor: 'Ana Costa', status: 'Cancelado' },
-      ],
+  const detectSchemaClientSide = async (file: File): Promise<DetectedSchema> => {
+    const content = await file.text();
+    const lines = content.split(/\r?\n/).filter(line => line.trim());
+    
+    if (lines.length === 0) {
+      throw new Error('Arquivo vazio');
+    }
+    
+    // Detect delimiter
+    const firstLine = lines[0];
+    const delimiters = [',', ';', '\t', '|'];
+    let delimiter = ',';
+    let maxCount = 0;
+    
+    for (const d of delimiters) {
+      const count = (firstLine.match(new RegExp(`\\${d}`, 'g')) || []).length;
+      if (count > maxCount) {
+        maxCount = count;
+        delimiter = d;
+      }
+    }
+    
+    // Parse rows
+    const parseRow = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
     };
+    
+    const headers = parseRow(lines[0]);
+    const rows = lines.slice(1).map(parseRow);
+    
+    // Analyze columns
+    const columns: DetectedColumn[] = headers.map((header, idx) => {
+      const values = rows.map(row => row[idx] ?? '');
+      const nonNull = values.filter(v => v !== '');
+      const unique = new Set(nonNull);
+      
+      // Simple type detection
+      let dataType: DetectedColumn['dataType'] = 'text';
+      const isNumeric = nonNull.every(v => !isNaN(parseFloat(v.replace(/[R$,]/g, '').replace(',', '.'))));
+      const isDate = nonNull.every(v => /^\d{4}-\d{2}-\d{2}/.test(v) || /^\d{2}\/\d{2}\/\d{4}/.test(v));
+      
+      if (isDate) dataType = 'date';
+      else if (isNumeric && nonNull.length > 0) {
+        dataType = nonNull.some(v => v.includes('R$') || v.includes('$')) ? 'currency' : 
+                   nonNull.some(v => v.includes('.') || v.includes(',')) ? 'number' : 'integer';
+      } else if (unique.size <= 10 && nonNull.length > 20) {
+        dataType = 'category';
+      }
+      
+      const isMeasure = ['integer', 'number', 'currency'].includes(dataType);
+      const isPrimaryDate = dataType === 'date' && idx === 0;
+      
+      return {
+        name: header.toLowerCase().replace(/\s+/g, '_'),
+        displayName: header.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        dataType,
+        isMeasure,
+        isDimension: !isMeasure,
+        isPrimaryDate,
+        nullRatio: Math.round((1 - nonNull.length / values.length) * 100) / 100,
+        cardinality: unique.size,
+        sampleValues: Array.from(unique).slice(0, 5),
+      };
+    });
+    
+    // Preview data
+    const previewData = rows.slice(0, 10).map(row => {
+      const obj: Record<string, any> = {};
+      headers.forEach((h, i) => {
+        obj[h.toLowerCase().replace(/\s+/g, '_')] = row[i] ?? null;
+      });
+      return obj;
+    });
+    
+    return { columns, rowCount: rows.length, previewData };
   };
 
   const uploadFile = async (file: File) => {
@@ -186,7 +230,7 @@ export function StepUpload({ workspace, file, onUploadComplete, onError }: StepU
       setUploadState('processing');
 
       // Detect schema
-      const schema = await detectSchema(file);
+      const schema = await detectSchema(file, storagePath);
 
       setUploadState('success');
       onUploadComplete(file, storagePath, schema);

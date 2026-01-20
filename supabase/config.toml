@@ -3,3 +3,6 @@ id = "mpbrjezmxmrdhgtvldvi"
 
 [functions.generate-insights]
 verify_jwt = false
+
+[functions.process-file]
+verify_jwt = false
