@@ -6,12 +6,21 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Building2, Search, Filter, Plus, MoreVertical,
-  Eye, Settings, UserPlus, Trash2, ExternalLink
+  Eye, Settings, UserPlus, Trash2, ExternalLink, Loader2, X
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +36,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceService } from '@/services/workspaces';
 import { useSaasAuth } from '@/contexts/SaasAuthContext';
 import { Organization } from '@/types/saas';
+import { toast } from 'sonner';
 
 function WorkspaceCard({ org, onView, onImpersonate }: { 
   org: Organization; 
@@ -123,12 +133,25 @@ function WorkspaceCard({ org, onView, onImpersonate }: {
   );
 }
 
+interface CreateWorkspaceFormData {
+  name: string;
+  slug: string;
+  plan: 'basic' | 'pro' | 'enterprise';
+}
+
 export default function AdminWorkspacesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { impersonate } = useSaasAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState<CreateWorkspaceFormData>({
+    name: '',
+    slug: '',
+    plan: 'basic',
+  });
 
   const { data: workspaces, isLoading } = useQuery({
     queryKey: ['admin-workspaces', search, statusFilter, planFilter],
@@ -139,10 +162,43 @@ export default function AdminWorkspacesPage() {
     }),
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Organization>) => workspaceService.create(data),
+    onSuccess: (newOrg) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-workspaces'] });
+      toast.success(`Workspace "${newOrg.name}" criado com sucesso!`);
+      setShowCreateModal(false);
+      setFormData({ name: '', slug: '', plan: 'basic' });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erro ao criar workspace');
+    },
+  });
+
   const handleImpersonate = async (org: Organization) => {
     await impersonate(org.id, org.name);
-    // Redirecionar para o app do cliente
     navigate('/app/dashboards');
+  };
+
+  const handleNameChange = (value: string) => {
+    const slug = value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    
+    setFormData({ ...formData, name: value, slug });
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+    createMutation.mutate(formData);
   };
 
   return (
@@ -153,7 +209,10 @@ export default function AdminWorkspacesPage() {
           <h1 className="text-2xl font-bold text-text-1">Workspaces</h1>
           <p className="text-text-3 mt-1">Gerencie os clientes da plataforma</p>
         </div>
-        <Button className="bg-pinn-gradient text-bg-0">
+        <Button 
+          className="bg-pinn-gradient text-bg-0"
+          onClick={() => setShowCreateModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Novo Workspace
         </Button>
@@ -225,6 +284,105 @@ export default function AdminWorkspacesPage() {
           )}
         </div>
       )}
+
+      {/* Create Workspace Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="bg-bg-1 border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-text-1">
+              Novo Workspace
+            </DialogTitle>
+          </DialogHeader>
+          
+          <form onSubmit={handleCreateSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-text-2">Nome da Empresa</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Ex: Minha Empresa"
+                className="bg-bg-2 border-border"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="slug" className="text-text-2">Slug (URL)</Label>
+              <Input
+                id="slug"
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="minha-empresa"
+                className="bg-bg-2 border-border font-mono text-sm"
+              />
+              <p className="text-xs text-text-3">
+                Identificador único usado em URLs e no banco de dados
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="plan" className="text-text-2">Plano</Label>
+              <Select 
+                value={formData.plan} 
+                onValueChange={(v) => setFormData({ ...formData, plan: v as any })}
+              >
+                <SelectTrigger className="bg-bg-2 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-bg-1 border-border">
+                  <SelectItem value="basic">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-text-3/20 text-text-2">Basic</Badge>
+                      <span className="text-text-3 text-xs">Funcionalidades essenciais</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pro">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-info/20 text-info">Pro</Badge>
+                      <span className="text-text-3 text-xs">Recursos avançados</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="enterprise">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-pinn-orange-500/20 text-pinn-orange-500">Enterprise</Badge>
+                      <span className="text-text-3 text-xs">Acesso completo</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowCreateModal(false)}
+                className="border-border"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-pinn-gradient text-bg-0"
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Criar Workspace
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
