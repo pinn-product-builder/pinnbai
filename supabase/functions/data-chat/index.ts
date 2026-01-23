@@ -25,14 +25,22 @@ serve(async (req) => {
   }
 
   try {
+    // Try OPENAI_API_KEY first, then fallback to LOVABLE_API_KEY
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      console.error("OPENAI_API_KEY is missing");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    
+    const useOpenAI = !!OPENAI_API_KEY;
+    const apiKey = OPENAI_API_KEY || LOVABLE_API_KEY;
+    
+    if (!apiKey) {
+      console.error("No API key found (OPENAI_API_KEY or LOVABLE_API_KEY)");
       return new Response(
-        JSON.stringify({ error: "Configuração de IA não encontrada. Configure a OPENAI_API_KEY." }),
+        JSON.stringify({ error: "Configuração de IA não encontrada. Configure OPENAI_API_KEY ou LOVABLE_API_KEY." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Using API:", useOpenAI ? "OpenAI" : "Lovable AI Gateway");
 
     const { 
       messages, 
@@ -223,27 +231,33 @@ Responda sempre em português do Brasil. Quando não souber algo específico, se
       ...messages
     ];
 
-    console.log("Calling OpenAI API with", aiMessages.length, "messages");
+    // Determine API endpoint and model based on available key
+    const apiUrl = useOpenAI 
+      ? "https://api.openai.com/v1/chat/completions"
+      : "https://ai.gateway.lovable.dev/v1/chat/completions";
+    
+    const model = useOpenAI ? "gpt-4o-mini" : "google/gemini-3-flash-preview";
+    
+    console.log("Calling AI API:", { apiUrl, model, messageCount: aiMessages.length });
 
-    // Call OpenAI API
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model,
         messages: aiMessages,
         stream: true,
       }),
     });
 
-    console.log("OpenAI response status:", response.status);
+    console.log("AI response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("OpenAI error:", response.status, errorText);
+      console.error("AI error:", response.status, errorText);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
@@ -252,8 +266,14 @@ Responda sempre em português do Brasil. Quando não souber algo específico, se
         });
       }
       if (response.status === 401) {
-        return new Response(JSON.stringify({ error: "Chave de API inválida. Verifique a OPENAI_API_KEY." }), {
+        return new Response(JSON.stringify({ error: "Chave de API inválida. Verifique a configuração." }), {
           status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos para continuar." }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
