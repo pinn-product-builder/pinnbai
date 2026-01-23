@@ -227,7 +227,7 @@ export function ImportWizard({ open, onOpenChange, onComplete }: ImportWizardPro
       // Se criou dashboard, navegar para edição
       if (dashboardId) {
         handleClose();
-        navigate(`/app/dashboards/${dashboardId}/edit`);
+        navigate(`/app/dashboards/${dashboardId}`);
       } else {
         handleClose();
       }
