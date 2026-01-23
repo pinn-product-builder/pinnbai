@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, Suspense, lazy } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from 'next-themes';
 import { 
@@ -14,7 +14,8 @@ import {
   X,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GlobalFilterBar } from './GlobalFilterBar';
@@ -24,6 +25,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useSaasAuth } from '@/contexts/SaasAuthContext';
 import { ROUTES, KEYBOARD_SHORTCUTS, REFRESH_INTERVALS } from '@/lib/config';
 import { SAAS_ROUTES } from '@/lib/saasRoutes';
+import { useGlobalFilters } from '@/hooks/useGlobalFilters';
+
+// Lazy load the chat component
+const DataChatPanel = lazy(() => import('@/components/dashboard/DataChatPanel').then(m => ({ default: m.DataChatPanel })));
 
 // Pinn Logo SVG Component
 const PinnLogoIcon = ({ className }: { className?: string }) => (
@@ -115,9 +120,11 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, user, signOut } = useSaasAuth();
+  const { filters } = useGlobalFilters();
 
   // Filtrar itens de navegação baseado na role
   const filteredNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
@@ -125,6 +132,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleLogout = async () => {
     await signOut();
   };
+
+  // Toggle chat with keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+A to toggle AI chat
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        setChatOpen(!chatOpen);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chatOpen]);
 
   // Atalho de teclado ESC para sair do modo view
   useEffect(() => {
@@ -234,8 +254,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          {/* Bottom Actions: Theme Toggle + View Mode + Logout */}
+          {/* Bottom Actions: AI Chat + Theme Toggle + View Mode + Logout */}
           <div className="absolute bottom-16 left-0 right-0 px-3 space-y-2">
+            {/* AI Chat Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setChatOpen(!chatOpen)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    chatOpen 
+                      ? "bg-pinn-orange-500/12 border border-pinn-orange-500/25 text-text-1" 
+                      : "text-text-2 hover:text-text-1 hover:bg-bg-2 border border-transparent"
+                  )}
+                >
+                  <Bot className={cn("w-5 h-5 flex-shrink-0", chatOpen && "text-pinn-orange-500")} />
+                  {!collapsed && <span>Agente IA</span>}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="pinn-tooltip">
+                <p>Conversar com IA (Ctrl+Shift+A)</p>
+              </TooltipContent>
+            </Tooltip>
+
             {/* Theme Toggle Button */}
             <ThemeToggle collapsed={collapsed} />
 
@@ -336,7 +377,34 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Page Content */}
           <main className="flex-1 p-6 overflow-auto">
-            {children}
+            <div className="flex gap-0 h-full">
+              {/* Main Dashboard Content */}
+              <div className={cn(
+                "flex-1 transition-all duration-300",
+                chatOpen ? "pr-0" : ""
+              )}>
+                {children}
+              </div>
+              
+              {/* AI Chat Panel - Slides in from right */}
+              {chatOpen && (
+                <div className="w-[400px] ml-6 flex-shrink-0 animate-slide-in-right">
+                  <Suspense fallback={
+                    <div className="h-full rounded-2xl bg-bg-1 border border-border flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pinn-orange-500" />
+                    </div>
+                  }>
+                    <DataChatPanel
+                      workspaceSlug={filters.orgId || 'afonsina'}
+                      datasetName="dashboard_afonsina"
+                      isOpen={chatOpen}
+                      onClose={() => setChatOpen(false)}
+                      className="h-[calc(100vh-8rem)] rounded-2xl shadow-xl"
+                    />
+                  </Suspense>
+                </div>
+              )}
+            </div>
           </main>
         </div>
       </div>
