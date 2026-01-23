@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Organization } from '@/types/saas';
 import { schemaService } from '@/services/schemaService';
+import { dashboardsService } from '@/services/dashboards';
+import { generateDashboardFromSchema } from '@/lib/dashboardGenerator';
 import { toast } from 'sonner';
 
 // Step Components
@@ -176,12 +178,49 @@ export function ImportWizard({ open, onOpenChange, onComplete }: ImportWizardPro
       }
       
       console.log('Dados inseridos:', insertResult.rowCount, 'linhas');
+
+      // 4. Gerar dashboard automaticamente se solicitado
+      let dashboardId: string | null = null;
+      
+      if (wizardData.generateDashboard) {
+        console.log('Gerando dashboard automático...');
+        
+        const generatedDash = generateDashboardFromSchema({
+          schema,
+          datasetId,
+          template: (wizardData.dashboardTemplate as 'auto' | 'sales' | 'analytics' | 'overview') || 'auto',
+          primaryDateColumn: wizardData.primaryDateColumn,
+        });
+
+        const newDashboard = await dashboardsService.create({
+          orgId: workspace.id,
+          name: `${wizardData.datasetName} - ${generatedDash.name}`,
+          description: generatedDash.description,
+          widgets: generatedDash.widgets,
+          status: 'draft',
+        });
+
+        dashboardId = newDashboard.id;
+        console.log('Dashboard criado:', dashboardId, 'com', generatedDash.widgets.length, 'widgets');
+        
+        toast.success(
+          `Dashboard "${newDashboard.name}" criado com ${generatedDash.widgets.length} visualizações!`,
+          { duration: 5000 }
+        );
+      }
       
       toast.success(`Importação concluída! ${insertResult.rowCount} linhas importadas para ${workspace.name}`);
       
       const importId = datasetId;
       onComplete?.(importId);
-      handleClose();
+      
+      // Se criou dashboard, navegar para edição
+      if (dashboardId) {
+        handleClose();
+        navigate(`/app/dashboards/${dashboardId}/edit`);
+      } else {
+        handleClose();
+      }
     } catch (err: any) {
       console.error('Erro na importação:', err);
       setError(err.message || 'Erro ao finalizar importação. Tente novamente.');
