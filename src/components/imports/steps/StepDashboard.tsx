@@ -71,6 +71,7 @@ const WIDGET_ICONS: Record<WidgetType, React.ElementType> = {
   table: Table2,
   list: Table2,
   heatmap: LayoutDashboard,
+  insights: Sparkles,
 };
 
 const WIDGET_LABELS: Record<WidgetType, string> = {
@@ -83,6 +84,7 @@ const WIDGET_LABELS: Record<WidgetType, string> = {
   table: 'Tabela',
   list: 'Lista',
   heatmap: 'Heatmap',
+  insights: 'Insights',
 };
 
 export function StepDashboard({ wizardData, onDataChange }: StepDashboardProps) {

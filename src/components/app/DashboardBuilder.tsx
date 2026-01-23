@@ -57,6 +57,7 @@ const WIDGET_TYPES: { type: WidgetType; label: string; icon: React.ElementType; 
   { type: 'funnel', label: 'Funil', icon: PieChart, defaultSize: { w: 4, h: 5 } },
   { type: 'table', label: 'Tabela', icon: Table2, defaultSize: { w: 6, h: 4 } },
   { type: 'list', label: 'Lista', icon: ListOrdered, defaultSize: { w: 4, h: 4 } },
+  { type: 'insights', label: 'Insights IA', icon: Hash, defaultSize: { w: 6, h: 4 } },
 ];
 
 // Mock data for widgets
