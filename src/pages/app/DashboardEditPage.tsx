@@ -21,6 +21,8 @@ export default function DashboardEditPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [dataSets, setDataSets] = useState<DataSet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [workspaceSlug, setWorkspaceSlug] = useState<string | undefined>();
+  const [datasetName, setDatasetName] = useState<string | undefined>();
 
   useEffect(() => {
     const load = async () => {
@@ -34,6 +36,20 @@ export default function DashboardEditPage() {
         ]);
         setDashboard(dashboardData);
         setDataSets(dataSetsData);
+        
+        // Extract workspace slug and dataset name from dashboard
+        if (dashboardData && dataSetsData.length > 0) {
+          // Find the dataset associated with this dashboard (from first widget)
+          const firstWidget = dashboardData.widgets?.[0];
+          if (firstWidget?.dataSetId) {
+            const dataset = dataSetsData.find(ds => ds.id === firstWidget.dataSetId);
+            if (dataset) {
+              setDatasetName(dataset.objectName || dataset.name);
+              // Extract workspace slug from orgId or dataset
+              setWorkspaceSlug(orgId || 'default');
+            }
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -80,6 +96,8 @@ export default function DashboardEditPage() {
         dashboardName={dashboard.name}
         initialWidgets={dashboard.widgets}
         dataSets={dataSets}
+        workspaceSlug={workspaceSlug}
+        datasetName={datasetName}
         onSave={handleSave}
         onPreview={handlePreview}
       />

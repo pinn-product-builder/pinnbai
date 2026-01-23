@@ -1,5 +1,6 @@
 /**
  * Builder de Dashboard com Grid Arrastável e Preview Premium
+ * Inclui Chat IA para análise de dados
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -22,7 +23,7 @@ import {
   Plus, Save, Eye, Trash2, Move, Edit3, Sparkles,
   BarChart3, LineChart, PieChart, Table2, ListOrdered, Hash,
   Users, DollarSign, TrendingUp, CalendarCheck, MessageSquare,
-  Percent, CheckCircle, Info
+  Percent, CheckCircle, Info, Bot, X, MessageCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -70,6 +71,8 @@ interface DashboardBuilderProps {
   dashboardName: string;
   initialWidgets: DashboardWidget[];
   dataSets: DataSet[];
+  workspaceSlug?: string;
+  datasetName?: string;
   onSave: (widgets: DashboardWidget[]) => void;
   onPreview: () => void;
 }
@@ -544,6 +547,8 @@ export function DashboardBuilder({
   dashboardName, 
   initialWidgets, 
   dataSets,
+  workspaceSlug,
+  datasetName,
   onSave,
   onPreview
 }: DashboardBuilderProps) {
@@ -551,6 +556,13 @@ export function DashboardBuilder({
   const [selectedWidget, setSelectedWidget] = useState<DashboardWidget | null>(null);
   const [configOpen, setConfigOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('preview');
+  const [chatOpen, setChatOpen] = useState(false);
+  
+  // Lazy load chat component
+  const DataChatPanel = useMemo(() => 
+    React.lazy(() => import('@/components/dashboard/DataChatPanel').then(m => ({ default: m.DataChatPanel }))),
+    []
+  );
 
   const layout: LayoutItem[] = widgets.map((w) => ({
     i: w.id,
@@ -657,6 +669,18 @@ export function DashboardBuilder({
               </TabsList>
             </Tabs>
             
+            {workspaceSlug && datasetName && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setChatOpen(!chatOpen)}
+                className={chatOpen ? "bg-pinn-orange-500/10 border-pinn-orange-500" : ""}
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Agente IA
+              </Button>
+            )}
+            
             <Button 
               size="sm" 
               onClick={() => onSave(widgets)}
@@ -718,6 +742,25 @@ export function DashboardBuilder({
             </div>
           )}
         </div>
+        
+        {/* AI Chat Panel - Side Panel */}
+        {chatOpen && workspaceSlug && datasetName && (
+          <div className="w-[420px] border-l border-border bg-bg-1 flex flex-col">
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pinn-orange-500" />
+              </div>
+            }>
+              <DataChatPanel
+                workspaceSlug={workspaceSlug}
+                datasetName={datasetName}
+                isOpen={chatOpen}
+                onClose={() => setChatOpen(false)}
+                className="h-full border-0 rounded-none"
+              />
+            </React.Suspense>
+          </div>
+        )}
       </div>
 
       {/* Config Sheet */}
