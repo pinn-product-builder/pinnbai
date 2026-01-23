@@ -148,7 +148,7 @@ export interface Dashboard {
   createdBy?: string;
 }
 
-export type WidgetType = 'kpi' | 'line' | 'bar' | 'funnel' | 'table' | 'list' | 'pie' | 'area' | 'heatmap';
+export type WidgetType = 'kpi' | 'line' | 'bar' | 'funnel' | 'table' | 'list' | 'pie' | 'area' | 'heatmap' | 'insights';
 
 export interface DashboardWidget {
   id: string;
@@ -160,15 +160,32 @@ export interface DashboardWidget {
 }
 
 export interface WidgetConfig {
+  // Core metrics
   metric?: string;
+  metrics?: string[]; // Para gráficos multi-série
   dimension?: string;
   dateColumn?: string;
   aggregation?: 'sum' | 'avg' | 'count' | 'distinct';
   format?: ColumnFormat;
+  
+  // Filters & Sorting
   filters?: WidgetFilter[];
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  
+  // Visual config - Premium widgets
+  icon?: string;
+  variant?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
+  description?: string;
+  subtitle?: string;
+  showTrend?: boolean;
+  showLegend?: boolean;
+  showGrid?: boolean;
+  showValues?: boolean;
+  
+  // Table specific
+  columns?: string[];
 }
 
 export interface WidgetFilter {
