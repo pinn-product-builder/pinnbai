@@ -46,37 +46,43 @@ serve(async (req) => {
     const schemaName = `ws_${workspaceSlug.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
     const tableName = datasetName.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
-    // Get sample data and statistics
-    const { data: sampleData } = await supabase.rpc('query_dataset', {
-      p_schema_name: schemaName,
-      p_table_name: tableName,
-      p_limit: 500,
-      p_offset: 0,
-      p_order_by: null,
-      p_order_dir: 'asc',
-      p_filters: null,
-    });
+    let dataRows: any[] = [];
+    let rowCount = 0;
+    let columns: string[] = [];
+    let stats: Record<string, any> = {};
 
-    const { data: rowCount } = await supabase.rpc('count_dataset_rows', {
-      p_schema_name: schemaName,
-      p_table_name: tableName,
-      p_filters: null,
-    });
+    // Try to get sample data and statistics
+    try {
+      const { data: sampleData, error: sampleError } = await supabase.rpc('query_dataset', {
+        p_schema_name: schemaName,
+        p_table_name: tableName,
+        p_limit: 500,
+        p_offset: 0,
+        p_order_by: null,
+        p_order_dir: 'asc',
+        p_filters: null,
+      });
 
-    // Get dataset metadata
-    const { data: metadata } = await supabase.rpc('list_schema_datasets', {
-      p_schema_name: schemaName,
-    });
+      if (!sampleError && sampleData) {
+        dataRows = Array.isArray(sampleData) ? sampleData : [];
+      }
 
-    const datasetMeta = Array.isArray(metadata) 
-      ? metadata.find((d: any) => d.tableName === tableName || d.name === datasetName)
-      : null;
+      const { data: countData, error: countError } = await supabase.rpc('count_dataset_rows', {
+        p_schema_name: schemaName,
+        p_table_name: tableName,
+        p_filters: null,
+      });
 
-    // Calculate statistics
-    const dataRows = Array.isArray(sampleData) ? sampleData : [];
-    const columns = dataRows.length > 0 ? Object.keys(dataRows[0]) : [];
+      if (!countError && countData) {
+        rowCount = countData;
+      }
+    } catch (e) {
+      console.log("Could not fetch dataset data, continuing with limited context:", e);
+    }
+
+    // Calculate statistics if we have data
+    columns = dataRows.length > 0 ? Object.keys(dataRows[0]) : [];
     
-    const stats: Record<string, any> = {};
     for (const col of columns) {
       const values = dataRows.map((row: any) => row[col]).filter(v => v != null);
       const numericValues = values.filter(v => typeof v === 'number' || !isNaN(Number(v))).map(Number);

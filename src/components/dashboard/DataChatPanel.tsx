@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-
+import { SUPABASE_CONFIG } from '@/lib/config';
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -54,7 +54,7 @@ interface DataChatPanelProps {
   className?: string;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = SUPABASE_CONFIG.url;
 
 export function DataChatPanel({ 
   workspaceSlug, 
@@ -116,10 +116,13 @@ Como posso ajudar você hoje?`,
       content: m.content
     }));
 
+    console.log('Sending to data-chat:', { workspaceSlug, datasetName, action, messagesCount: allMessages.length });
+    
     const response = await fetch(`${SUPABASE_URL}/functions/v1/data-chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'apikey': SUPABASE_CONFIG.anonKey,
       },
       body: JSON.stringify({
         messages: [...allMessages, { role: 'user', content: userMessage }],
@@ -130,9 +133,17 @@ Como posso ajudar você hoje?`,
       }),
     });
 
+    console.log('Response status:', response.status);
+
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to get response');
+      let errorMsg = 'Erro ao conectar com o agente IA';
+      try {
+        const error = await response.json();
+        errorMsg = error.error || errorMsg;
+      } catch {
+        errorMsg = `Erro ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMsg);
     }
 
     const reader = response.body?.getReader();
