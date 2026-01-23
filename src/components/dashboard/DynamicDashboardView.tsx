@@ -93,11 +93,11 @@ const generateMockBarData = () => [
 ];
 
 const generateMockFunnelData = () => [
-  { stage_name: 'Novo Lead', leads: 100, stage_order: 1 },
-  { stage_name: 'Qualificado', leads: 75, stage_order: 2 },
-  { stage_name: 'Proposta', leads: 40, stage_order: 3 },
-  { stage_name: 'Negociação', leads: 25, stage_order: 4 },
-  { stage_name: 'Fechado', leads: 15, stage_order: 5 },
+  { org_id: 'mock', stage_key: 'novo_lead', stage_name: 'Novo Lead', stage_order: 1, stage_group: 'topo', leads: 100 },
+  { org_id: 'mock', stage_key: 'qualificado', stage_name: 'Qualificado', stage_order: 2, stage_group: 'meio', leads: 75 },
+  { org_id: 'mock', stage_key: 'proposta', stage_name: 'Proposta', stage_order: 3, stage_group: 'meio', leads: 40 },
+  { org_id: 'mock', stage_key: 'negociacao', stage_name: 'Negociação', stage_order: 4, stage_group: 'fundo', leads: 25 },
+  { org_id: 'mock', stage_key: 'fechado', stage_name: 'Fechado', stage_order: 5, stage_group: 'fundo', leads: 15 },
 ];
 
 const generateMockPieData = () => [
