@@ -25,11 +25,11 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is missing");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is missing");
       return new Response(
-        JSON.stringify({ error: "Configuração de IA não encontrada. Contate o suporte." }),
+        JSON.stringify({ error: "Configuração de IA não encontrada. Configure a OPENAI_API_KEY." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -223,27 +223,27 @@ Responda sempre em português do Brasil. Quando não souber algo específico, se
       ...messages
     ];
 
-    console.log("Calling Lovable AI Gateway with", aiMessages.length, "messages");
+    console.log("Calling OpenAI API with", aiMessages.length, "messages");
 
-    // Call Lovable AI Gateway
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call OpenAI API
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: aiMessages,
         stream: true,
       }),
     });
 
-    console.log("AI Gateway response status:", response.status);
+    console.log("OpenAI response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("OpenAI error:", response.status, errorText);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
@@ -251,9 +251,9 @@ Responda sempre em português do Brasil. Quando não souber algo específico, se
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos para continuar." }), {
-          status: 402,
+      if (response.status === 401) {
+        return new Response(JSON.stringify({ error: "Chave de API inválida. Verifique a OPENAI_API_KEY." }), {
+          status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
