@@ -57,13 +57,9 @@ interface DataChatPanelProps {
   className?: string;
 }
 
-// Use Lovable Cloud URL for Edge Functions - use env vars first, fallback to config
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// Fallback to config only if env vars are missing
-const LOVABLE_CLOUD_URL = SUPABASE_URL || SUPABASE_CONFIG.url;
-const LOVABLE_CLOUD_KEY = SUPABASE_KEY || SUPABASE_CONFIG.anonKey;
+// Use the hardcoded Supabase config since this project uses external Supabase
+const EDGE_FUNCTION_URL = SUPABASE_CONFIG.url;
+const EDGE_FUNCTION_KEY = SUPABASE_CONFIG.anonKey;
 
 export function DataChatPanel({ 
   workspaceSlug, 
@@ -125,94 +121,106 @@ Como posso ajudar você hoje?`,
       content: m.content
     }));
 
-    console.log('Sending to data-chat:', { workspaceSlug, datasetName, action, messagesCount: allMessages.length, url: LOVABLE_CLOUD_URL });
-    
-    const response = await fetch(`${LOVABLE_CLOUD_URL}/functions/v1/data-chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LOVABLE_CLOUD_KEY}`,
-        'apikey': LOVABLE_CLOUD_KEY,
-      },
-      body: JSON.stringify({
-        messages: [...allMessages, { role: 'user', content: userMessage }],
-        workspaceSlug,
-        datasetName,
-        action,
-        reportType
-      }),
+    const edgeFunctionUrl = `${EDGE_FUNCTION_URL}/functions/v1/data-chat`;
+    console.log('DataChatPanel: Calling edge function:', { 
+      url: edgeFunctionUrl, 
+      workspaceSlug, 
+      datasetName, 
+      action, 
+      messagesCount: allMessages.length 
     });
+    
+    try {
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${EDGE_FUNCTION_KEY}`,
+          'apikey': EDGE_FUNCTION_KEY,
+        },
+        body: JSON.stringify({
+          messages: [...allMessages, { role: 'user', content: userMessage }],
+          workspaceSlug,
+          datasetName,
+          action,
+          reportType
+        }),
+      });
 
-    console.log('Response status:', response.status);
+      console.log('DataChatPanel: Response status:', response.status);
 
-    if (!response.ok) {
-      let errorMsg = 'Erro ao conectar com o agente IA';
-      try {
-        const error = await response.json();
-        errorMsg = error.error || errorMsg;
-      } catch {
-        errorMsg = `Erro ${response.status}: ${response.statusText}`;
-      }
-      throw new Error(errorMsg);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No response body');
-
-    const decoder = new TextDecoder();
-    let assistantContent = '';
-    let textBuffer = '';
-
-    // Create assistant message
-    const assistantId = `msg-${Date.now()}`;
-    setMessages(prev => [...prev, {
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isReport: action === 'report',
-      reportType
-    }]);
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith('\r')) line = line.slice(0, -1);
-        if (line.startsWith(':') || line.trim() === '') continue;
-        if (!line.startsWith('data: ')) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === '[DONE]') break;
-
+      if (!response.ok) {
+        let errorMsg = 'Erro ao conectar com o agente IA';
         try {
-          const parsed = JSON.parse(jsonStr);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            assistantContent += content;
-            setMessages(prev => 
-              prev.map(m => 
-                m.id === assistantId 
-                  ? { ...m, content: assistantContent }
-                  : m
-              )
-            );
-          }
+          const error = await response.json();
+          errorMsg = error.error || errorMsg;
         } catch {
-          textBuffer = line + '\n' + textBuffer;
-          break;
+          errorMsg = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMsg);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let textBuffer = '';
+
+      // Create assistant message
+      const assistantId = `msg-${Date.now()}`;
+      setMessages(prev => [...prev, {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date(),
+        isReport: action === 'report',
+        reportType
+      }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setMessages(prev => 
+                prev.map(m => 
+                  m.id === assistantId 
+                    ? { ...m, content: assistantContent }
+                    : m
+                )
+              );
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
         }
       }
-    }
 
-    return assistantContent;
+      return assistantContent;
+    } catch (fetchError: any) {
+      console.error('DataChatPanel: Fetch error:', fetchError);
+      throw new Error(fetchError.message || 'Erro de conexão. Verifique sua internet.');
+    }
   }, [messages, workspaceSlug, datasetName]);
 
   const handleSend = async () => {
