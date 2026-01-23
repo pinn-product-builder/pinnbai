@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { SUPABASE_CONFIG } from '@/lib/config';
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -54,7 +55,9 @@ interface DataChatPanelProps {
   className?: string;
 }
 
-const SUPABASE_URL = SUPABASE_CONFIG.url;
+// Use Lovable Cloud URL for Edge Functions
+const LOVABLE_CLOUD_URL = import.meta.env.VITE_SUPABASE_URL || SUPABASE_CONFIG.url;
+const LOVABLE_CLOUD_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey;
 
 export function DataChatPanel({ 
   workspaceSlug, 
@@ -116,13 +119,14 @@ Como posso ajudar você hoje?`,
       content: m.content
     }));
 
-    console.log('Sending to data-chat:', { workspaceSlug, datasetName, action, messagesCount: allMessages.length });
+    console.log('Sending to data-chat:', { workspaceSlug, datasetName, action, messagesCount: allMessages.length, url: LOVABLE_CLOUD_URL });
     
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/data-chat`, {
+    const response = await fetch(`${LOVABLE_CLOUD_URL}/functions/v1/data-chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${LOVABLE_CLOUD_KEY}`,
+        'apikey': LOVABLE_CLOUD_KEY,
       },
       body: JSON.stringify({
         messages: [...allMessages, { role: 'user', content: userMessage }],
