@@ -21,7 +21,9 @@ import {
   Minimize2,
   Copy,
   Check,
-  Download
+  Download,
+  FileSpreadsheet,
+  FileIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -55,9 +57,13 @@ interface DataChatPanelProps {
   className?: string;
 }
 
-// Use Lovable Cloud URL for Edge Functions
-const LOVABLE_CLOUD_URL = import.meta.env.VITE_SUPABASE_URL || SUPABASE_CONFIG.url;
-const LOVABLE_CLOUD_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_CONFIG.anonKey;
+// Use Lovable Cloud URL for Edge Functions - use env vars first, fallback to config
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Fallback to config only if env vars are missing
+const LOVABLE_CLOUD_URL = SUPABASE_URL || SUPABASE_CONFIG.url;
+const LOVABLE_CLOUD_KEY = SUPABASE_KEY || SUPABASE_CONFIG.anonKey;
 
 export function DataChatPanel({ 
   workspaceSlug, 
@@ -290,6 +296,67 @@ Como posso ajudar você hoje?`,
     URL.revokeObjectURL(url);
   };
 
+  const downloadAsDocx = async (content: string, filename: string) => {
+    // Convert markdown to simple HTML-like format for DOCX
+    const htmlContent = content
+      .replace(/## (.*)/g, '<h2>$1</h2>')
+      .replace(/### (.*)/g, '<h3>$1</h3>')
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/- (.*)/g, '<li>$1</li>')
+      .replace(/\n/g, '<br/>');
+
+    // Create a simple DOCX-compatible content (RTF-like)
+    const docContent = `
+<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+<head><meta charset='utf-8'><title>${filename}</title></head>
+<body>${htmlContent}</body>
+</html>`;
+
+    const blob = new Blob([docContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAsXlsx = async (content: string, filename: string) => {
+    // Parse markdown content into rows
+    const lines = content.split('\n').filter(line => line.trim());
+    const rows: string[][] = [];
+    
+    let currentSection = '';
+    for (const line of lines) {
+      if (line.startsWith('## ')) {
+        currentSection = line.slice(3);
+        rows.push([currentSection]);
+        rows.push(['---']);
+      } else if (line.startsWith('### ')) {
+        rows.push([line.slice(4)]);
+      } else if (line.startsWith('- ')) {
+        rows.push(['', line.slice(2)]);
+      } else if (line.startsWith('**') && line.includes(':')) {
+        const [key, ...valueParts] = line.replace(/\*\*/g, '').split(':');
+        rows.push([key.trim(), valueParts.join(':').trim()]);
+      } else if (line.trim()) {
+        rows.push([line.replace(/\*\*/g, '')]);
+      }
+    }
+
+    // Create CSV content (Excel can open it)
+    const csvContent = rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const BOM = '\uFEFF'; // UTF-8 BOM for Excel
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -426,15 +493,32 @@ Como posso ajudar você hoje?`,
                             Copiar
                           </Button>
                           {msg.isReport && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => downloadAsMarkdown(msg.content, `relatorio-${msg.reportType}`)}
-                            >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                >
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Exportar
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                <DropdownMenuItem onClick={() => downloadAsMarkdown(msg.content, `relatorio-${msg.reportType}`)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Markdown (.md)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => downloadAsDocx(msg.content, `relatorio-${msg.reportType}`)}>
+                                  <FileIcon className="h-4 w-4 mr-2" />
+                                  Word (.doc)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => downloadAsXlsx(msg.content, `relatorio-${msg.reportType}`)}>
+                                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                                  Excel (.csv)
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           )}
                         </div>
                       )}
