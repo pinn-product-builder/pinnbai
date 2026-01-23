@@ -96,10 +96,20 @@ interface DailyChartProps {
 }
 
 export function DailyChart({ data, lines, height = 300 }: DailyChartProps) {
-  const formattedData = data.map((d) => ({
-    ...d,
-    dayLabel: format(parseISO(d.day), 'dd/MM', { locale: ptBR }),
-  }));
+  const formattedData = data.map((d) => {
+    // Handle both ISO dates and pre-formatted labels
+    let dayLabel = d.day;
+    try {
+      // Try to parse as ISO date
+      const parsed = parseISO(d.day);
+      if (!isNaN(parsed.getTime())) {
+        dayLabel = format(parsed, 'dd/MM', { locale: ptBR });
+      }
+    } catch {
+      // If parsing fails, use the original value (already formatted)
+    }
+    return { ...d, dayLabel };
+  });
 
   const axisProps = getAxisProps();
   const gridColor = getGridColor();

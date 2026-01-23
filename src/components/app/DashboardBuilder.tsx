@@ -95,16 +95,20 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const PIE_COLORS = ['hsl(var(--pinn-orange-500))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--info))'];
 
-// Mock data generators
+// Mock data generators - using ISO date format for compatibility with DailyChart
 const generateMockTrendData = () => {
-  const days = ['01/01', '02/01', '03/01', '04/01', '05/01', '06/01', '07/01', '08/01', '09/01', '10/01'];
-  return days.map(day => ({
-    day,
-    leads_new: Math.floor(Math.random() * 100 + 50),
-    msg_in: Math.floor(Math.random() * 200 + 100),
-    meetings_scheduled: Math.floor(Math.random() * 30 + 5),
-    spend: Math.floor(Math.random() * 500 + 100),
-  }));
+  const today = new Date();
+  return Array.from({ length: 10 }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (9 - i));
+    return {
+      day: date.toISOString().split('T')[0], // ISO format: YYYY-MM-DD
+      leads_new: Math.floor(Math.random() * 100 + 50),
+      msg_in: Math.floor(Math.random() * 200 + 100),
+      meetings_scheduled: Math.floor(Math.random() * 30 + 5),
+      spend: Math.floor(Math.random() * 500 + 100),
+    };
+  });
 };
 
 const generateMockBarData = () => [
