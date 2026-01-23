@@ -1,8 +1,11 @@
 /**
- * Mock de Workspaces/Organizations
+ * Workspaces/Organizations Service
+ * Integrado com schemas isolados por workspace
  */
 
 import { Organization } from '@/types/saas';
+import { schemaService } from './schemaService';
+import { toast } from 'sonner';
 
 // ===== MOCK DATA =====
 const MOCK_ORGANIZATIONS: Organization[] = [
@@ -115,11 +118,9 @@ export const workspaceService = {
   },
 
   /**
-   * Criar workspace
+   * Criar workspace COM schema isolado
    */
   create: async (data: Partial<Organization>): Promise<Organization> => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     const newOrg: Organization = {
       id: `org-${Date.now()}`,
       name: data.name || 'Novo Workspace',
@@ -133,6 +134,23 @@ export const workspaceService = {
         currency: 'BRL',
       },
     };
+    
+    // Criar schema isolado para o workspace
+    console.log('Creating isolated schema for workspace:', newOrg.slug);
+    const schemaResult = await schemaService.createWorkspaceSchema(
+      newOrg.id,
+      newOrg.slug,
+      newOrg.name
+    );
+    
+    if (!schemaResult.success) {
+      console.warn('Failed to create workspace schema:', schemaResult.error);
+      // Continue anyway - schema can be created later
+      toast.warning('Schema do workspace será criado na primeira importação');
+    } else {
+      console.log('Schema created:', schemaResult.schemaName);
+      toast.success(`Schema ${schemaResult.schemaName} criado com sucesso`);
+    }
     
     MOCK_ORGANIZATIONS.push(newOrg);
     return newOrg;
