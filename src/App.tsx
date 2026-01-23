@@ -123,6 +123,7 @@ const App = () => (
                 <Route index element={<Navigate to="/app/dashboards" replace />} />
                 <Route path="dashboards" element={<DashboardsPage />} />
                 <Route path="dashboards/:id" element={<DashboardEditPage />} />
+                <Route path="dashboards/:id/edit" element={<DashboardEditPage />} />
                 <Route path="data-sources" element={<DataSourcesPage />} />
                 <Route path="data-sets" element={<DataSetsPage />} />
                 <Route path="*" element={<PlaceholderPage />} />
