@@ -8,6 +8,7 @@ import {
   Percent, Clock, Key, Table2, ArrowUpDown, Check
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -109,10 +110,10 @@ export function StepSchema({ schema, onSchemaChange, primaryDateColumn, onPrimar
         </TabsList>
 
         <TabsContent value="columns" className="mt-4">
-          <div className="rounded-lg border border-border overflow-hidden">
+          <ScrollArea className="h-[400px] rounded-lg border border-border">
             <Table>
               <TableHeader>
-                <TableRow className="border-border hover:bg-transparent bg-bg-2">
+                <TableRow className="border-border hover:bg-transparent bg-bg-2 sticky top-0 z-10">
                   <TableHead className="text-text-3 w-[200px]">Coluna</TableHead>
                   <TableHead className="text-text-3 w-[150px]">Tipo</TableHead>
                   <TableHead className="text-text-3 text-center w-[80px]">Medida</TableHead>
@@ -216,7 +217,7 @@ export function StepSchema({ schema, onSchemaChange, primaryDateColumn, onPrimar
                 })}
               </TableBody>
             </Table>
-          </div>
+          </ScrollArea>
         </TabsContent>
 
         <TabsContent value="preview" className="mt-4">
