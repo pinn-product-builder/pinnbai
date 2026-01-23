@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Organization } from '@/types/saas';
+import { schemaService } from '@/services/schemaService';
+import { toast } from 'sonner';
 
 // Step Components
 import { StepWorkspace } from './steps/StepWorkspace';
@@ -125,14 +127,64 @@ export function ImportWizard({ open, onOpenChange, onComplete }: ImportWizardPro
     setError(null);
     
     try {
-      // TODO: Trigger actual import processing
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const workspace = wizardData.workspace;
+      const schema = wizardData.schema;
       
-      const importId = `import-${Date.now()}`;
+      if (!workspace || !schema) {
+        throw new Error('Dados incompletos para finalizar importação');
+      }
+
+      // 1. Garantir que o schema do workspace existe
+      console.log('Criando/verificando schema do workspace:', workspace.slug);
+      const schemaResult = await schemaService.createWorkspaceSchema(
+        workspace.id,
+        workspace.slug,
+        workspace.name
+      );
+      
+      if (!schemaResult.success) {
+        throw new Error(schemaResult.error || 'Erro ao criar schema do workspace');
+      }
+      
+      console.log('Schema criado/verificado:', schemaResult.schemaName);
+
+      // 2. Preparar colunas para inserção
+      const columns = schema.columns.map(col => ({
+        name: col.name,
+        dataType: col.dataType
+      }));
+
+      // 3. Inserir dados no schema isolado do workspace
+      const datasetId = `dataset-${Date.now()}`;
+      const tableName = wizardData.datasetName
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      
+      console.log('Inserindo dados no dataset:', tableName);
+      const insertResult = await schemaService.insertImportedData(
+        workspace.slug,
+        datasetId,
+        tableName,
+        columns,
+        schema.previewData
+      );
+      
+      if (!insertResult.success) {
+        throw new Error(insertResult.error || 'Erro ao inserir dados');
+      }
+      
+      console.log('Dados inseridos:', insertResult.rowCount, 'linhas');
+      
+      toast.success(`Importação concluída! ${insertResult.rowCount} linhas importadas para ${workspace.name}`);
+      
+      const importId = datasetId;
       onComplete?.(importId);
       handleClose();
-    } catch (err) {
-      setError('Erro ao finalizar importação. Tente novamente.');
+    } catch (err: any) {
+      console.error('Erro na importação:', err);
+      setError(err.message || 'Erro ao finalizar importação. Tente novamente.');
     } finally {
       setIsProcessing(false);
     }
